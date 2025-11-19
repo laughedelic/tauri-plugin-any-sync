@@ -12,6 +12,12 @@ links = "tauri-plugin-any-sync"
 tauri = { version = "2.9.2" }
 serde = "1.0"
 thiserror = "2"
+tokio = { version = "1.0", features = ["full"] }
+tonic = "0.12"
+prost = "0.13"
+tempfile = "3.0"
+uuid = { version = "1.0", features = ["v4"] }
 
 [build-dependencies]
 tauri-plugin = { version = "2.5.1", features = ["build"] }
+tonic-build = "0.12"

@@ -48,23 +48,115 @@ This plugin implements a sidecar architecture where a Go backend provides gRPC s
 
 ### Installation
 
-```bash
-# Clone repository
-git clone https://github.com/tauri-apps/tauri-plugin-any-sync
-cd tauri-plugin-any-sync
+#### For Plugin Users
 
-# Build Go backend
-./build-go-backend.sh
+1. **Add the plugin to your Tauri app:**
+   ```bash
+   tauri add tauri-plugin-any-sync
+   ```
 
-# Build Rust plugin
-cargo build
+2. **Download or copy sidecar binaries:**
+   
+   The plugin requires Go backend binaries to be placed in your app's `src-tauri/binaries/` directory. Download the correct binary for your platform from the [GitHub Releases](https://github.com/tauri-apps/tauri-plugin-any-sync/releases) and place it in `src-tauri/binaries/`:
 
-# Install dependencies
-bun install
+   ```bash
+   # Create binaries directory
+   mkdir -p src-tauri/binaries
+   
+   # Download binary for your platform (replace with your target triple)
+   # macOS ARM64: curl -L -o src-tauri/binaries/server-aarch64-apple-darwin https://github.com/tauri-apps/tauri-plugin-any-sync/releases/download/v0.1.0/server-aarch64-apple-darwin
+   # macOS Intel: curl -L -o src-tauri/binaries/server-x86_64-apple-darwin https://github.com/tauri-apps/tauri-plugin-any-sync/releases/download/v0.1.0/server-x86_64-apple-darwin
+   # Linux ARM64: curl -L -o src-tauri/binaries/server-aarch64-unknown-linux-gnu https://github.com/tauri-apps/tauri-plugin-any-sync/releases/download/v0.1.0/server-aarch64-unknown-linux-gnu
+   # Linux Intel: curl -L -o src-tauri/binaries/server-x86_64-unknown-linux-gnu https://github.com/tauri-apps/tauri-plugin-any-sync/releases/download/v0.1.0/server-x86_64-unknown-linux-gnu
+   # Windows: curl -L -o src-tauri/binaries/server-x86_64-pc-windows-msvc.exe https://github.com/tauri-apps/tauri-plugin-any-sync/releases/download/v0.1.0/server-x86_64-pc-windows-msvc.exe
+   ```
 
-# Run example app
-cd examples/tauri-app
-bun run tauri dev
+3. **Configure Tauri to use the sidecar:**
+   
+   Add to your `src-tauri/tauri.conf.json`:
+   ```json
+   {
+     "bundle": {
+       "externalBin": ["binaries/server"]
+     }
+   }
+   ```
+
+4. **Add permissions:**
+   
+   Add to your `src-tauri/capabilities/default.json`:
+   ```json
+   {
+     "permissions": [
+       "core:default",
+       "any-sync:default",
+       {
+         "identifier": "shell:allow-execute",
+         "allow": [
+           {
+             "name": "binaries/server",
+             "sidecar": true
+           }
+         ]
+       }
+     ]
+   ]
+   }
+   ```
+
+5. **Initialize the plugin:**
+   
+   In your `src-tauri/src/lib.rs`:
+   ```rust
+   tauri::Builder::default()
+       .plugin(tauri_plugin_shell::init())
+       .plugin(tauri_plugin_any_sync::init())
+       .run(tauri::generate_context!())
+       .expect("error while running tauri application");
+   ```
+
+#### Automatic Binary Setup (Recommended)
+
+Add this to your app's `build.rs` to automatically copy binaries from the installed plugin:
+
+```rust
+// In your app's build.rs (usually src-tauri/build.rs)
+fn copy_plugin_binaries() -> Result<(), Box<dyn std::error::Error>> {
+    use std::env;
+    use std::fs;
+    use std::path::Path;
+    
+    // Get plugin binaries from installed crate
+    let plugin_binaries = env::var("CARGO_TARGET_DIR")
+        .map(|target_dir| Path::new(target_dir).join("build").join("tauri-plugin-any-sync-*.out"))
+        .and_then(|out_dir| out_dir.join("binaries"))
+        .filter(|dir| dir.exists());
+    
+    if let Some(plugin_binaries) = plugin_binaries {
+        // Copy to app's src-tauri/binaries
+        let app_binaries = Path::new("src-tauri").join("binaries");
+        fs::create_dir_all(&app_binaries)?;
+        
+        for entry in fs::read_dir(&plugin_binaries)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_file() {
+                let file_name = path.file_name()
+                    .ok_or("Invalid filename")?
+                    .to_string_lossy()
+                    .to_string();
+                fs::copy(&path, &app_binaries.join(&file_name))?;
+                println!("📦 Copied {}", file_name);
+            }
+        }
+        println!("✅ Plugin binaries copied to {}", app_binaries.display());
+    }
+    
+    Ok(())
+}
+
+// Call this before tauri::Builder::build()
+copy_plugin_binaries()?;
 ```
 
 ## Development

@@ -7,6 +7,15 @@
   ],
   "permissions": [
     "core:default",
-    "any-sync:default"
+    "any-sync:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "binaries/server",
+          "sidecar": true
+        }
+      ]
+    }
   ]
 }

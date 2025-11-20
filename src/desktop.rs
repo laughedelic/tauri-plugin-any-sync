@@ -1,9 +1,8 @@
 use serde::de::DeserializeOwned;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::SystemTime;
 use tauri::{plugin::PluginApi, AppHandle, Runtime};
-use tokio::process::Command;
+use tauri_plugin_shell::ShellExt;
 use tokio::sync::RwLock;
 use tokio::time::{sleep, timeout, Duration};
 use tonic::transport::{Channel, Endpoint};
@@ -31,7 +30,7 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 
 /// Manages Go backend sidecar process
 pub struct SidecarManager {
-    process: Option<tokio::process::Child>,
+    child: Option<tauri_plugin_shell::process::CommandChild>,
     port: Option<u16>,
     client: Option<HealthServiceClient<Channel>>,
     is_running: bool,
@@ -40,40 +39,40 @@ pub struct SidecarManager {
 impl SidecarManager {
     pub fn new() -> Self {
         Self {
-            process: None,
+            child: None,
             port: None,
             client: None,
             is_running: false,
         }
     }
 
-    async fn start(&mut self) -> Result<()> {
+    async fn start<R: Runtime>(&mut self, app: &AppHandle<R>) -> Result<()> {
         if self.is_running {
             return Ok(());
         }
-
-        // Find server binary
-        let binary_path = self.find_server_binary()?;
 
         // Create a temporary file for port communication
         let port_file = tempfile::NamedTempFile::new()?;
         let port_file_path = port_file.path().to_str().unwrap();
 
-        // Start server process
-        let mut cmd = Command::new(&binary_path);
-        cmd.env("ANY_SYNC_PORT_FILE", port_file_path);
-
-        #[cfg(unix)]
-        {
-            cmd.kill_on_drop(true);
-        }
-
-        let child = cmd.spawn().map_err(|e| {
+        // Start sidecar using Tauri shell plugin
+        // Tauri automatically finds server-{target-triple} in plugin's binaries/
+        let sidecar_command = app.shell().sidecar("server").map_err(|e| {
             std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Failed to start server: {}", e),
+                format!("Failed to create sidecar command: {}", e),
             )
         })?;
+
+        let (_rx, child) = sidecar_command
+            .env("ANY_SYNC_PORT_FILE", port_file_path)
+            .spawn()
+            .map_err(|e| {
+                std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("Failed to spawn sidecar: {}", e),
+                )
+            })?;
 
         // Wait for server to write port
         let port = self
@@ -99,7 +98,7 @@ impl SidecarManager {
         // Test the connection
         self.test_connection(&mut client).await?;
 
-        self.process = Some(child);
+        self.child = Some(child);
         self.port = Some(port);
         self.client = Some(client);
         self.is_running = true;
@@ -107,31 +106,7 @@ impl SidecarManager {
         Ok(())
     }
 
-    fn find_server_binary(&self) -> Result<PathBuf> {
-        // Try different binary names based on platform
-        let binary_names = if cfg!(target_os = "windows") {
-            vec!["server.exe", "server-windows-amd64.exe"]
-        } else if cfg!(target_os = "macos") {
-            vec!["server", "server-darwin-arm64", "server-darwin-amd64"]
-        } else {
-            vec!["server", "server-linux-amd64", "server-linux-arm64"]
-        };
 
-        let binaries_dir = PathBuf::from("binaries");
-
-        for name in binary_names {
-            let path = binaries_dir.join(name);
-            if path.exists() {
-                return Ok(path);
-            }
-        }
-
-        Err(std::io::Error::new(
-            std::io::ErrorKind::NotFound,
-            "Server binary not found. Please run ./build-go-backend.sh first.",
-        )
-        .into())
-    }
 
     async fn wait_for_port(&self, port_file: &str, timeout_duration: Duration) -> Result<u16> {
         let start_time = tokio::time::Instant::now();
@@ -186,17 +161,8 @@ impl SidecarManager {
     }
 
     pub async fn stop(&mut self) -> Result<()> {
-        if let Some(mut process) = self.process.take() {
-            #[cfg(unix)]
-            {
-                let _ = process.kill().await;
-            }
-            #[cfg(not(unix))]
-            {
-                let _ = process.kill();
-            }
-
-            let _ = process.wait().await;
+        if let Some(child) = self.child.take() {
+            let _ = child.kill();
         }
 
         self.is_running = false;
@@ -206,9 +172,9 @@ impl SidecarManager {
         Ok(())
     }
 
-    pub async fn ping(&mut self, message: Option<String>) -> Result<GrpcPingResponse> {
+    pub async fn ping<R: Runtime>(&mut self, app: &AppHandle<R>, message: Option<String>) -> Result<GrpcPingResponse> {
         if !self.is_running {
-            self.start().await?;
+            self.start(app).await?;
         }
 
         if let Some(client) = &mut self.client {
@@ -251,7 +217,7 @@ pub struct AnySync<R: Runtime> {
 impl<R: Runtime> AnySync<R> {
     pub async fn ping(&self, payload: PingRequest) -> crate::Result<PingResponse> {
         let mut manager = self.manager.write().await;
-        let response = manager.ping(payload.value).await?;
+        let response = manager.ping(&self.app, payload.value).await?;
 
         Ok(PingResponse {
             value: Some(response.message),

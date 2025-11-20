@@ -80,19 +80,19 @@ build_target() {
     
     # Set GOOS and GOARCH for cross-compilation
     case $target in
-        "darwin-amd64")
+        "x86_64-apple-darwin")
             export GOOS=darwin GOARCH=amd64
             ;;
-        "darwin-arm64")
+        "aarch64-apple-darwin")
             export GOOS=darwin GOARCH=arm64
             ;;
-        "linux-amd64")
+        "x86_64-unknown-linux-gnu")
             export GOOS=linux GOARCH=amd64
             ;;
-        "linux-arm64")
+        "aarch64-unknown-linux-gnu")
             export GOOS=linux GOARCH=arm64
             ;;
-        "windows-amd64")
+        "x86_64-pc-windows-msvc")
             export GOOS=windows GOARCH=amd64
             output_name="${output_name}.exe"
             ;;
@@ -138,11 +138,11 @@ main() {
     if [[ "$1" == "--cross" ]]; then
         print_status "Cross-compiling for multiple platforms..."
         
-        build_target "darwin-amd64" "server-darwin-amd64"
-        build_target "darwin-arm64" "server-darwin-arm64"
-        build_target "linux-amd64" "server-linux-amd64"
-        build_target "linux-arm64" "server-linux-arm64"
-        build_target "windows-amd64" "server-windows-amd64"
+        build_target "x86_64-apple-darwin" "server-x86_64-apple-darwin"
+        build_target "aarch64-apple-darwin" "server-aarch64-apple-darwin"
+        build_target "x86_64-unknown-linux-gnu" "server-x86_64-unknown-linux-gnu"
+        build_target "aarch64-unknown-linux-gnu" "server-aarch64-unknown-linux-gnu"
+        build_target "x86_64-pc-windows-msvc" "server-x86_64-pc-windows-msvc"
     fi
     
     print_status "Build process completed successfully!"
@@ -158,11 +158,11 @@ usage() {
     echo "  --cross    Build for all supported platforms"
     echo ""
     echo "Supported platforms:"
-    echo "  - darwin-amd64"
-    echo "  - darwin-arm64"
-    echo "  - linux-amd64"
-    echo "  - linux-arm64"
-    echo "  - windows-amd64"
+    echo "  - x86_64-apple-darwin"
+    echo "  - aarch64-apple-darwin"
+    echo "  - x86_64-unknown-linux-gnu"
+    echo "  - aarch64-unknown-linux-gnu"
+    echo "  - x86_64-pc-windows-msvc"
 }
 
 # Parse command line arguments

@@ -2,6 +2,8 @@ use tauri::{
     plugin::{Builder, TauriPlugin},
     Manager, Runtime,
 };
+#[cfg(desktop)]
+use tauri_plugin_shell::ShellExt;
 
 pub use models::*;
 
@@ -40,6 +42,10 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("any-sync")
         .invoke_handler(tauri::generate_handler![commands::ping])
         .setup(|app, api| {
+            // Initialize shell plugin for sidecar support
+            #[cfg(desktop)]
+            let _shell = app.shell();
+            
             #[cfg(mobile)]
             let any_sync = mobile::init(app, api)?;
             #[cfg(desktop)]

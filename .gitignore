@@ -16,8 +16,14 @@ node_modules/
 dist-js
 dist
 
-# Go backend binaries
+# Go backend binaries (source)
 /binaries/
 /binaries/*.exe
 /binaries/server*
 /binaries/*-*
+
+# Plugin binaries (for distribution)
+/src-tauri/binaries/
+/src-tauri/binaries/*.exe
+/src-tauri/binaries/server*
+/src-tauri/binaries/*-*

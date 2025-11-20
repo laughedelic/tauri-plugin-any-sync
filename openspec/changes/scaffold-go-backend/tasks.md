@@ -81,6 +81,50 @@
 - Task 7 depends on Tasks 1-5 (testing needs complete integration)
 - Task 8 depends on all previous tasks (documentation after implementation)
 
+## Updated Implementation Tasks for Desktop Sidecar Approach
+
+### 10. Desktop Sidecar Implementation
+- [ ] Update `desktop.rs` to use Tauri shell plugin sidecar APIs instead of manual process management
+- [ ] Implement proper binary discovery using Tauri's sidecar naming conventions
+- [ ] Add shell plugin dependency to plugin Cargo.toml
+- [ ] Update error handling to work with shell plugin command execution
+- [ ] Implement proper sidecar lifecycle management using Tauri's shell APIs
+
+### 11. Binary Distribution Setup
+- [ ] Update build script to include all platform binaries in plugin crate
+- [ ] Ensure binaries follow Tauri's target-triple naming convention
+- [ ] Add binary verification and checksum validation
+- [ ] Test that Tauri bundling includes correct platform-specific binaries
+- [ ] Verify that unused platform binaries are excluded from final app bundle
+
+### 12. Installation Documentation
+- [ ] Update root README.md with platform-specific installation instructions
+- [ ] Add desktop configuration guide with externalBin setup examples
+- [ ] Document mobile zero-configuration experience
+- [ ] Create troubleshooting section for common sidecar setup issues
+- [ ] Add FAQ section addressing platform-specific concerns
+
+### 13. Example App Updates
+- [ ] Update example app tauri.conf.json with externalBin configuration for desktop
+- [ ] Add shell plugin permissions to example app capabilities
+- [ ] Demonstrate proper sidecar binary setup in example code
+- [ ] Add platform detection to show appropriate setup instructions
+- [ ] Test example app builds and runs on all target platforms
+
+### 14. Documentation Integration
+- [ ] Update AGENTS.md files with desktop sidecar guidance
+- [ ] Add shell plugin configuration examples to documentation
+- [ ] Document binary naming conventions and target-triple requirements
+- [ ] Create platform-specific setup checklists
+- [ ] Ensure all documentation references updated sidecar approach
+
+### 15. Testing and Validation
+- [ ] Test sidecar process spawning and management via shell plugin
+- [ ] Validate binary discovery across all supported platforms
+- [ ] Test error handling and recovery scenarios
+- [ ] Verify mobile zero-configuration still works
+- [ ] End-to-end testing of updated installation process
+
 ## Validation Criteria
 
 Each task should be validated with:

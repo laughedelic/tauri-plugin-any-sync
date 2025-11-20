@@ -47,20 +47,22 @@ service HealthService {
 
 ### 3. Desktop Integration Pattern
 
-**Rationale**: Sidecar process avoids FFI complexity and toolchain conflicts.
+**Rationale**: Sidecar process using Tauri shell plugin APIs avoids FFI complexity and leverages Tauri's battle-tested process management.
 
 **Process Flow**:
-1. Tauri plugin setup spawns Go sidecar process
-2. Sidecar listens on random localhost port
-3. Rust plugin connects via gRPC client
-4. Communication flows through gRPC calls
-5. Plugin handles sidecar lifecycle (start/stop/restart)
+1. Plugin configures externalBin in tauri.conf.json
+2. Tauri bundles platform-specific Go binaries with app
+3. Plugin uses `app.shell().sidecar()` to spawn Go process
+4. Tauri handles process lifecycle, port allocation, and cleanup
+5. Rust plugin connects via gRPC client
+6. Communication flows through gRPC calls
+7. Plugin monitors sidecar health through shell plugin events
 
 **Implementation Details**:
-- Use `tokio::process::Command` for process spawning
-- Random port allocation to avoid conflicts
-- Health checks for process monitoring
-- Graceful shutdown on app exit
+- Use Tauri shell plugin sidecar APIs instead of manual process management
+- Leverage Tauri's automatic binary discovery and target-triple handling
+- Utilize shell plugin's built-in health monitoring and error handling
+- Configure shell permissions in app capabilities for sidecar execution
 
 ### 4. Error Handling Strategy
 
@@ -140,10 +142,11 @@ stateDiagram-v2
 - Port communicated via command line or environment
 - Cleanup on process exit
 
-### 2. Binary Distribution
-- Go binaries compiled for each target triple
-- Stored in `binaries/` directory
-- Included in plugin package
+### 2. Binary Distribution Strategy
+- Go binaries compiled for each target triple by plugin maintainer
+- Stored in plugin crate and automatically bundled by Tauri
+- Users configure externalBin to enable platform-specific binary selection
+- Tauri build system includes only target platform binaries in final app
 
 ### 3. Build Integration
 - Go build integrated into Rust build process
@@ -152,8 +155,9 @@ stateDiagram-v2
 
 ### 4. Testing Strategy
 - Unit tests for Go backend logic
-- Integration tests for gRPC communication
+- Integration tests for Tauri shell plugin sidecar management
 - End-to-end tests through TypeScript layer
+- Platform-specific binary discovery and configuration validation
 
 ## Future Extensibility
 

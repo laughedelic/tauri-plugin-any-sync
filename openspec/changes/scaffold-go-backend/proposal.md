@@ -16,17 +16,19 @@ This change establishes the foundational Go backend architecture and integrates 
 ## Scope
 
 **In Scope:**
-- Basic Go backend with gRPC health check/ping service
-- Desktop sidecar process spawning and lifecycle management
+- Basic Go backend with gRPC server that can respond to health checks and basic ping operations.
+- Desktop sidecar process management using Tauri shell plugin APIs
 - gRPC client communication from Rust plugin
 - TypeScript command that demonstrates full round-trip communication
-- Updated example app that uses the plugin
-- Build scripts for Go backend compilation
+- Updated example app with proper sidecar configuration
+- Build scripts for Go backend compilation and binary distribution
+- Platform-specific installation documentation
 - Basic error handling and logging
 
 **Out of Scope:**
 - AnySync/AnyStore integration (deferred to Phase 1)
 - Mobile gomobile implementation (structure only)
+- Manual process management (replaced by Tauri shell plugin)
 - Advanced gRPC streaming
 - Data persistence or synchronization logic
 - Production-ready error handling
@@ -38,13 +40,16 @@ This change establishes the foundational Go backend architecture and integrates 
 Basic Go backend structure with gRPC server that can respond to health checks and basic ping operations.
 
 ### desktop-integration
-Desktop sidecar process management including spawning, health checks, and graceful shutdown.
+Desktop sidecar process management using Tauri shell plugin APIs with proper binary discovery and lifecycle management.
 
 ### plugin-communication
 End-to-end communication from TypeScript commands through Rust plugin to Go backend and back.
 
 ### example-app-update
-Minimal working example that demonstrates plugin functionality with basic UI interactions.
+Working example that demonstrates plugin functionality with proper sidecar configuration and platform-specific setup instructions.
+
+### installation-guide
+Comprehensive documentation for desktop and mobile platform setup with clear configuration examples and troubleshooting guidance.
 
 ## Dependencies
 

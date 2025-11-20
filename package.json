@@ -1,7 +1,7 @@
 {
   "name": "tauri-plugin-any-sync-api",
   "version": "0.1.0",
-  "author": "You",
+  "author": "Alexey Alekhin <laughedelic@gmail.com>",
   "description": "",
   "type": "module",
   "types": "./dist-js/index.d.ts",

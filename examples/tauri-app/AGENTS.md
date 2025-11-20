@@ -6,8 +6,8 @@ This guide covers testing the any-sync plugin with the example Tauri application
 
 ```bash
 cd examples/tauri-app
-npm install
-npm run tauri dev
+bun install
+bun run tauri dev
 ```
 
 ## Testing Workflow
@@ -75,13 +75,13 @@ ping("A".repeat(1000)).then(response => console.log(response))
 
 ```bash
 # Development mode
-npm run tauri dev
+bun run tauri dev
 
 # Production build
-npm run tauri build
+bun run tauri build
 
 # Test specific functionality
-npm run tauri dev -- --help
+bun run tauri dev -- --help
 ```
 
 ### Debug Mode
@@ -91,10 +91,10 @@ Enable verbose logging:
 ```bash
 # Go backend debug logging
 export ANY_SYNC_LOG_LEVEL=debug
-npm run tauri dev
+bun run tauri dev
 
 # Rust plugin debug logging
-RUST_LOG=debug npm run tauri dev
+RUST_LOG=debug bun run tauri dev
 ```
 
 ## Testing Checklist
@@ -206,7 +206,7 @@ Enable comprehensive logging:
 # All logs
 export RUST_LOG=debug
 export ANY_SYNC_LOG_LEVEL=debug
-npm run tauri dev
+bun run tauri dev
 
 # Go backend logs only
 export ANY_SYNC_LOG_LEVEL=debug
@@ -244,13 +244,13 @@ ping -c 4 localhost
 ### Automated Tests
 ```bash
 # Run all tests
-npm test
+bun test
 
 # E2E tests
-npm run test:e2e
+bun run test:e2e
 
 # Performance tests
-npm run test:performance
+bun run test:performance
 ```
 
 ### Manual Testing Guide

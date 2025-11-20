@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "identifier": "com.tauri.dev",
   "build": {
-    "beforeDevCommand": "pnpm dev",
-    "beforeBuildCommand": "pnpm build",
+    "beforeDevCommand": "bun dev",
+    "beforeBuildCommand": "bun build",
     "devUrl": "http://localhost:1420",
     "frontendDist": "../dist"
   },

@@ -58,21 +58,13 @@ impl SidecarManager {
         // Start sidecar using Tauri shell plugin
         // Tauri automatically finds server-{target-triple} in plugin's binaries/
         let sidecar_command = app.shell().sidecar("server").map_err(|e| {
-            std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to create sidecar command: {}", e),
-            )
+            std::io::Error::other(format!("Failed to create sidecar command: {}", e))
         })?;
 
         let (_rx, child) = sidecar_command
             .env("ANY_SYNC_PORT_FILE", port_file_path)
             .spawn()
-            .map_err(|e| {
-                std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to spawn sidecar: {}", e),
-                )
-            })?;
+            .map_err(|e| std::io::Error::other(format!("Failed to spawn sidecar: {}", e)))?;
 
         // Wait for server to write port
         let port = self
@@ -80,19 +72,12 @@ impl SidecarManager {
             .await?;
 
         // Connect to server
-        let endpoint =
-            Endpoint::from_shared(format!("http://localhost:{}", port)).map_err(|e| {
-                std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Invalid endpoint: {}", e),
-                )
-            })?;
-        let channel = endpoint.connect().await.map_err(|e| {
-            std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to connect: {}", e),
-            )
-        })?;
+        let endpoint = Endpoint::from_shared(format!("http://localhost:{}", port))
+            .map_err(|e| std::io::Error::other(format!("Invalid endpoint: {}", e)))?;
+        let channel = endpoint
+            .connect()
+            .await
+            .map_err(|e| std::io::Error::other(format!("Failed to connect: {}", e)))?;
         let mut client = HealthServiceClient::new(channel);
 
         // Test the connection
@@ -139,17 +124,12 @@ impl SidecarManager {
                 {
                     Ok(())
                 } else {
-                    Err(
-                        std::io::Error::new(std::io::ErrorKind::Other, "Server is not serving")
-                            .into(),
-                    )
+                    Err(std::io::Error::other("Server is not serving").into())
                 }
             }
-            Ok(Err(e)) => Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Connection test failed: {}", e),
-            )
-            .into()),
+            Ok(Err(e)) => {
+                Err(std::io::Error::other(format!("Connection test failed: {}", e)).into())
+            }
             Err(_) => Err(std::io::Error::new(
                 std::io::ErrorKind::TimedOut,
                 "Connection test timed out",
@@ -192,11 +172,7 @@ impl SidecarManager {
 
             match timeout(Duration::from_secs(10), client.ping(request)).await {
                 Ok(Ok(response)) => Ok(response.into_inner()),
-                Ok(Err(e)) => Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Ping failed: {}", e),
-                )
-                .into()),
+                Ok(Err(e)) => Err(std::io::Error::other(format!("Ping failed: {}", e)).into()),
                 Err(_) => {
                     Err(std::io::Error::new(std::io::ErrorKind::TimedOut, "Ping timed out").into())
                 }

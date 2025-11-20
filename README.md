@@ -60,11 +60,11 @@ cd tauri-plugin-any-sync
 cargo build
 
 # Install dependencies
-npm install
+bun install
 
 # Run example app
 cd examples/tauri-app
-npm run tauri dev
+bun run tauri dev
 ```
 
 ## Development
@@ -104,14 +104,14 @@ cargo clippy
 
 ```bash
 # Build types
-npm run build
+bun run build
 
 # Watch for changes
-npm run dev
+bun run dev
 
 # Test API
 cd examples/tauri-app
-npm run tauri dev
+bun run tauri dev
 ```
 
 ## Usage
@@ -182,7 +182,7 @@ cargo tarpaulin --out Html
 # Build and test everything
 ./build-go-backend.sh --cross
 cargo build
-cd examples/tauri-app && npm run tauri dev
+cd examples/tauri-app && bun run tauri dev
 
 # Test ping functionality
 # Click the "Ping" button in the UI
@@ -373,7 +373,7 @@ export ANY_SYNC_LOG_LEVEL=debug
 
 # Check plugin commands
 cd examples/tauri-app
-npm run tauri -- --help
+bun run tauri -- --help
 ```
 
 ## Contributing

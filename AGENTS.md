@@ -82,10 +82,10 @@ cargo clippy
 # Edit API
 
 # Build types
-npm run build
+bun run build
 
 # Test with example app
-cd examples/tauri-app && npm run tauri dev
+cd examples/tauri-app && bun run tauri dev
 ```
 
 ### 4. End-to-End Testing
@@ -96,7 +96,7 @@ cargo build
 
 # Test example app
 cd examples/tauri-app
-npm run tauri dev
+bun run tauri dev
 
 # Verify ping functionality
 # Click ping button in UI

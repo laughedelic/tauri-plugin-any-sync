@@ -2,7 +2,7 @@
 name = "tauri-app"
 version = "0.1.0"
 description = "A Tauri App"
-authors = ["you"]
+authors = ["Alexey Alekhin <laughedelic@gmail.com>"]
 license = ""
 repository = ""
 edition = "2021"
@@ -20,4 +20,3 @@ tauri-build = { version = "2.5.1", default-features = false }
 [dependencies]
 tauri = { version = "2.9.2" }
 tauri-plugin-any-sync = { path = "../../../" }
-

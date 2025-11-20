@@ -106,8 +106,6 @@ impl SidecarManager {
         Ok(())
     }
 
-
-
     async fn wait_for_port(&self, port_file: &str, timeout_duration: Duration) -> Result<u16> {
         let start_time = tokio::time::Instant::now();
 
@@ -172,7 +170,11 @@ impl SidecarManager {
         Ok(())
     }
 
-    pub async fn ping<R: Runtime>(&mut self, app: &AppHandle<R>, message: Option<String>) -> Result<GrpcPingResponse> {
+    pub async fn ping<R: Runtime>(
+        &mut self,
+        app: &AppHandle<R>,
+        message: Option<String>,
+    ) -> Result<GrpcPingResponse> {
         if !self.is_running {
             self.start(app).await?;
         }

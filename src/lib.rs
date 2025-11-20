@@ -17,8 +17,6 @@ mod error;
 mod models;
 mod proto;
 
-
-
 pub use error::{Error, Result};
 
 #[cfg(desktop)]
@@ -45,7 +43,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             // Initialize shell plugin for sidecar support
             #[cfg(desktop)]
             let _shell = app.shell();
-            
+
             #[cfg(mobile)]
             let any_sync = mobile::init(app, api)?;
             #[cfg(desktop)]

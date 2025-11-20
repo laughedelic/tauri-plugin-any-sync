@@ -56,16 +56,44 @@ Then they should be properly propagated to the TypeScript layer with meaningful 
 ### Requirement: Plugin Initialization
 The existing plugin setup SHALL include sidecar process initialization and gRPC client creation.
 #### Scenario:
-Given the existing plugin setup in lib.rs
-When adding desktop integration
-Then the setup should include sidecar process initialization and gRPC client creation
+Given: existing plugin setup in lib.rs
+When: adding desktop integration
+Then: the setup should include sidecar process initialization and gRPC client creation
 
-### Requirement: Plugin Documentation Updates
-The existing plugin AGENTS.md SHALL be updated with desktop integration guidance and tooling.
+### Requirement: Binary Distribution Strategy
+The plugin SHALL use pre-compiled Go binaries distributed within the plugin crate for desktop platforms.
 #### Scenario:
-Given developers need to work with the Rust plugin code
-When they open the plugin directory
-Then they should find clear instructions for desktop integration and gRPC client development
+Given: plugin needs to support desktop platforms (Windows, macOS, Linux)
+When: users install the plugin
+Then: the plugin should include all necessary platform binaries that are automatically bundled by Tauri
+
+### Requirement: User Configuration Requirements
+The plugin SHALL require one-time externalBin configuration for desktop platforms only.
+#### Scenario:
+Given: developer wants to use the plugin on desktop
+When: they install the plugin
+Then: they should add externalBin configuration to their app's tauri.conf.json and copy binaries to the correct location
+
+### Requirement: Mobile Zero Configuration
+The plugin SHALL require zero additional configuration for mobile platforms using gomobile.
+#### Scenario:
+Given: developer wants to use the plugin on mobile (iOS/Android)
+When: they install the plugin
+Then: it should work immediately without any sidecar configuration
+
+### Requirement: Installation Documentation
+The plugin SHALL provide clear platform-specific installation instructions.
+#### Scenario:
+Given: developer installs the plugin for desktop usage
+When: they read the documentation
+Then: they should find step-by-step instructions for externalBin configuration and binary setup
+
+### Requirement: Binary Discovery Enhancement
+The plugin SHALL enhance binary discovery to work with Tauri's sidecar naming conventions.
+#### Scenario:
+Given: Tauri expects binaries with target-triple suffixes
+When: the plugin searches for Go backend binary
+Then: it should find the correct platform-specific binary in the expected location
 
 ## REMOVED Requirements
 

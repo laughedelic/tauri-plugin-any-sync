@@ -31,7 +31,7 @@ When an error occurs
 Then the example app should display the error message appropriately
 
 ### Requirement: Plugin Configuration
-The example app SHALL include the any-sync plugin in the tauri.conf.json capabilities.
+The example app SHALL include the any-sync plugin in the tauri.conf.json capabilities and externalBin configuration for desktop platforms.
 #### Scenario:
 Given the example app needs to use the plugin
 When configuring the Tauri app
@@ -66,6 +66,13 @@ The example app SHALL include component-specific AGENTS.md documentation for tes
 Given developers need to test and work with the example app
 When they open the examples directory
 Then they should find clear instructions for running, testing, and debugging plugin integration
+
+### Requirement: Proper Sidecar Integration
+The example app SHALL demonstrate Tauri's standard sidecar pattern using shell plugin for desktop platforms.
+#### Scenario:
+Given: desktop platforms require externalBin configuration
+When: example app configures plugin
+Then: it should use Tauri shell plugin sidecar APIs instead of manual process management
 
 ## REMOVED Requirements
 

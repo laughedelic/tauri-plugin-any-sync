@@ -35,9 +35,30 @@ Then they should experience consistent structure and information density
 ### Requirement: Project Documentation Structure
 The existing documentation approach SHALL accommodate component-specific AGENTS.md files.
 #### Scenario:
-Given the current project has basic documentation
-When adding component-specific files
-Then the documentation structure should remain organized and navigable
+Given: the current project has basic documentation
+When: adding component-specific files
+Then: the documentation structure should remain organized and navigable
+
+### Requirement: Plugin Installation Guide
+The root README.md SHALL include clear installation instructions for desktop and mobile platforms.
+#### Scenario:
+Given: developer wants to install the plugin for their application
+When: they read the README
+Then: they should find platform-specific setup instructions and configuration examples
+
+### Requirement: Desktop Setup Instructions
+The documentation SHALL provide step-by-step desktop platform configuration with externalBin setup.
+#### Scenario:
+Given: developer uses desktop platforms (Windows, macOS, Linux)
+When: they follow installation guide
+Then: they should successfully configure sidecar binaries and shell permissions
+
+### Requirement: Mobile Setup Instructions
+The documentation SHALL document that mobile platforms work without additional configuration.
+#### Scenario:
+Given: developer uses mobile platforms (iOS, Android)
+When: they follow installation guide
+Then: they should understand that no externalBin setup is required
 
 ## REMOVED Requirements
 

@@ -181,7 +181,11 @@ The plugin automatically downloads pre-compiled Go backend binaries from GitHub 
 7. **Build your app:**
 
    ```bash
-   cargo build
+   # Using Tauri CLI (recommended)
+   npm run tauri build
+   
+   # Or with cargo directly from src-tauri directory
+   cd src-tauri && cargo build
    ```
 
 ## Development
@@ -245,10 +249,15 @@ For local development with your own Go binaries:
 # Set environment variable to use local binaries
 export ANY_SYNC_GO_BINARIES_DIR=./binaries
 
-# Build plugin
+# Build plugin from src-tauri directory (ensures features are applied)
+cd examples/tauri-app/src-tauri
 cargo build
 
-# Run tests
+# Or use Tauri CLI which handles build orchestration automatically
+cd examples/tauri-app
+npm run tauri dev  # or: tauri dev
+
+# Run tests (from root or src-tauri)
 cargo test
 
 # Check code
@@ -257,6 +266,8 @@ cargo clippy
 # Format code
 cargo fmt
 ```
+
+**Important**: When building the plugin directly with `cargo build`, run it from the `src-tauri/` subdirectory to ensure Cargo.toml features are properly applied. The Tauri CLI (e.g., `tauri dev`, `tauri build`) automatically handles this.
 
 **Persistent configuration** via `.cargo/config.toml`:
 ```toml
@@ -273,9 +284,25 @@ bun run build
 
 ### Example Application
 
+To run the example app, you need to set the environment variable for local binaries (since v0.1.0 release doesn't exist on GitHub yet):
+
 ```bash
+# Set environment variable
+export ANY_SYNC_GO_BINARIES_DIR=./binaries
+
+# Build Go backend first (if not already built)
+./build-go-backend.sh
+
+# Run example app
 cd examples/tauri-app
-tauri dev
+npm run tauri dev
+```
+
+Or configure persistently in `.cargo/config.toml` at the project root:
+
+```toml
+[env]
+ANY_SYNC_GO_BINARIES_DIR = { value = "/absolute/path/to/binaries", force = true }
 ```
 
 ## Usage

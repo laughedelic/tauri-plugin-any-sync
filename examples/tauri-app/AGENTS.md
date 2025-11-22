@@ -31,6 +31,8 @@ The example app demonstrates the complete any-sync plugin integration:
 
 ### 2. End-to-End Testing
 
+Use tauri-webdriver MCP server tools to run the application and interact with it.
+
 Test the complete communication flow:
 
 1. **UI Layer**: Svelte component calls `ping()` function

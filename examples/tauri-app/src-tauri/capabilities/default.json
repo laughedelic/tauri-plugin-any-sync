@@ -7,7 +7,7 @@
   ],
   "permissions": [
     "core:default",
-    "any-sync:default",
+    "any-sync-go:default",
     {
       "identifier": "shell:allow-execute",
       "allow": [

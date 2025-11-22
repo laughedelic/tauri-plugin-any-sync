@@ -1,0 +1,76 @@
+name: Release Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-binaries:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            targets: "x86_64-apple-darwin aarch64-apple-darwin"
+          - os: ubuntu-latest
+            targets: "x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu"
+          - os: windows-latest
+            targets: "x86_64-pc-windows-msvc"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Set up protoc
+        uses: arduino/setup-protoc@v2
+        with:
+          version: '25.0'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install protoc Go plugins
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+      - name: Build binaries
+        run: bash ./build-go-backend.sh --cross
+
+      - name: Generate checksums
+        run: |
+          cd binaries
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            # On Windows, use certutil for SHA256
+            for file in *; do
+              certutil -hashfile "$file" SHA256 | grep -v "SHA256 hash of file" | tr '\\n' ' ' | sed 's/ $//' > "$file.sha256.tmp"
+              echo "  $file" >> "$file.sha256.tmp"
+              cat "$file.sha256.tmp" | tr -d '\r' > "$file.sha256"
+              rm "$file.sha256.tmp"
+            done
+            # Combine into checksums.txt
+            cat *.sha256 | sed 's/^  / /' > checksums.txt
+          else
+            # On Unix-like systems
+            shasum -a 256 * > checksums.txt.tmp
+            mv checksums.txt.tmp checksums.txt
+          fi
+          cd ..
+
+      - name: List artifacts
+        run: ls -lah binaries/
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            binaries/server*
+            binaries/checksums.txt
+          draft: false
+          prerelease: false

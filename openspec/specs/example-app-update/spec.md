@@ -1,6 +1,9 @@
 # Example App Update Specification
 
-## ADDED Requirements
+## Purpose
+Provides a working example application demonstrating plugin integration, communication with the Go backend, and proper Tauri sidecar configuration for desktop platforms.
+
+## Requirements
 
 ### Requirement: Plugin Integration
 The example app SHALL successfully import and initialize the any-sync plugin.
@@ -44,8 +47,6 @@ Given the example app needs to be buildable
 When running the build process
 Then it should successfully compile with the plugin dependency
 
-## MODIFIED Requirements
-
 ### Requirement: Example App Frontend
 The existing Svelte frontend SHALL include components to demonstrate plugin functionality.
 #### Scenario:
@@ -73,7 +74,3 @@ The example app SHALL demonstrate Tauri's standard sidecar pattern using shell p
 Given: desktop platforms require externalBin configuration
 When: example app configures plugin
 Then: it should use Tauri shell plugin sidecar APIs instead of manual process management
-
-## REMOVED Requirements
-
-None

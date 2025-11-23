@@ -1,6 +1,9 @@
 # Desktop Integration Specification
 
-## ADDED Requirements
+## Purpose
+Manages the Go backend as a sidecar process on desktop platforms with health monitoring, gRPC communication, and graceful lifecycle management.
+
+## Requirements
 
 ### Requirement: Sidecar Process Spawning
 The plugin SHALL spawn the Go backend as a separate process with proper lifecycle management.
@@ -51,8 +54,6 @@ Given the sidecar process fails to start or crashes
 When errors occur during process management
 Then they should be properly propagated to the TypeScript layer with meaningful error messages
 
-## MODIFIED Requirements
-
 ### Requirement: Plugin Initialization
 The existing plugin setup SHALL include sidecar process initialization and gRPC client creation.
 #### Scenario:
@@ -94,7 +95,3 @@ The plugin SHALL enhance binary discovery to work with Tauri's sidecar naming co
 Given: Tauri expects binaries with target-triple suffixes
 When: the plugin searches for Go backend binary
 Then: it should find the correct platform-specific binary in the expected location
-
-## REMOVED Requirements
-
-None

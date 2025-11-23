@@ -1,6 +1,9 @@
 # Documentation Structure Specification
 
-## ADDED Requirements
+## Purpose
+Provides component-specific AGENTS.md files and comprehensive installation documentation for both desktop and mobile platforms.
+
+## Requirements
 
 ### Requirement: Root AGENTS.md Update
 The root AGENTS.md SHALL be updated with Phase 0 component structure and tooling overview.
@@ -30,8 +33,6 @@ Given AI assistants and developers use multiple AGENTS.md files
 When they reference different components
 Then they should experience consistent structure and information density
 
-## MODIFIED Requirements
-
 ### Requirement: Project Documentation Structure
 The existing documentation approach SHALL accommodate component-specific AGENTS.md files.
 #### Scenario:
@@ -59,7 +60,3 @@ The documentation SHALL document that mobile platforms work without additional c
 Given: developer uses mobile platforms (iOS, Android)
 When: they follow installation guide
 Then: they should understand that no externalBin setup is required
-
-## REMOVED Requirements
-
-None

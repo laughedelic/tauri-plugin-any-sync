@@ -1,6 +1,9 @@
 # Go Backend Scaffolding Specification
 
-## ADDED Requirements
+## Purpose
+Provides a Go backend with gRPC services for health checks and plugin communication, including proper package structure, Protocol Buffer definitions, and cross-platform build support.
+
+## Requirements
 
 ### Requirement: Basic Go Backend Structure
 The project SHALL provide a Go backend with proper package structure separating API and internal code.
@@ -58,15 +61,9 @@ Given developers need to work with the Go backend code
 When they open the go-backend directory
 Then they should find clear instructions for building, testing, and gRPC development
 
-## MODIFIED Requirements
-
 ### Requirement: Project Structure
 The existing project structure SHALL accommodate the Go backend directory without conflicts.
 #### Scenario:
 Given the existing Tauri plugin structure
 When adding the Go backend
 Then the `go-backend/` directory should integrate cleanly with the existing project layout
-
-## REMOVED Requirements
-
-None

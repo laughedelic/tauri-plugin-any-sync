@@ -1,6 +1,9 @@
 # Plugin Installation Guide Specification
 
-## ADDED Requirements
+## Purpose
+Provides clear, platform-specific installation instructions with configuration examples, troubleshooting guidance, and permission setup for desktop and mobile platforms.
+
+## Requirements
 
 ### Requirement: Platform-Specific Instructions
 The installation guide SHALL provide separate, clear instructions for desktop and mobile platforms.
@@ -51,15 +54,9 @@ Given: developer is unsure which setup instructions to follow
 When: they read platform detection section
 Then: they should clearly understand whether they need desktop or mobile setup
 
-## MODIFIED Requirements
-
 ### Requirement: Plugin Integration Update
 The existing installation approach SHALL accommodate the hybrid desktop/mobile strategy.
 #### Scenario:
 Given: plugin uses different integration patterns for different platforms
 When: developer reads installation guide
 Then: they should understand the distinction and follow appropriate steps
-
-## REMOVED Requirements
-
-None

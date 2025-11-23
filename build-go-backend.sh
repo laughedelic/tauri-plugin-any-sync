@@ -68,7 +68,7 @@ generate_proto() {
     export PATH=$PATH:$(go env GOPATH)/bin
     
     # Generate protobuf code and check for errors
-    if ! protoc --go_out=. --go-grpc_out=. api/proto/health.proto 2>&1; then
+    if ! protoc --go_out=. --go-grpc_out=. api/proto/*.proto 2>&1; then
         cd ..
         print_error "Failed to generate protobuf code"
         exit 1

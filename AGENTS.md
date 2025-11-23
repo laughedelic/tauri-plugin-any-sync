@@ -209,9 +209,9 @@ The plugin uses an automated binary distribution system with two distinct modes:
 ### Cross-Platform Support
 
 **Available Platforms**:
-- **macOS**: `server-x86_64-apple-darwin` (Intel), `server-aarch64-apple-darwin` (Apple Silicon)
-- **Linux**: `server-x86_64-unknown-linux-gnu` (x64), `server-aarch64-unknown-linux-gnu` (ARM64)
-- **Windows**: `server-x86_64-pc-windows-msvc` (x64)
+- **macOS**: `any-sync-x86_64-apple-darwin` (Intel), `any-sync-aarch64-apple-darwin` (Apple Silicon)
+- **Linux**: `any-sync-x86_64-unknown-linux-gnu` (x64), `any-sync-aarch64-unknown-linux-gnu` (ARM64)
+- **Windows**: `any-sync-x86_64-pc-windows-msvc` (x64)
 
 ## Communication Flow
 

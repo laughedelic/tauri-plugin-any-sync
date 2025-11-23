@@ -183,19 +183,19 @@ fn determine_binaries_to_download() -> Result<Vec<String>, Box<dyn std::error::E
 
     // Check which platform features are enabled
     if cfg!(feature = "x86_64-apple-darwin") {
-        binaries.push("server-x86_64-apple-darwin".to_string());
+        binaries.push("any-sync-x86_64-apple-darwin".to_string());
     }
     if cfg!(feature = "aarch64-apple-darwin") {
-        binaries.push("server-aarch64-apple-darwin".to_string());
+        binaries.push("any-sync-aarch64-apple-darwin".to_string());
     }
     if cfg!(feature = "x86_64-unknown-linux-gnu") {
-        binaries.push("server-x86_64-unknown-linux-gnu".to_string());
+        binaries.push("any-sync-x86_64-unknown-linux-gnu".to_string());
     }
     if cfg!(feature = "aarch64-unknown-linux-gnu") {
-        binaries.push("server-aarch64-unknown-linux-gnu".to_string());
+        binaries.push("any-sync-aarch64-unknown-linux-gnu".to_string());
     }
     if cfg!(feature = "x86_64-pc-windows-msvc") {
-        binaries.push("server-x86_64-pc-windows-msvc.exe".to_string());
+        binaries.push("any-sync-x86_64-pc-windows-msvc.exe".to_string());
     }
 
     Ok(binaries)

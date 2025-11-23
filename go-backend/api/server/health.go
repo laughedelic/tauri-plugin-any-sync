@@ -21,7 +21,7 @@ type HealthServer struct {
 // NewHealthServer creates a new HealthServer instance
 func NewHealthServer() *HealthServer {
 	return &HealthServer{
-		serverID:  fmt.Sprintf("server-%d", time.Now().Unix()),
+		serverID:  fmt.Sprintf("any-sync-%d", time.Now().Unix()),
 		startTime: time.Now(),
 	}
 }

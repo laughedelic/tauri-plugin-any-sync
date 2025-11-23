@@ -76,6 +76,31 @@ func (s *Store) Get(ctx context.Context, collection, id string) (string, error) 
 	return doc.Value().String(), nil
 }
 
+// Delete removes a document from the specified collection by ID
+// Returns true if the document existed and was deleted, false if it didn't exist
+// This operation is idempotent - deleting a non-existent document returns (false, nil)
+func (s *Store) Delete(ctx context.Context, collection, id string) (bool, error) {
+	coll, err := s.db.Collection(ctx, collection)
+	if err != nil {
+		return false, fmt.Errorf("failed to get collection %q: %w", collection, err)
+	}
+
+	// Check if document exists before deleting
+	_, err = coll.FindId(ctx, id)
+	if err != nil {
+		// Document not found - this is not an error, just return false
+		return false, nil
+	}
+
+	// Delete the document by ID
+	err = coll.DeleteId(ctx, id)
+	if err != nil {
+		return false, fmt.Errorf("failed to delete document in collection %q with id %q: %w", collection, id, err)
+	}
+
+	return true, nil
+}
+
 // List returns all document IDs in the specified collection
 func (s *Store) List(ctx context.Context, collection string) ([]string, error) {
 	coll, err := s.db.Collection(ctx, collection)

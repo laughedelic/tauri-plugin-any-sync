@@ -1,5 +1,5 @@
 <script>
-  import { storagePut, storageGet, storageList, ping } from 'tauri-plugin-any-sync-api'
+  import { storagePut, storageGet, storageDelete, storageList, ping } from 'tauri-plugin-any-sync-api'
 
   let collection = $state('notes')
   let documentId = $state('note1')
@@ -82,6 +82,41 @@
       } else {
         documentJson = JSON.stringify(doc, null, 2)
         result = `✓ Loaded ${collection}/${documentId}`
+      }
+    } catch (e) {
+      result = `✗ ${e.message}`
+    }
+  }
+
+  async function handleDelete() {
+    error = ''
+    result = ''
+    try {
+      // Find current document index before deletion
+      const currentIndex = documents.indexOf(documentId)
+      
+      const existed = await storageDelete(collection, documentId)
+      if (existed) {
+        result = `✓ Deleted ${collection}/${documentId}`
+        
+        // Refresh the UI
+        await refreshCollections()
+        await refreshDocuments()
+        
+        // Select adjacent document
+        const newDocs = await storageList(collection)
+        if (newDocs.length > 0) {
+          // Try to select the document at the same index, or the previous one, or the first one
+          const newIndex = Math.min(currentIndex, newDocs.length - 1)
+          documentId = newDocs[newIndex]
+          await handleRetrieve()
+        } else {
+          // No documents left, clear the form
+          documentJson = ''
+          documentId = ''
+        }
+      } else {
+        result = `✗ Document didn't exist: ${collection}/${documentId}`
       }
     } catch (e) {
       result = `✗ ${e.message}`
@@ -222,6 +257,7 @@
         
         <div class="actions">
           <button onclick={handleStore} class="primary">💾 Store Document</button>
+          <button onclick={handleDelete} class="danger" disabled={!documentId}>🗑️ Delete Document</button>
         </div>
 
         {#if result}
@@ -435,6 +471,22 @@
 
   button.primary:hover {
     background: #333;
+  }
+
+  button.danger {
+    background: #dc2626;
+    color: #fff;
+    border-color: #dc2626;
+  }
+
+  button.danger:hover:not(:disabled) {
+    background: #b91c1c;
+    border-color: #b91c1c;
+  }
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .result {

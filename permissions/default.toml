@@ -4,5 +4,6 @@ permissions = [
   "allow-ping",
   "allow-storage-put",
   "allow-storage-get",
+  "allow-storage-delete",
   "allow-storage-list",
 ]

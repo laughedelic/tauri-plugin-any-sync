@@ -12,6 +12,9 @@ service StorageService {
   // Get retrieves a document by ID from a collection
   rpc Get(GetRequest) returns (GetResponse);
   
+  // Delete removes a document by ID from a collection (idempotent)
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+  
   // List returns all document IDs in a collection
   rpc List(ListRequest) returns (ListResponse);
 }
@@ -38,6 +41,17 @@ message GetRequest {
 message GetResponse {
   string document_json = 1;  // Document as JSON string (empty if not found)
   bool found = 2;            // Whether document was found
+}
+
+// DeleteRequest removes a document
+message DeleteRequest {
+  string collection = 1;  // Collection name
+  string id = 2;          // Document ID
+}
+
+// DeleteResponse confirms document deletion
+message DeleteResponse {
+  bool existed = 1;  // Whether document existed before deletion
 }
 
 // ListRequest lists documents in a collection

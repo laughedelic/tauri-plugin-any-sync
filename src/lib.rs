@@ -42,6 +42,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::ping,
             commands::storage_put,
             commands::storage_get,
+            commands::storage_delete,
             commands::storage_list
         ])
         .setup(|app, api| {

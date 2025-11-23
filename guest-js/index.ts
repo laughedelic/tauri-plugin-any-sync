@@ -117,6 +117,57 @@ export async function storageGet(
 }
 
 /**
+ * Delete a document from the specified collection by ID
+ * @param collection Collection name to delete from
+ * @param id Document identifier
+ * @returns Promise resolving to true if the document existed and was deleted, false if it didn't exist
+ * @throws Error if the deletion operation fails
+ *
+ * @remarks
+ * This operation is idempotent - deleting a non-existent document succeeds and returns false.
+ * Only database or connection errors will throw an exception.
+ *
+ * @example
+ * ```typescript
+ * const existed = await storageDelete("users", "user123");
+ * if (existed) {
+ *   console.log("User was deleted");
+ * } else {
+ *   console.log("User didn't exist");
+ * }
+ * ```
+ */
+export async function storageDelete(
+  collection: string,
+  id: string,
+): Promise<boolean> {
+  try {
+    console.log(`[any-sync] Deleting document from ${collection}/${id}`);
+
+    const response = await invoke<{ existed: boolean }>(
+      "plugin:any-sync|storage_delete",
+      {
+        payload: {
+          collection,
+          id,
+        },
+      },
+    );
+
+    console.log(
+      `[any-sync] Delete completed: ${collection}/${id}, existed=${response.existed}`,
+    );
+    return response.existed;
+  } catch (error) {
+    console.error(
+      `[any-sync] Storage delete failed for ${collection}/${id}:`,
+      error,
+    );
+    throw new Error(`Failed to delete document: ${error}`);
+  }
+}
+
+/**
  * List all document IDs in the specified collection
  * @param collection Collection name to list documents from
  * @returns Promise resolving to an array of document IDs

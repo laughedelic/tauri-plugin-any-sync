@@ -7,6 +7,7 @@ Default permissions for the plugin
 - `allow-ping`
 - `allow-storage-put`
 - `allow-storage-get`
+- `allow-storage-delete`
 - `allow-storage-list`
 
 ## Permission Table
@@ -40,6 +41,32 @@ Enables the ping command without any pre-configured scope.
 <td>
 
 Denies the ping command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`any-sync:allow-storage-delete`
+
+</td>
+<td>
+
+Enables the storage_delete command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`any-sync:deny-storage-delete`
+
+</td>
+<td>
+
+Denies the storage_delete command without any pre-configured scope.
 
 </td>
 </tr>

@@ -12,6 +12,7 @@ use tonic::Request;
 use crate::models::*;
 use crate::proto::anysync::{
     health_service_client::HealthServiceClient, storage_service_client::StorageServiceClient,
+    DeleteRequest as GrpcDeleteRequest, DeleteResponse as GrpcDeleteResponse,
     GetRequest as GrpcGetRequest, GetResponse as GrpcGetResponse, HealthCheckRequest,
     ListRequest as GrpcListRequest, ListResponse as GrpcListResponse,
     PingRequest as GrpcPingRequest, PingResponse as GrpcPingResponse, PutRequest as GrpcPutRequest,
@@ -367,6 +368,48 @@ impl SidecarManager {
         }
     }
 
+    pub async fn storage_delete<R: Runtime>(
+        &mut self,
+        app: &AppHandle<R>,
+        collection: String,
+        id: String,
+    ) -> Result<GrpcDeleteResponse> {
+        if !self.is_running {
+            info!("Sidecar not running, starting it first");
+            self.start(app).await?;
+        }
+
+        if let Some(client) = &mut self.storage_client {
+            debug!("Sending delete request: collection='{}', id='{}'", collection, id);
+
+            let request = Request::new(GrpcDeleteRequest { collection, id });
+
+            match timeout(Duration::from_secs(10), client.delete(request)).await {
+                Ok(Ok(response)) => {
+                    let response = response.into_inner();
+                    info!("Delete successful: existed={}", response.existed);
+                    Ok(response)
+                }
+                Ok(Err(e)) => {
+                    error!("Delete failed: {}", e);
+                    Err(crate::Error::Storage(format!(
+                        "Delete operation failed: {}",
+                        e
+                    )))
+                }
+                Err(_) => {
+                    error!("Delete timed out after 10 seconds");
+                    Err(crate::Error::Storage("Delete operation timed out".to_string()))
+                }
+            }
+        } else {
+            error!("No storage gRPC client available");
+            Err(crate::Error::Storage(
+                "Storage client not available".to_string(),
+            ))
+        }
+    }
+
     pub async fn storage_list<R: Runtime>(
         &mut self,
         app: &AppHandle<R>,
@@ -456,6 +499,17 @@ impl<R: Runtime> AnySync<R> {
                 None
             },
             found: response.found,
+        })
+    }
+
+    pub async fn storage_delete(&self, payload: DeleteRequest) -> crate::Result<DeleteResponse> {
+        let mut manager = self.manager.write().await;
+        let response = manager
+            .storage_delete(&self.app, payload.collection, payload.id)
+            .await?;
+
+        Ok(DeleteResponse {
+            existed: response.existed,
         })
     }
 

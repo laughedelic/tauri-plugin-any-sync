@@ -64,6 +64,24 @@ func (s *StorageServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetRes
 	}, nil
 }
 
+// Delete removes a document from a collection
+// This operation is idempotent - deleting a non-existent document succeeds
+func (s *StorageServer) Delete(ctx context.Context, req *pb.DeleteRequest) (*pb.DeleteResponse, error) {
+	if req.Collection == "" {
+		return nil, status.Error(codes.InvalidArgument, "collection name is required")
+	}
+	if req.Id == "" {
+		return nil, status.Error(codes.InvalidArgument, "document ID is required")
+	}
+
+	existed, err := s.store.Delete(ctx, req.Collection, req.Id)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to delete document: %v", err)
+	}
+
+	return &pb.DeleteResponse{Existed: existed}, nil
+}
+
 // List returns all document IDs in a collection
 func (s *StorageServer) List(ctx context.Context, req *pb.ListRequest) (*pb.ListResponse, error) {
 	if req.Collection == "" {

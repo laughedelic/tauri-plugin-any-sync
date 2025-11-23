@@ -408,3 +408,148 @@ func TestIntegration(t *testing.T) {
 		}
 	})
 }
+
+func TestDelete(t *testing.T) {
+	t.Run("DeleteExistingDocument", func(t *testing.T) {
+		store, cleanup := createTestStore(t)
+		defer cleanup()
+
+		ctx := context.Background()
+		// Put a document
+		err := store.Put(ctx, "users", "user1", `{"name":"Alice"}`)
+		if err != nil {
+			t.Fatalf("Put failed: %v", err)
+		}
+
+		// Delete it
+		existed, err := store.Delete(ctx, "users", "user1")
+		if err != nil {
+			t.Fatalf("Delete failed: %v", err)
+		}
+		if !existed {
+			t.Error("Expected existed=true for existing document")
+		}
+
+		// Verify it's gone
+		result, err := store.Get(ctx, "users", "user1")
+		if err != nil {
+			t.Fatalf("Get failed: %v", err)
+		}
+		if result != "" {
+			t.Error("Expected document to be deleted, but it still exists")
+		}
+	})
+
+	t.Run("DeleteNonExistentDocument", func(t *testing.T) {
+		store, cleanup := createTestStore(t)
+		defer cleanup()
+
+		ctx := context.Background()
+		// Delete a document that doesn't exist
+		existed, err := store.Delete(ctx, "users", "nonexistent")
+		if err != nil {
+			t.Fatalf("Delete should not error on non-existent document: %v", err)
+		}
+		if existed {
+			t.Error("Expected existed=false for non-existent document")
+		}
+	})
+
+	t.Run("DeleteIdempotent", func(t *testing.T) {
+		store, cleanup := createTestStore(t)
+		defer cleanup()
+
+		ctx := context.Background()
+		// Put a document
+		err := store.Put(ctx, "users", "user1", `{"name":"Bob"}`)
+		if err != nil {
+			t.Fatalf("Put failed: %v", err)
+		}
+
+		// Delete it first time
+		existed, err := store.Delete(ctx, "users", "user1")
+		if err != nil {
+			t.Fatalf("First delete failed: %v", err)
+		}
+		if !existed {
+			t.Error("Expected existed=true on first delete")
+		}
+
+		// Delete it second time (idempotent)
+		existed, err = store.Delete(ctx, "users", "user1")
+		if err != nil {
+			t.Fatalf("Second delete failed: %v", err)
+		}
+		if existed {
+			t.Error("Expected existed=false on second delete (idempotent)")
+		}
+	})
+
+	t.Run("DeleteFromEmptyCollection", func(t *testing.T) {
+		store, cleanup := createTestStore(t)
+		defer cleanup()
+
+		ctx := context.Background()
+		// Delete from collection that doesn't have any documents
+		existed, err := store.Delete(ctx, "empty_collection", "any_id")
+		if err != nil {
+			t.Fatalf("Delete from empty collection failed: %v", err)
+		}
+		if existed {
+			t.Error("Expected existed=false for empty collection")
+		}
+	})
+
+	t.Run("DeleteUpdatesListCorrectly", func(t *testing.T) {
+		store, cleanup := createTestStore(t)
+		defer cleanup()
+
+		ctx := context.Background()
+		// Put multiple documents
+		docs := map[string]string{
+			"doc1": `{"name":"Doc1"}`,
+			"doc2": `{"name":"Doc2"}`,
+			"doc3": `{"name":"Doc3"}`,
+		}
+		for id, doc := range docs {
+			err := store.Put(ctx, "collection", id, doc)
+			if err != nil {
+				t.Fatalf("Put %s failed: %v", id, err)
+			}
+		}
+
+		// Verify all are listed
+		ids, err := store.List(ctx, "collection")
+		if err != nil {
+			t.Fatalf("List failed: %v", err)
+		}
+		if len(ids) != 3 {
+			t.Errorf("Expected 3 documents, got %d", len(ids))
+		}
+
+		// Delete one
+		existed, err := store.Delete(ctx, "collection", "doc2")
+		if err != nil {
+			t.Fatalf("Delete failed: %v", err)
+		}
+		if !existed {
+			t.Error("Expected existed=true")
+		}
+
+		// Verify list is updated
+		ids, err = store.List(ctx, "collection")
+		if err != nil {
+			t.Fatalf("List after delete failed: %v", err)
+		}
+		if len(ids) != 2 {
+			t.Errorf("Expected 2 documents after delete, got %d", len(ids))
+		}
+
+		// Verify doc2 is not in the list
+		for _, id := range ids {
+			if id == "doc2" {
+				t.Error("Deleted document still appears in list")
+			}
+		}
+	})
+}

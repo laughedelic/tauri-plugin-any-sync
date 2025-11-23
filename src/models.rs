@@ -42,6 +42,19 @@ pub struct GetResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct DeleteRequest {
+    pub collection: String,
+    pub id: String,
+}
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteResponse {
+    pub existed: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ListRequest {
     pub collection: String,
 }

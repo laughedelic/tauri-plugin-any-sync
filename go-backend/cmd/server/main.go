@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"anysync-backend/api/server"
 	"anysync-backend/internal/config"
 	"anysync-backend/internal/health"
+	"anysync-backend/internal/storage"
 )
 
 var (
@@ -41,12 +43,30 @@ func main() {
 	// Create health service
 	healthSvc := health.NewService()
 
+	// Initialize storage
+	// Use a database path from environment or default to current directory
+	dbPath := os.Getenv("ANY_SYNC_DB_PATH")
+	if dbPath == "" {
+		dbPath = filepath.Join(".", "anystore.db")
+	}
+	log.Printf("Initializing storage at: %s", dbPath)
+
+	store, err := storage.New(dbPath)
+	if err != nil {
+		log.Fatalf("Failed to initialize storage: %v", err)
+	}
+	defer store.Close()
+
 	// Create gRPC server
 	grpcServer := grpc.NewServer()
 
 	// Register health service
 	healthServer := server.NewHealthServer()
 	pb.RegisterHealthServiceServer(grpcServer, healthServer)
+
+	// Register storage service
+	storageServer := server.NewStorageServer(store)
+	pb.RegisterStorageServiceServer(grpcServer, storageServer)
 
 	// Create listener
 	lis, err := net.Listen("tcp", cfg.GetAddress())

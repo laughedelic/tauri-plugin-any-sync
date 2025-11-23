@@ -1,0 +1,111 @@
+package storage
+
+import (
+	"context"
+	"fmt"
+
+	anystore "github.com/anyproto/any-store"
+	"github.com/anyproto/any-store/anyenc"
+)
+
+// Store wraps AnyStore database operations
+type Store struct {
+	db anystore.DB
+}
+
+// New creates a new Store instance with the given database path
+func New(dbPath string) (*Store, error) {
+	db, err := anystore.Open(context.Background(), dbPath, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database: %w", err)
+	}
+	return &Store{db: db}, nil
+}
+
+// Close closes the database connection
+func (s *Store) Close() error {
+	return s.db.Close()
+}
+
+// Put stores a document in the specified collection
+// The document must be valid JSON
+func (s *Store) Put(ctx context.Context, collection, id, documentJSON string) error {
+	// Parse the input JSON document
+	doc, err := anyenc.ParseJson(documentJSON)
+	if err != nil {
+		return fmt.Errorf("invalid JSON document: %w", err)
+	}
+
+	// Create arena and set the id field (AnyStore uses 'id', not '_id')
+	a := &anyenc.Arena{}
+	doc.Set("id", a.NewString(id))
+
+	// Get or create collection
+	coll, err := s.db.Collection(ctx, collection)
+	if err != nil {
+		return fmt.Errorf("failed to get collection %q: %w", collection, err)
+	}
+
+	// UpsertOne will insert if not exists, or update if exists
+	err = coll.UpsertOne(ctx, doc)
+	if err != nil {
+		return fmt.Errorf("failed to upsert document in collection %q with id %q: %w", collection, id, err)
+	}
+
+	return nil
+}
+
+// Get retrieves a document from the specified collection by ID
+// Returns empty string if document not found
+func (s *Store) Get(ctx context.Context, collection, id string) (string, error) {
+	coll, err := s.db.Collection(ctx, collection)
+	if err != nil {
+		return "", fmt.Errorf("failed to get collection %q: %w", collection, err)
+	}
+
+	// Find document by ID
+	doc, err := coll.FindId(ctx, id)
+	if err != nil {
+		// Document not found
+		return "", nil
+	}
+
+	// Convert to JSON string using String() method
+	return doc.Value().String(), nil
+}
+
+// List returns all document IDs in the specified collection
+func (s *Store) List(ctx context.Context, collection string) ([]string, error) {
+	coll, err := s.db.Collection(ctx, collection)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get collection %q: %w", collection, err)
+	}
+
+	// Find all documents (nil filter means all)
+	query := coll.Find(nil)
+	iter, err := query.Iter(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list documents in collection %q: %w", collection, err)
+	}
+	defer iter.Close()
+
+	var ids []string
+	for iter.Next() {
+		doc, err := iter.Doc()
+		if err != nil {
+			iter.Close()
+			return nil, fmt.Errorf("error retrieving document in collection %q: %w", collection, err)
+		}
+		// Get the id field from the document
+		idStr := doc.Value().GetString("id")
+		if idStr != "" {
+			ids = append(ids, idStr)
+		}
+	}
+
+	if err := iter.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating documents in collection %q: %w", collection, err)
+	}
+
+	return ids, nil
+}

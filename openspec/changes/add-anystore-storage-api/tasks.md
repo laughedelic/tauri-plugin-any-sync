@@ -2,12 +2,12 @@
 
 ## 1. Go Backend Storage Integration
 
-- [ ] 1.1 Add AnyStore dependency to `go-backend/go.mod`
-- [ ] 1.2 Create `go-backend/internal/storage/anystore.go` with storage wrapper
-- [ ] 1.3 Define `storage.proto` with Put, Get, List RPC methods
-- [ ] 1.4 Implement gRPC StorageService in `go-backend/api/server/storage.go`
-- [ ] 1.5 Wire storage service into main gRPC server
-- [ ] 1.6 Add unit tests for storage operations
+- [x] 1.1 Add AnyStore dependency to `go-backend/go.mod`
+- [x] 1.2 Create `go-backend/internal/storage/anystore.go` with storage wrapper
+- [x] 1.3 Define `storage.proto` with Put, Get, List RPC methods
+- [x] 1.4 Implement gRPC StorageService in `go-backend/api/server/storage.go`
+- [x] 1.5 Wire storage service into main gRPC server
+- [x] 1.6 Add unit tests for storage operations
 
 ## 2. Rust Plugin Storage Commands
 

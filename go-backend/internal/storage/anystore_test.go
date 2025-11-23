@@ -100,12 +100,31 @@ func TestPut(t *testing.T) {
 		defer cleanup()
 
 		ctx := context.Background()
-		err := store.Put(ctx, "users", "invalid", "not valid json")
-		if err == nil {
-			t.Error("Expected error when putting invalid JSON")
+
+		testCases := []struct {
+			name        string
+			invalidJSON string
+		}{
+			{"PlainText", "not valid json"},
+			{"MissingClosingBrace", `{"name": "Alice"`},
+			{"MissingQuotesAroundKey", `{name: "Alice"}`},
+			{"TrailingComma", `{"name": "Alice",}`},
+			{"SingleQuotes", `{'name': 'Alice'}`},
+			{"MissingValue", `{"name":}`},
+			{"ExtraComma", `{"name":, "age": 30}`},
+			{"UnterminatedString", `{"name": "Alice}`},
 		}
-		if !strings.Contains(err.Error(), "invalid JSON") {
-			t.Errorf("Expected 'invalid JSON' error, got: %v", err)
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				err := store.Put(ctx, "users", "invalid_"+tc.name, tc.invalidJSON)
+				if err == nil {
+					t.Errorf("Expected error for invalid JSON: %s", tc.invalidJSON)
+				}
+				if !strings.Contains(err.Error(), "invalid JSON") {
+					t.Errorf("Expected 'invalid JSON' error, got: %v", err)
+				}
+			})
 		}
 	})
 

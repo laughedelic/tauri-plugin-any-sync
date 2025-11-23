@@ -211,7 +211,7 @@ impl SidecarManager {
                 .unwrap()
                 .as_secs();
 
-            let msg = message.clone().unwrap_or_default();
+            let msg = message.as_deref().unwrap_or("");
             debug!("Sending ping request with message: '{}'", msg);
 
             let request = Request::new(GrpcPingRequest {

@@ -26,6 +26,7 @@ dist
 /src/proto/anysync.rs
 
 # OpenSpec prompts
+opencode.json*
 /.opencode/**/openspec-*.md
 /.github/prompts/openspec-*.md
 /.claude/commands/openspec/*.md

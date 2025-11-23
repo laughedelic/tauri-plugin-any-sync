@@ -28,8 +28,8 @@ jobs:
         with:
           version: '28.x'
 
-      - name: Cross-compile binaries
-        run: ./build-go-backend.sh --cross      
+      - name: Compile Go backend
+        run: ./build-go-backend.sh x86_64-unknown-linux-gnu
 
       - name: Run Go tests
         working-directory: go-backend

@@ -19,10 +19,10 @@
 
 ## 3. TypeScript API Bindings
 
-- [ ] 3.1 Add storage functions to `guest-js/index.ts` (put, get, list)
-- [ ] 3.2 Add TypeScript type definitions for storage operations
-- [ ] 3.3 Export storage API in main package entry point
-- [ ] 3.4 Add JSDoc documentation for storage functions
+- [x] 3.1 Add storage functions to `guest-js/index.ts` (put, get, list)
+- [x] 3.2 Add TypeScript type definitions for storage operations
+- [x] 3.3 Export storage API in main package entry point
+- [x] 3.4 Add JSDoc documentation for storage functions
 
 ## 4. Example Application Updates
 

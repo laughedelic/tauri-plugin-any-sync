@@ -65,7 +65,7 @@ The plugin SHALL use automated binary downloads from GitHub Releases via Cargo l
 - **WHEN** users install the plugin in their Tauri application
 - **THEN** the plugin's build script automatically downloads platform-specific binaries from GitHub Releases
 - **AND** propagates binary locations via Cargo environment variables
-- **AND** consumers copy binaries to their src-tauri/binaries/ directory using build scripts
+- **AND** consumers link binaries to their src-tauri/binaries/ directory using build scripts (symlink on Unix, copy on Windows)
 
 #### Scenario: Feature-based platform selection
 - **WHEN** consumers configure plugin dependency features in Cargo.toml

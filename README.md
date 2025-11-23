@@ -109,36 +109,43 @@ The plugin automatically downloads pre-compiled Go backend binaries from GitHub 
    - Platform groups: `macos`, `linux`, `windows`
    - All platforms: `all`
 
-3. **Update `src-tauri/build.rs` script** to copy binaries to a stable path in your project:
+3. **Update `src-tauri/build.rs` script** to link binaries directory:
 
    ```rust
-   use std::env;
-   use std::fs;
-   use std::path::Path;
+   use std::{env, fs, path::Path};
    
    fn main() {
-       // Read binary path from plugin
+       // Link binaries directory from plugin
        if let Ok(binaries_dir) = env::var("DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR") {
-           let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-           let dest_dir = Path::new(&manifest_dir).join("binaries");
+           let dest_dir = Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap()).join("binaries");
+           let _ = fs::remove_dir_all(&dest_dir).or_else(|_| fs::remove_file(&dest_dir));
+           let source = Path::new(&binaries_dir).canonicalize().unwrap();
            
-           fs::create_dir_all(&dest_dir).unwrap();
+           #[cfg(unix)]
+           std::os::unix::fs::symlink(&source, &dest_dir).unwrap();
            
-           // Copy binaries from plugin's output directory
-           for entry in fs::read_dir(&binaries_dir).unwrap() {
-               let entry = entry.unwrap();
-               let path = entry.path();
-               if path.is_file() {
-                   let file_name = entry.file_name();
-                   let dest = dest_dir.join(&file_name);
-                   fs::copy(&path, &dest).unwrap();
+           #[cfg(windows)]
+           {
+               fs::create_dir_all(&dest_dir).unwrap();
+               for entry in fs::read_dir(&source).unwrap().flatten() {
+                   if entry.path().is_file() {
+                       fs::copy(&entry.path(), dest_dir.join(entry.file_name())).unwrap();
+                   }
                }
            }
        }
+       
+       tauri_build::build()
    }
    ```
 
-4. **Add sidecar binary to Tauri config** in `src-tauri/tauri.conf.json`:
+4. **Create `.taurignore` file** in `src-tauri/` to prevent rebuild loops:
+
+   ```
+   binaries/
+   ```
+
+5. **Add sidecar binary to Tauri config** in `src-tauri/tauri.conf.json`:
 
    ```json
    {
@@ -336,13 +343,13 @@ const response = await ping('Custom message')
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|-----------|----------|-------------|
-| `ANY_SYNC_HOST` | localhost | Server bind address |
-| `ANY_SYNC_PORT` | 0 (random) | Server port |
-| `ANY_SYNC_LOG_LEVEL` | info | Logging level |
-| `ANY_SYNC_LOG_FORMAT` | json | Log format |
-| `ANY_SYNC_HEALTH_CHECK_INTERVAL` | 30 | Health check interval (seconds) |
+| Variable                         | Default    | Description                     |
+| -------------------------------- | ---------- | ------------------------------- |
+| `ANY_SYNC_HOST`                  | localhost  | Server bind address             |
+| `ANY_SYNC_PORT`                  | 0 (random) | Server port                     |
+| `ANY_SYNC_LOG_LEVEL`             | info       | Logging level                   |
+| `ANY_SYNC_LOG_FORMAT`            | json       | Log format                      |
+| `ANY_SYNC_HEALTH_CHECK_INTERVAL` | 30         | Health check interval (seconds) |
 
 ## Testing
 

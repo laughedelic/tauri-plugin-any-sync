@@ -54,12 +54,13 @@ The installation guide SHALL include solutions for binary download and automatio
   - Checksum verification failures
 
 #### Scenario: Build script debugging
-- **WHEN** consumer build scripts fail to copy binaries correctly
+- **WHEN** consumer build scripts fail to link binaries correctly
 - **THEN** the troubleshooting section explains:
   - How to verify environment variables are set
-  - How to check if binaries were downloaded
+  - How to check if binaries were downloaded/linked
   - Common path and naming issues
-  - Platform-specific considerations
+  - Platform-specific considerations (symlinks vs copying)
+  - .taurignore configuration to prevent rebuild loops
 
 ### Requirement: Permission Configuration
 The installation guide SHALL document required shell plugin permissions for desktop platforms.

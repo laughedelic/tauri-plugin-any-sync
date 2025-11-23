@@ -1,0 +1,5 @@
+# Ignore binaries directory to prevent rebuild loops
+binaries/
+
+# Ignore target directory (already ignored by default, but explicit is good)
+target/

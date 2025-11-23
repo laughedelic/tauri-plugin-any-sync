@@ -131,17 +131,20 @@ The plugin uses an automated binary distribution system with two distinct modes:
    - Emit warning message
 3. **If not set** (consumer/CI mode):
    - Determine enabled features (e.g., `macos`, `windows`)
-   - Download matching binaries from GitHub Releases for plugin version
+   - Download binaries from GitHub Releases for plugin version
    - Download and parse `checksums.txt` from release assets
    - Verify SHA256 checksums for each binary
    - Store verified binaries in `OUT_DIR/binaries/`
    - Fail build with clear error if download or verification fails
 4. Emit `cargo:binaries_dir=<path>` for consumer propagation (both modes)
 
+**Note**: In development mode, symlinks are used instead of copying to save disk space and improve build times. On Windows, files are copied as a fallback since symlinks require admin privileges.
+
 **Consumer Build** (`build.rs` in consuming app):
 1. Read `DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR` environment variable from plugin
-2. Copy binaries to `src-tauri/binaries/` directory
+2. Create symlink to binaries directory (or copy on Windows) at `src-tauri/binaries/`
 3. Configure `externalBin` in `tauri.conf.json` to bundle binaries
+4. Add `.taurignore` to prevent rebuild loops from file watcher
 
 ### Cargo Configuration
 

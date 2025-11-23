@@ -74,7 +74,7 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
             build_go_backend()?;
         }
 
-        copy_local_binaries(&local_path, &binaries_out_dir)?;
+        link_local_binaries(&local_path, &binaries_out_dir)?;
     } else {
         // CONSUMER/CI MODE: Download from GitHub
         download_binaries_from_github(&binaries_out_dir)?;
@@ -86,8 +86,8 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Copy binaries from local directory (development mode)
-fn copy_local_binaries(
+/// Link binaries from local directory (development mode)
+fn link_local_binaries(
     local_path: &str,
     dest_dir: &std::path::PathBuf,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -113,30 +113,44 @@ fn copy_local_binaries(
     }
 
     println!(
-        "cargo:warning=Copying local binaries from: {}",
+        "cargo:warning=Linking local binaries from: {}",
         local_binaries.canonicalize()?.display()
     );
 
     // Create destination directory
     fs::create_dir_all(dest_dir)?;
 
-    // Copy all binaries from source to destination
+    // Create symlinks to binaries from source to destination
     for entry in fs::read_dir(local_binaries)? {
         let entry = entry?;
         let path = entry.path();
 
-        // Only copy binary files (skip non-files like directories)
+        // Only link binary files (skip non-files like directories)
         if path.is_file() {
             let file_name = entry.file_name();
             let dest_file = dest_dir.join(&file_name);
-            // println!(
-            //     "cargo:warning=Copying local binary to: {}",
-            //     dest_file.display()
-            // );
-            fs::copy(&path, &dest_file)?;
+
+            // Remove existing symlink/file if it exists
+            if dest_file.exists() || dest_file.symlink_metadata().is_ok() {
+                fs::remove_file(&dest_file).ok();
+            }
+
+            // Use absolute path for symlink target
+            let absolute_source = path.canonicalize()?;
+
+            // Create symlink (Unix) or copy (Windows fallback)
+            #[cfg(unix)]
+            {
+                std::os::unix::fs::symlink(&absolute_source, &dest_file)?;
+            }
+
+            #[cfg(windows)]
+            {
+                // Windows symlinks require admin privileges, so fall back to copying
+                fs::copy(&absolute_source, &dest_file)?;
+            }
         }
     }
-
     Ok(())
 }
 

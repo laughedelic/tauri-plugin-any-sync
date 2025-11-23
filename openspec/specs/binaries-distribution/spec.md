@@ -61,12 +61,13 @@ The plugin SHALL verify the integrity of downloaded binaries using SHA256 checks
 - **AND** suggests potential MITM attack or corrupted download
 
 ### Requirement: Consumer Build Script Integration
-The plugin SHALL provide documentation and examples for consumer build scripts to copy binaries to their application.
+The plugin SHALL provide documentation and examples for consumer build scripts to link or copy binaries to their application.
 #### Scenario: Consumer build script pattern
 - **WHEN** a consumer application builds with the plugin as a dependency
 - **THEN** their build.rs can read DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR
-- **AND** copy the appropriate platform binaries to their src-tauri/binaries/ directory
-- **AND** rename binaries following Tauri's sidecar naming convention (binary-<target-triple>)
+- **AND** create a symlink (Unix) or copy files (Windows) to their src-tauri/binaries/ directory
+- **AND** binaries follow Tauri's sidecar naming convention (binary-<target-triple>)
+- **AND** .taurignore prevents rebuild loops from file watcher
 
 ### Requirement: Local Development Mode
 The plugin SHALL support local development using environment variable override to bypass GitHub downloads.

@@ -126,7 +126,7 @@ fn download_binaries_from_github(
 
     // Construct GitHub release URL
     let release_url = format!(
-        "https://github.com/sst/tauri-plugin-any-sync/releases/download/v{}/",
+        "https://github.com/laughedelic/tauri-plugin-any-sync/releases/download/v{}/",
         version
     );
 

@@ -86,7 +86,7 @@ export async function storageGet(
   try {
     console.log(`[any-sync] Getting document from ${collection}/${id}`);
 
-    const response = await invoke<{ documentJson?: string }>(
+    const response = await invoke<{ documentJson: string; found: boolean }>(
       "plugin:any-sync|storage_get",
       {
         payload: {
@@ -96,7 +96,7 @@ export async function storageGet(
       },
     );
 
-    if (!response.documentJson) {
+    if (!response.found) {
       console.log(`[any-sync] Document not found: ${collection}/${id}`);
       return null;
     }

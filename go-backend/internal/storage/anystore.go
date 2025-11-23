@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	anystore "github.com/anyproto/any-store"
@@ -85,16 +86,14 @@ func (s *Store) Delete(ctx context.Context, collection, id string) (bool, error)
 		return false, fmt.Errorf("failed to get collection %q for document %q: %w", collection, id, err)
 	}
 
-	// Check if document exists before deleting
-	_, err = coll.FindId(ctx, id)
-	if err != nil {
-		// Document not found - this is not an error, just return false
-		return false, nil
-	}
-
 	// Delete the document by ID
+	// AnyStore returns ErrDocNotFound if the document doesn't exist
 	err = coll.DeleteId(ctx, id)
 	if err != nil {
+		// Check if the document simply didn't exist (not an error condition)
+		if errors.Is(err, anystore.ErrDocNotFound) {
+			return false, nil
+		}
 		return false, fmt.Errorf("failed to delete document in collection %q with id %q: %w", collection, id, err)
 	}
 

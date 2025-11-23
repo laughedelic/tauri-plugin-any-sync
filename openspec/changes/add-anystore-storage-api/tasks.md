@@ -26,12 +26,12 @@
 
 ## 4. Example Application Updates
 
-- [ ] 4.1 Create storage demo component in `examples/tauri-app/src/lib/Storage.svelte`
-- [ ] 4.2 Add UI for putting documents (collection, id, JSON data)
-- [ ] 4.3 Add UI for getting documents by ID
-- [ ] 4.4 Add UI for listing collection contents
-- [ ] 4.5 Integrate storage demo into main App.svelte
-- [ ] 4.6 Add example data and usage instructions
+- [x] 4.1 Create storage demo component in `examples/tauri-app/src/lib/Storage.svelte`
+- [x] 4.2 Add UI for putting documents (collection, id, JSON data)
+- [x] 4.3 Add UI for getting documents by ID
+- [x] 4.4 Add UI for listing collection contents
+- [x] 4.5 Integrate storage demo into main App.svelte
+- [x] 4.6 Add example data and usage instructions
 
 ## 5. Documentation and Validation
 

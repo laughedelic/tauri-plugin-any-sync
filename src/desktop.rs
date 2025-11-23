@@ -2,7 +2,7 @@ use log::{debug, error, info, warn};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use std::time::SystemTime;
-use tauri::{plugin::PluginApi, AppHandle, Runtime};
+use tauri::{plugin::PluginApi, AppHandle, Manager, Runtime};
 use tauri_plugin_shell::ShellExt;
 use tokio::sync::RwLock;
 use tokio::time::{sleep, timeout, Duration};
@@ -65,6 +65,26 @@ impl SidecarManager {
         let port_file_path = port_file.path().to_str().unwrap();
         debug!("Created port file: {}", port_file_path);
 
+        // Set database path to user's data directory (outside src-tauri to avoid file watcher loops)
+        let db_path = app
+            .path()
+            .app_data_dir()
+            .map_err(|e| {
+                error!("Failed to get app data dir: {}", e);
+                std::io::Error::other(format!("Failed to get app data dir: {}", e))
+            })?
+            .join("anystore.db");
+
+        // Ensure the data directory exists
+        if let Some(parent) = db_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        let db_path_str = db_path
+            .to_str()
+            .ok_or_else(|| std::io::Error::other("Invalid database path"))?;
+        debug!("Database path: {}", db_path_str);
+
         // Start sidecar using Tauri shell plugin
         // Tauri automatically finds any-sync-{target-triple} in plugin's binaries/
         debug!("Creating sidecar command for 'any-sync'");
@@ -76,6 +96,7 @@ impl SidecarManager {
         debug!("Spawning sidecar process...");
         let (_rx, child) = sidecar_command
             .env("ANY_SYNC_PORT_FILE", port_file_path)
+            .env("ANY_SYNC_DB_PATH", db_path_str)
             .spawn()
             .map_err(|e| {
                 error!("Failed to spawn sidecar: {}", e);

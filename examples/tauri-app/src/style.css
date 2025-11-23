@@ -1,11 +1,11 @@
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
   font-weight: 400;
 
-  color: #0f0f0f;
-  background-color: #f6f6f6;
+  color: #1a1a1a;
+  background-color: #ffffff;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -16,11 +16,12 @@
 
 .container {
   margin: 0;
-  padding-top: 10vh;
+  padding: 2rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
+  min-height: 100vh;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .logo {

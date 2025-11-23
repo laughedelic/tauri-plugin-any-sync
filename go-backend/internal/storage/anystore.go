@@ -30,14 +30,16 @@ func (s *Store) Close() error {
 // Put stores a document in the specified collection
 // The document must be valid JSON
 func (s *Store) Put(ctx context.Context, collection, id, documentJSON string) error {
+	// Create arena for new values
+	a := &anyenc.Arena{}
+
 	// Parse the input JSON document
 	doc, err := anyenc.ParseJson(documentJSON)
 	if err != nil {
 		return fmt.Errorf("invalid JSON document: %w", err)
 	}
 
-	// Create arena and set the id field (AnyStore uses 'id', not '_id')
-	a := &anyenc.Arena{}
+	// Set the id field (AnyStore requires 'id' field in the document)
 	doc.Set("id", a.NewString(id))
 
 	// Get or create collection

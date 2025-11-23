@@ -12,7 +12,7 @@ This guide covers development, building, and testing of the Go backend for the a
 cd go-backend && go test ./... -v
 
 # Run server manually
-./binaries/server --port 8080
+./binaries/any-sync-aarch64-apple-darwin --port 8080
 ```
 
 ## Architecture Overview
@@ -231,7 +231,7 @@ Test server startup and communication:
 
 ```bash
 # Start server
-./binaries/server --port 8080 &
+./binaries/any-sync-aarch64-apple-darwin --port 8080 &
 
 # Test with grpcurl (requires grpcurl installation)
 grpcurl -plaintext -d '{"message":"test"} localhost:8080 anysync.HealthService/Ping
@@ -277,7 +277,7 @@ Enable debug logging:
 
 ```bash
 export ANY_SYNC_LOG_LEVEL=debug
-./binaries/server
+./binaries/any-sync-aarch64-apple-darwin
 ```
 
 ### Health Check Endpoint

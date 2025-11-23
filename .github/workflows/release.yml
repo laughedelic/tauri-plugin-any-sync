@@ -70,7 +70,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            binaries/server*
+            binaries/any-sync-*
             binaries/checksums.txt
           draft: false
           prerelease: false

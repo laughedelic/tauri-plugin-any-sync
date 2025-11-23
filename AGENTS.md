@@ -312,7 +312,7 @@ cargo install cargo-audit
 export ANY_SYNC_LOG_LEVEL=debug
 
 # Check Go backend logs
-./binaries/server --port 8080
+./binaries/any-sync-aarch64-apple-darwin --port 8080
 
 # Check Rust plugin logs
 RUST_LOG=debug cargo run

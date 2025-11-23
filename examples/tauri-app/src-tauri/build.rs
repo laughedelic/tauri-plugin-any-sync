@@ -5,6 +5,10 @@ use std::path::Path;
 fn main() {
     // Copy binaries from plugin
     if let Ok(binaries_dir) = env::var("DEP_ANY_SYNC_GO_BINARIES_DIR") {
+        println!(
+            "cargo:warning=Copying binaries from plugin output directory: {}",
+            binaries_dir
+        );
         let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
         let dest_dir = Path::new(&manifest_dir).join("binaries");
 
@@ -20,6 +24,7 @@ fn main() {
             if path.is_file() {
                 let file_name = entry.file_name();
                 let dest = dest_dir.join(&file_name);
+                println!("cargo:warning=Copying plugin binary: {}", dest.display());
                 fs::copy(&path, &dest).unwrap();
             }
         }

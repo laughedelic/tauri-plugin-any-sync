@@ -34,8 +34,8 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
     // Check if local development mode is enabled
     if let Ok(local_path) = env::var(ENV_VAR_NAME) {
         // LOCAL DEVELOPMENT MODE
+        // println!("cargo:warning=Using local binaries from: {}", local_path);
         copy_local_binaries(&local_path, &binaries_out_dir)?;
-        println!("cargo:warning=Using local binaries from: {}", local_path);
     } else {
         // CONSUMER/CI MODE: Download from GitHub
         download_binaries_from_github(&binaries_out_dir)?;
@@ -60,7 +60,7 @@ fn copy_local_binaries(
     if !local_binaries.exists() {
         return Err(format!(
             "Local binaries directory not found at: {}",
-            local_path
+            local_binaries.display()
         )
         .into());
     }
@@ -68,10 +68,15 @@ fn copy_local_binaries(
     if !local_binaries.is_dir() {
         return Err(format!(
             "Expected a directory but found a file at: {}",
-            local_path
+            local_binaries.display()
         )
         .into());
     }
+
+    println!(
+        "cargo:warning=Copying local binaries from: {}",
+        local_binaries.canonicalize()?.display()
+    );
 
     // Create destination directory
     fs::create_dir_all(dest_dir)?;
@@ -85,6 +90,10 @@ fn copy_local_binaries(
         if path.is_file() {
             let file_name = entry.file_name();
             let dest_file = dest_dir.join(&file_name);
+            println!(
+                "cargo:warning=Copying local binary to: {}",
+                dest_file.display()
+            );
             fs::copy(&path, &dest_file)?;
         }
     }
@@ -138,9 +147,9 @@ fn download_binaries_from_github(
         let binary_content = download_file(&url)?;
 
         // Verify checksum
-        let expected_checksum = checksums.get(&binary_name).ok_or_else(|| {
-            format!("Checksum not found for binary: {}", binary_name)
-        })?;
+        let expected_checksum = checksums
+            .get(&binary_name)
+            .ok_or_else(|| format!("Checksum not found for binary: {}", binary_name))?;
 
         let actual_checksum = compute_sha256(&binary_content);
 

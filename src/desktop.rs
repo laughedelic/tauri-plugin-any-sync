@@ -122,6 +122,9 @@ impl SidecarManager {
             error!("Failed to connect to gRPC server: {}", e);
             std::io::Error::other(format!("Failed to connect: {}", e))
         })?;
+        // Clone the channel to create both HealthServiceClient and StorageServiceClient.
+        // Channels are designed to be cheaply cloneable in tonic, allowing multiple service clients
+        // to share the same underlying connection. This ensures efficient resource usage.
         let mut client = HealthServiceClient::new(channel.clone());
         let storage_client = StorageServiceClient::new(channel);
         debug!("gRPC clients created successfully");

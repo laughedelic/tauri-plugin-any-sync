@@ -313,12 +313,16 @@ fn compute_sha256(data: &[u8]) -> String {
 
 fn generate_protobuf() -> Result<(), Box<dyn std::error::Error>> {
     println!("cargo:rerun-if-changed=go-backend/api/proto/health.proto");
+    println!("cargo:rerun-if-changed=go-backend/api/proto/storage.proto");
 
     // Generate protobuf code
     tonic_build::configure()
         .build_server(false) // We only need the client
         .compile_protos(
-            &["go-backend/api/proto/health.proto"],
+            &[
+                "go-backend/api/proto/health.proto",
+                "go-backend/api/proto/storage.proto",
+            ],
             &["go-backend/api/proto"],
         )?;
 

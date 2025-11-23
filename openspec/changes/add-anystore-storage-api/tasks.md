@@ -11,11 +11,11 @@
 
 ## 2. Rust Plugin Storage Commands
 
-- [ ] 2.1 Update protobuf generation to include storage service
-- [ ] 2.2 Add storage command handlers in `src/commands.rs` (desktop-only)
-- [ ] 2.3 Add gRPC client calls in `src/desktop.rs` for storage operations
-- [ ] 2.4 Add error handling for storage-specific errors
-- [ ] 2.5 Add integration tests for storage commands
+- [x] 2.1 Update protobuf generation to include storage service
+- [x] 2.2 Add storage command handlers in `src/commands.rs` (desktop-only)
+- [x] 2.3 Add gRPC client calls in `src/desktop.rs` for storage operations
+- [x] 2.4 Add error handling for storage-specific errors
+- [x] 2.5 Add integration tests for storage commands
 
 ## 3. TypeScript API Bindings
 

@@ -30,3 +30,8 @@ dist
 
 # Generated protobuf code
 /src/proto/anysync.rs
+
+# OpenSpec prompts
+/.opencode/**/openspec-*.md
+/.github/prompts/openspec-*.md
+/.claude/commands/openspec/*.md

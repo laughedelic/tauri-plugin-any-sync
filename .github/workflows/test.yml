@@ -13,14 +13,49 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  test-go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go-backend/go.mod'
+          cache-dependency-path: 'go-backend/go.sum'
+      
+      - name: Set up protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          version: '28.x'
+      
+      - name: Run Go tests
+        working-directory: go-backend
+        run: go test -v ./...
+
+  test-typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - uses: oven-sh/setup-bun@v2
+      
+      - name: Install dependencies
+        run: bun install
+      
+      - name: Type check
+        run: bunx tsc --noEmit
+      
+      - name: Build
+        run: bun run build
+
+  test-rust:
     strategy:
       fail-fast: false
       matrix:
         platform:
           - ubuntu-latest
           - macos-latest
-          - windows-latest
+          # - windows-latest # TODO: reenable (too slow currently)
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4

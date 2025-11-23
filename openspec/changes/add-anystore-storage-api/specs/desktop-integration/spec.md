@@ -52,21 +52,7 @@ The Rust plugin SHALL convert gRPC storage errors to Tauri-compatible error type
 - **WHEN** a storage command is invoked
 - **THEN** a connection error is returned with troubleshooting guidance
 
-### Requirement: Desktop-Only Storage Commands
 
-The storage commands SHALL be conditionally compiled for desktop platforms only using `#[cfg(desktop)]`.
-
-#### Scenario: Storage commands available on desktop
-
-- **GIVEN** a desktop build (macOS, Linux, Windows)
-- **WHEN** the plugin is compiled
-- **THEN** storage command handlers are included
-
-#### Scenario: Storage commands excluded on mobile
-
-- **GIVEN** a mobile build (iOS, Android)
-- **WHEN** the plugin is compiled
-- **THEN** storage command handlers are excluded
 
 ### Requirement: gRPC Client Integration
 

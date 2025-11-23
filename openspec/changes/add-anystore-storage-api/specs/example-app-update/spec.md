@@ -68,21 +68,7 @@ The example app SHALL display storage errors in a user-friendly format for debug
 - **WHEN** the operation completes
 - **THEN** the error message is displayed in a visible error panel
 
-### Requirement: Storage State Visualization
 
-The example app SHALL visualize the current state of stored documents.
-
-#### Scenario: Recently stored documents
-
-- **GIVEN** the user has stored documents
-- **WHEN** the storage demo is displayed
-- **THEN** a list of recent operations is shown with timestamps
-
-#### Scenario: Retrieved document display
-
-- **GIVEN** a Get operation returns a document
-- **WHEN** the result is displayed
-- **THEN** the JSON is formatted and syntax-highlighted for readability
 
 ## MODIFIED Requirements
 

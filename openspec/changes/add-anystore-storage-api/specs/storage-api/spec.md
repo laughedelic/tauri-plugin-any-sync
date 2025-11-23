@@ -22,7 +22,7 @@ The Go backend SHALL provide a gRPC StorageService with four CRUD operations for
 
 - **GIVEN** a collection name and document ID of a non-existent document
 - **WHEN** Get RPC is called
-- **THEN** a NOT_FOUND error is returned with context
+- **THEN** an empty response is returned with found=false
 
 #### Scenario: Delete operation removes document
 
@@ -134,11 +134,11 @@ The storage service SHALL organize documents into named collections matching Any
 
 The storage service SHALL include collection name and document ID in error messages for debugging.
 
-#### Scenario: Not found error includes context
+#### Scenario: Get response includes found status
 
-- **GIVEN** a Get request for a non-existent document
-- **WHEN** the error is returned
-- **THEN** the error message includes collection name and document ID
+- **GIVEN** a Get request for any document
+- **WHEN** the response is returned
+- **THEN** the found field indicates whether the document exists
 
 #### Scenario: Invalid argument error includes context
 

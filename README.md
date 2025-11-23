@@ -435,6 +435,22 @@ try {
 }
 ```
 
+### Data Persistence
+
+Documents are stored locally using SQLite via AnyStore. The database is automatically created in the application's data directory:
+
+- **macOS**: `~/Library/Application Support/{app-name}/anystore.db`
+- **Linux**: `~/.local/share/{app-name}/anystore.db`
+- **Windows**: `%APPDATA%\{app-name}\anystore.db`
+
+Data persists across application restarts automatically. No additional configuration is required.
+
+**Database Location Notes**:
+- The `{app-name}` is determined by your Tauri app's bundle identifier
+- The database file is created on first storage operation
+- All collections are stored in a single SQLite database file
+- Storage operations are ACID-compliant (Atomic, Consistent, Isolated, Durable)
+
 ## Configuration
 
 ### Environment Variables

@@ -45,7 +45,7 @@ func (s *Store) Put(ctx context.Context, collection, id, documentJSON string) er
 	// Get or create collection
 	coll, err := s.db.Collection(ctx, collection)
 	if err != nil {
-		return fmt.Errorf("failed to get collection %q: %w", collection, err)
+		return fmt.Errorf("failed to get collection %q for document %q: %w", collection, id, err)
 	}
 
 	// UpsertOne will insert if not exists, or update if exists
@@ -62,7 +62,7 @@ func (s *Store) Put(ctx context.Context, collection, id, documentJSON string) er
 func (s *Store) Get(ctx context.Context, collection, id string) (string, error) {
 	coll, err := s.db.Collection(ctx, collection)
 	if err != nil {
-		return "", fmt.Errorf("failed to get collection %q: %w", collection, err)
+		return "", fmt.Errorf("failed to get collection %q for document %q: %w", collection, id, err)
 	}
 
 	// Find document by ID
@@ -82,7 +82,7 @@ func (s *Store) Get(ctx context.Context, collection, id string) (string, error) 
 func (s *Store) Delete(ctx context.Context, collection, id string) (bool, error) {
 	coll, err := s.db.Collection(ctx, collection)
 	if err != nil {
-		return false, fmt.Errorf("failed to get collection %q: %w", collection, err)
+		return false, fmt.Errorf("failed to get collection %q for document %q: %w", collection, id, err)
 	}
 
 	// Check if document exists before deleting
@@ -105,7 +105,7 @@ func (s *Store) Delete(ctx context.Context, collection, id string) (bool, error)
 func (s *Store) List(ctx context.Context, collection string) ([]string, error) {
 	coll, err := s.db.Collection(ctx, collection)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get collection %q: %w", collection, err)
+		return nil, fmt.Errorf("failed to list documents in collection %q: %w", collection, err)
 	}
 
 	// Find all documents (nil filter means all)

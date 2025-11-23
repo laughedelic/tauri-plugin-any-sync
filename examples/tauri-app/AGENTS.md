@@ -1,6 +1,82 @@
-# Example App Testing Guide
+# Example App Development Guide
 
-This guide covers testing the any-sync plugin with the example Tauri application.
+This guide covers development principles and testing for the any-sync plugin example application.
+
+## UI Design Principles
+
+### Philosophy
+The example app demonstrates plugin functionality through a **minimal, intuitive interface**. The design prioritizes clarity and ease of use over feature completeness.
+
+### Key Principles
+
+1. **Single-Page Layout**
+   - No tabs or complex navigation
+   - All functionality visible at once
+   - Minimal cognitive load for users
+
+2. **Component Structure**
+   - Use scoped styles within component file (idiomatic Svelte)
+   - Only extract components if genuinely reusable across multiple views
+
+3. **Visual Hierarchy**
+   - Sidebar navigation for browsing/discovery
+   - Main content area for editing/viewing
+   - Clear separation between navigation and content
+
+4. **Interaction Patterns**
+   - **Click to select** - Items in lists/sidebars load automatically
+   - **Button actions** - Explicit operations (Store, Create, etc.)
+   - **Auto-refresh** - Update lists/views after mutations
+   - **Inline feedback** - Success/error messages appear in context
+
+5. **Feedback & Messaging**
+   - Unified message display (success and errors in same location)
+   - Visual distinction (color coding: green for success, red for errors)
+   - Clear prefixes (✓ for success, ✗ for errors)
+   - Messages appear where action was taken
+
+6. **Form Design**
+   - Minimal labels (uppercase, small, subtle)
+   - Clear input purposes
+   - Group related inputs visually
+   - Primary action buttons stand out (dark/bold)
+   - Secondary actions subdued (light/outlined)
+
+7. **Styling Approach**
+   - **Component styles**: Keep in `<style>` blocks (scoped to component)
+   - **Global styles**: Only typography, colors, resets in `style.css`
+   - **Consistency**: Use design tokens (specific colors, sizes, spacing)
+   - **Minimalism**: Light backgrounds (#fafafa), subtle borders (#e5e5e5)
+   - **Typography**: System fonts, -apple-system stack for native feel
+
+8. **State Management**
+   - Use Svelte runes (`$state`, `$effect`) for reactivity
+   - Auto-initialize on mount (preload data)
+   - Keep state close to usage (no global stores for demo app)
+
+9. **User Experience**
+   - **Discoverability**: Show what exists (auto-scan, list available items)
+   - **Defaults**: Pre-populate with example data
+   - **Zero state**: Clear messaging when empty
+   - **Quick actions**: One-click creation with sensible defaults
+   - **Auto-load**: Select first item automatically when switching contexts
+
+### Anti-Patterns to Avoid
+
+- ❌ Verbose instructions or help text (UI should be self-evident)
+- ❌ Manual refresh buttons (auto-update instead)
+- ❌ Complex form validation for demo purposes
+- ❌ Feature bloat (keep focused on plugin capabilities)
+
+### Code Organization
+
+```
+examples/tauri-app/src/
+├── App.svelte          # Main UI component (structure + styles + logic)
+├── main.js             # App entry point
+├── style.css           # Global styles only (minimal)
+└── lib/                # Only if multiple reusable components needed
+```
 
 ## Quick Start
 

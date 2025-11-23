@@ -16,12 +16,12 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 900,
         "resizable": true,
         "title": "AnySync Storage Demo",
-        "width": 1000,
-        "minHeight": 700,
-        "minWidth": 800
+        "minHeight": 400,
+        "height": 600,
+        "minWidth": 200,
+        "width": 700
       }
     ]
   },

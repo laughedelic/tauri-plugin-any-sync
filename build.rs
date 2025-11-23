@@ -1,6 +1,29 @@
 const COMMANDS: &[&str] = &["ping"];
 
+/// Build Go backend binaries using the build script
+fn build_go_backend() -> Result<(), Box<dyn std::error::Error>> {
+    use std::process::Command;
+
+    println!("cargo:warning=Building Go backend binaries...");
+
+    let status = Command::new("./build-go-backend.sh")
+        .arg("--cross")
+        .status()?;
+
+    if !status.success() {
+        return Err("Failed to build Go backend".into());
+    }
+
+    println!("cargo:warning=Go backend build completed successfully");
+    Ok(())
+}
+
 fn main() {
+    println!(
+        "cargo:debug=ANY_SYNC_GO_BINARIES_DIR={}",
+        std::env::var("ANY_SYNC_GO_BINARIES_DIR").unwrap_or_default()
+    );
+
     // Generate protobuf code first
     if let Err(e) = generate_protobuf() {
         eprintln!("Warning: Failed to generate protobuf code: {}", e);
@@ -25,8 +48,9 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
 
     const ENV_VAR_NAME: &str = "ANY_SYNC_GO_BINARIES_DIR";
 
-    // Register dependency on environment variable changes
-    println!("cargo:rerun-if-env-changed={}", ENV_VAR_NAME);
+    // Register dependencies for rebuild triggers
+    println!("cargo:rerun-if-changed=go-backend/");
+    println!("cargo:rerun-if-changed=build-go-backend.sh");
 
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
     let binaries_out_dir = out_dir.join("binaries");
@@ -34,7 +58,22 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
     // Check if local development mode is enabled
     if let Ok(local_path) = env::var(ENV_VAR_NAME) {
         // LOCAL DEVELOPMENT MODE
-        // println!("cargo:warning=Using local binaries from: {}", local_path);
+        let local_binaries = std::path::Path::new(&local_path);
+        println!("cargo:rerun-if-changed={}", local_binaries.display());
+
+        // Check if binaries directory exists and has any files
+        let binaries_missing = !local_binaries.exists()
+            || !local_binaries.is_dir()
+            || std::fs::read_dir(local_binaries)?.next().is_none();
+
+        if binaries_missing {
+            println!(
+                "cargo:warning=Go binaries not found in [{}], building...",
+                local_binaries.display()
+            );
+            build_go_backend()?;
+        }
+
         copy_local_binaries(&local_path, &binaries_out_dir)?;
     } else {
         // CONSUMER/CI MODE: Download from GitHub
@@ -90,10 +129,10 @@ fn copy_local_binaries(
         if path.is_file() {
             let file_name = entry.file_name();
             let dest_file = dest_dir.join(&file_name);
-            println!(
-                "cargo:warning=Copying local binary to: {}",
-                dest_file.display()
-            );
+            // println!(
+            //     "cargo:warning=Copying local binary to: {}",
+            //     dest_file.display()
+            // );
             fs::copy(&path, &dest_file)?;
         }
     }

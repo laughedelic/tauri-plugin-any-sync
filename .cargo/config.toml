@@ -1,0 +1,2 @@
+[env]
+ANY_SYNC_GO_BINARIES_DIR = { value = "binaries", force = true }

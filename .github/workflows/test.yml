@@ -26,6 +26,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
 
+      - name: Set up protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          version: '28.x'
+
       - name: install webkit2gtk
         if: matrix.platform == 'ubuntu-latest'
         run: |

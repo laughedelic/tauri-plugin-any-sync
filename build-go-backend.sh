@@ -63,8 +63,17 @@ check_protoc_plugins() {
 generate_proto() {
     print_status "Generating protobuf code..."
     cd go-backend
+    
+    # Add Go bin to PATH for protoc plugins
     export PATH=$PATH:$(go env GOPATH)/bin
-    protoc --go_out=. --go-grpc_out=. api/proto/health.proto
+    
+    # Generate protobuf code and check for errors
+    if ! protoc --go_out=. --go-grpc_out=. api/proto/health.proto 2>&1; then
+        cd ..
+        print_error "Failed to generate protobuf code"
+        exit 1
+    fi
+    
     cd ..
     print_status "Protobuf code generated successfully"
 }

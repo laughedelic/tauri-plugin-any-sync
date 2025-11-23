@@ -18,6 +18,12 @@ The Rust plugin SHALL provide Tauri commands for storage operations that communi
 - **WHEN** the Rust command handler is invoked
 - **THEN** a gRPC Get request is sent to the sidecar and the document JSON is returned
 
+#### Scenario: Delete command removes document
+
+- **GIVEN** a TypeScript call to storage.delete(collection, id)
+- **WHEN** the Rust command handler is invoked
+- **THEN** a gRPC Delete request is sent to the sidecar and the result (existed boolean) is returned
+
 #### Scenario: List command retrieves IDs
 
 - **GIVEN** a TypeScript call to storage.list(collection)

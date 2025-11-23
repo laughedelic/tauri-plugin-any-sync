@@ -4,7 +4,7 @@
 
 ### Requirement: Storage Service Definition
 
-The Go backend SHALL provide a gRPC StorageService with three operations for document storage and retrieval.
+The Go backend SHALL provide a gRPC StorageService with four CRUD operations for document storage and retrieval.
 
 #### Scenario: Put operation stores document
 
@@ -23,6 +23,18 @@ The Go backend SHALL provide a gRPC StorageService with three operations for doc
 - **GIVEN** a collection name and document ID of a non-existent document
 - **WHEN** Get RPC is called
 - **THEN** a NOT_FOUND error is returned with context
+
+#### Scenario: Delete operation removes document
+
+- **GIVEN** a collection name and document ID of an existing document
+- **WHEN** Delete RPC is called
+- **THEN** the document is removed from AnyStore and existed=true is returned
+
+#### Scenario: Delete operation is idempotent
+
+- **GIVEN** a collection name and document ID of a non-existent document
+- **WHEN** Delete RPC is called
+- **THEN** success is returned with existed=false (no error)
 
 #### Scenario: List operation returns all IDs
 
@@ -67,6 +79,18 @@ The storage service SHALL define gomobile-compatible protobuf messages using onl
 - **GIVEN** a storage Get operation
 - **WHEN** the GetRequest message is constructed
 - **THEN** it contains collection (string) and id (string)
+
+#### Scenario: DeleteRequest contains required fields
+
+- **GIVEN** a storage Delete operation
+- **WHEN** the DeleteRequest message is constructed
+- **THEN** it contains collection (string) and id (string)
+
+#### Scenario: DeleteResponse indicates if document existed
+
+- **GIVEN** a Delete operation completes successfully
+- **WHEN** the DeleteResponse is returned
+- **THEN** it contains existed (bool) indicating if the document was present
 
 #### Scenario: ListRequest contains required fields
 

@@ -64,24 +64,26 @@ This change introduces the first functional integration with AnyStore, moving th
 - Protobuf messages: Would require pre-defined schemas, limiting flexibility
 - Raw bytes: Less developer-friendly, no JSON validation
 
-### Decision 3: Minimal Operation Set (Put/Get/List)
+### Decision 3: CRUD Operation Set (Put/Get/Delete/List)
 
-**What:** Implement only 3 operations:
+**What:** Implement 4 CRUD operations:
 - `Put(collection, id, json)` - Upsert document
 - `Get(collection, id)` - Retrieve document
+- `Delete(collection, id)` - Remove document
 - `List(collection)` - Get all IDs
 
 **Why:**
-- Sufficient to demonstrate full stack integration
-- Easy to test and validate
-- Provides foundation for more operations
-- Keeps scope minimal and achievable
+- Provides complete CRUD functionality as solid foundation
+- Easy to test and validate full document lifecycle
+- Delete is essential for real-world applications
+- Still minimal and achievable (only 4 operations)
+- Prevents awkward "why no delete?" questions
 
 **Operations deliberately excluded (future work):**
 - Query/filter operations
-- Delete operations
 - Bulk operations
 - Index management
+- Transaction support
 
 ### Decision 4: Collection-Based Organization
 
@@ -143,6 +145,15 @@ message GetRequest {
   string id = 2;
 }
 
+message DeleteRequest {
+  string collection = 1;
+  string id = 2;
+}
+
+message DeleteResponse {
+  bool existed = 1;  // true if document existed and was deleted
+}
+
 message ListRequest {
   string collection = 1;
 }
@@ -151,11 +162,32 @@ message ListRequest {
 **Why:**
 - Simple, gomobile-compatible types (all strings)
 - Clear semantics for each operation
+- DeleteResponse includes `existed` field for debugging/UX
 - Extensible (can add fields without breaking changes)
 
 **Alternatives considered:**
 - Batch operations: Added complexity for unclear benefit
 - Structured document fields: Defeats schema-less purpose
+- Void delete response: Less informative for client code
+
+### Decision 8: Delete Operation Semantics
+
+**What:**
+- Delete operation is idempotent (deleting non-existent document succeeds)
+- Returns boolean `existed` field indicating if document was present
+- Empty collections persist (no auto-cleanup)
+- Only errors on database/connection failures, not missing documents
+
+**Why:**
+- Idempotent deletes simplify client code (no need to check existence first)
+- Aligns with REST/HTTP best practices (DELETE returns 204 regardless)
+- `existed` field useful for UX ("deleted" vs "already gone")
+- Empty collections harmless and match typical database behavior
+
+**Alternatives considered:**
+- Error on missing document: More complex error handling for clients
+- Auto-cleanup empty collections: Added complexity without clear benefit
+- Void response: Less debuggable, harder to test
 
 ## Risks / Trade-offs
 
@@ -216,9 +248,9 @@ message ListRequest {
 ### Phase 3: Storage API Expansion (Future)
 
 1. Add Query operation with MongoDB-style filters
-2. Add Delete operation
-3. Add bulk Put/Delete operations
-4. Add index management APIs
+2. Add bulk Put/Delete operations
+3. Add index management APIs
+4. Add transaction support
 
 ### Rollback Plan
 

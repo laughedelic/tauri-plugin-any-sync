@@ -9,9 +9,10 @@ AnyStore provides a document-oriented database with MongoDB-style queries backed
 ## What Changes
 
 - **Add AnyStore dependency** to Go backend and integrate with gRPC server
-- **Implement minimal storage API** with 3 operations:
-  - `put(collection, id, document)` - Store a document
+- **Implement CRUD storage API** with 4 operations:
+  - `put(collection, id, document)` - Store or update a document
   - `get(collection, id)` - Retrieve a document by ID
+  - `delete(collection, id)` - Delete a document by ID
   - `list(collection)` - List all document IDs in a collection
 - **Add protobuf definitions** for storage operations (StorageService)
 - **Expose storage commands** in Rust plugin (desktop sidecar only)
@@ -22,8 +23,8 @@ AnyStore provides a document-oriented database with MongoDB-style queries backed
 This is explicitly **NOT** a full storage API implementation. The goal is to:
 1. Validate the desktop sidecar architecture end-to-end
 2. Prove AnyStore integration works correctly
-3. Provide a foundation for future storage features
-4. Keep the scope minimal (< 500 lines of new code across all layers)
+3. Provide complete CRUD operations as a solid foundation
+4. Keep the scope minimal (< 600 lines of new code across all layers)
 
 ## Impact
 

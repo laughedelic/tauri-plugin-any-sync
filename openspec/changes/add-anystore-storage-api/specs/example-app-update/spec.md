@@ -18,6 +18,12 @@ The example app SHALL provide an interactive UI component for demonstrating stor
 - **WHEN** the user enters collection and ID
 - **THEN** a "Get Document" button calls storage.get() and displays the JSON
 
+#### Scenario: Delete document UI
+
+- **GIVEN** the storage demo component
+- **WHEN** the user enters collection and ID
+- **THEN** a "Delete Document" button calls storage.delete() and displays whether document existed
+
 #### Scenario: List collection UI
 
 - **GIVEN** the storage demo component
@@ -33,6 +39,12 @@ The example app SHALL demonstrate practical usage of the storage API with exampl
 - **GIVEN** the storage demo component
 - **WHEN** the component is loaded
 - **THEN** example values are pre-filled (e.g., collection="todos", id="1", json="{\"title\":\"Test\"}")
+
+#### Scenario: Full CRUD cycle demonstrated
+
+- **GIVEN** the storage demo UI
+- **WHEN** the user interacts with examples
+- **THEN** the UI demonstrates create (put), read (get), update (put), and delete operations
 
 #### Scenario: Multiple collections demonstrated
 

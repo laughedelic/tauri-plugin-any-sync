@@ -2,9 +2,7 @@
 
 ## Purpose
 Provides a working example application demonstrating plugin integration, communication with the Go backend, and proper Tauri sidecar configuration for desktop platforms.
-
 ## Requirements
-
 ### Requirement: Plugin Integration
 The example app SHALL successfully import and initialize the any-sync plugin.
 #### Scenario:
@@ -74,3 +72,70 @@ The example app SHALL demonstrate Tauri's standard sidecar pattern using shell p
 Given: desktop platforms require externalBin configuration
 When: example app configures plugin
 Then: it should use Tauri shell plugin sidecar APIs instead of manual process management
+
+### Requirement: Storage Demo Component
+
+The example app SHALL provide an interactive UI component for demonstrating storage operations.
+
+#### Scenario: Put document UI
+
+- **GIVEN** the storage demo component
+- **WHEN** the user enters collection, ID, and JSON
+- **THEN** a "Store Document" button calls storage.put() and displays the result
+
+#### Scenario: Get document UI
+
+- **GIVEN** the storage demo component
+- **WHEN** the user enters collection and ID
+- **THEN** a "Get Document" button calls storage.get() and displays the JSON
+
+#### Scenario: Delete document UI
+
+- **GIVEN** the storage demo component
+- **WHEN** the user enters collection and ID
+- **THEN** a "Delete Document" button calls storage.delete() and displays whether document existed
+
+#### Scenario: List collection UI
+
+- **GIVEN** the storage demo component
+- **WHEN** the user enters a collection name
+- **THEN** a "List Documents" button calls storage.list() and displays all IDs
+
+### Requirement: Storage API Demonstration
+
+The example app SHALL demonstrate practical usage of the storage API with example data.
+
+#### Scenario: Pre-filled examples
+
+- **GIVEN** the storage demo component
+- **WHEN** the component is loaded
+- **THEN** example values are pre-filled (e.g., collection="todos", id="1", json="{\"title\":\"Test\"}")
+
+#### Scenario: Full CRUD cycle demonstrated
+
+- **GIVEN** the storage demo UI
+- **WHEN** the user interacts with examples
+- **THEN** the UI demonstrates create (put), read (get), update (put), and delete operations
+
+#### Scenario: Multiple collections demonstrated
+
+- **GIVEN** the storage demo UI
+- **WHEN** the user interacts with examples
+- **THEN** multiple collection names are suggested (e.g., "todos", "notes", "settings")
+
+### Requirement: Error Display
+
+The example app SHALL display storage errors in a user-friendly format for debugging.
+
+#### Scenario: Success feedback
+
+- **GIVEN** a successful storage operation
+- **WHEN** the operation completes
+- **THEN** a success message is displayed with operation details
+
+#### Scenario: Error feedback
+
+- **GIVEN** a failed storage operation (e.g., invalid JSON)
+- **WHEN** the operation completes
+- **THEN** the error message is displayed in a visible error panel
+

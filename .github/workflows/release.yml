@@ -4,73 +4,57 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v0.3.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 jobs:
-  build-binaries:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: macos-latest
-            targets: "x86_64-apple-darwin aarch64-apple-darwin"
-          - os: ubuntu-latest
-            targets: "x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu"
-          - os: windows-latest
-            targets: "x86_64-pc-windows-msvc"
+  release:
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.23'
 
       - name: Set up protoc
-        uses: arduino/setup-protoc@v2
+        uses: arduino/setup-protoc@v3
         with:
-          version: '25.0'
+          version: '28.x'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install protoc Go plugins
-        run: |
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-
-      - name: Build binaries
-        run: bash ./build-go-backend.sh --cross
+      - name: Cross-compile binaries
+        run: ./build-go-backend.sh --cross
 
       - name: Generate checksums
         run: |
           cd binaries
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            # On Windows, use certutil for SHA256
-            for file in *; do
-              certutil -hashfile "$file" SHA256 | grep -v "SHA256 hash of file" | tr '\\n' ' ' | sed 's/ $//' > "$file.sha256.tmp"
-              echo "  $file" >> "$file.sha256.tmp"
-              cat "$file.sha256.tmp" | tr -d '\r' > "$file.sha256"
-              rm "$file.sha256.tmp"
-            done
-            # Combine into checksums.txt
-            cat *.sha256 | sed 's/^  / /' > checksums.txt
+          sha256sum * > checksums.txt
+          cat checksums.txt
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version || github.ref_name }}
+        run: |
+          # Check if release already exists
+          if gh release view $VERSION &>/dev/null; then
+            echo "Release already exists, uploading assets only..."
+            gh release upload $VERSION \
+              binaries/* \
+              --clobber
           else
-            # On Unix-like systems
-            shasum -a 256 * > checksums.txt.tmp
-            mv checksums.txt.tmp checksums.txt
+            echo "Creating new release..."
+            gh release create $VERSION \
+              --generate-notes \
+              binaries/*
           fi
-          cd ..
-
-      - name: List artifacts
-        run: ls -lah binaries/
-
-      - name: Upload to release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            binaries/any-sync-*
-            binaries/checksums.txt
-          draft: false
-          prerelease: false

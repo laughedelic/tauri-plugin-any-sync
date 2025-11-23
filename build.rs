@@ -264,7 +264,6 @@ fn generate_protobuf() -> Result<(), Box<dyn std::error::Error>> {
     // Generate protobuf code
     tonic_build::configure()
         .build_server(false) // We only need the client
-        .out_dir("src/proto")
         .compile_protos(
             &["go-backend/api/proto/health.proto"],
             &["go-backend/api/proto"],

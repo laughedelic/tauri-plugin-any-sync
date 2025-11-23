@@ -27,3 +27,6 @@ dist
 /src-tauri/binaries/*.exe
 /src-tauri/binaries/server*
 /src-tauri/binaries/*-*
+
+# Generated protobuf code
+/src/proto/anysync.rs

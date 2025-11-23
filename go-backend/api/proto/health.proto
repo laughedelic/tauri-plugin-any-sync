@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package anysync;
 
-option go_package = "anysync-backend/api/proto";
+option go_package = "api/proto";
 
 // Health check service for basic connectivity testing
 service HealthService {

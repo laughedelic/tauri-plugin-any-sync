@@ -2,7 +2,7 @@ use log::{debug, error, info, warn};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use std::time::SystemTime;
-use tauri::{plugin::PluginApi, AppHandle, Runtime};
+use tauri::{plugin::PluginApi, AppHandle, Manager, Runtime};
 use tauri_plugin_shell::ShellExt;
 use tokio::sync::RwLock;
 use tokio::time::{sleep, timeout, Duration};
@@ -11,8 +11,12 @@ use tonic::Request;
 
 use crate::models::*;
 use crate::proto::anysync::{
-    health_service_client::HealthServiceClient, HealthCheckRequest, PingRequest as GrpcPingRequest,
-    PingResponse as GrpcPingResponse,
+    health_service_client::HealthServiceClient, storage_service_client::StorageServiceClient,
+    DeleteRequest as GrpcDeleteRequest, DeleteResponse as GrpcDeleteResponse,
+    GetRequest as GrpcGetRequest, GetResponse as GrpcGetResponse, HealthCheckRequest,
+    ListRequest as GrpcListRequest, ListResponse as GrpcListResponse,
+    PingRequest as GrpcPingRequest, PingResponse as GrpcPingResponse, PutRequest as GrpcPutRequest,
+    PutResponse as GrpcPutResponse,
 };
 use crate::Result;
 
@@ -34,6 +38,7 @@ pub struct SidecarManager {
     child: Option<tauri_plugin_shell::process::CommandChild>,
     port: Option<u16>,
     client: Option<HealthServiceClient<Channel>>,
+    storage_client: Option<StorageServiceClient<Channel>>,
     is_running: bool,
 }
 
@@ -43,6 +48,7 @@ impl SidecarManager {
             child: None,
             port: None,
             client: None,
+            storage_client: None,
             is_running: false,
         }
     }
@@ -60,6 +66,26 @@ impl SidecarManager {
         let port_file_path = port_file.path().to_str().unwrap();
         debug!("Created port file: {}", port_file_path);
 
+        // Set database path to user's data directory (outside src-tauri to avoid file watcher loops)
+        let db_path = app
+            .path()
+            .app_data_dir()
+            .map_err(|e| {
+                error!("Failed to get app data dir: {}", e);
+                std::io::Error::other(format!("Failed to get app data dir: {}", e))
+            })?
+            .join("anystore.db");
+
+        // Ensure the data directory exists
+        if let Some(parent) = db_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        let db_path_str = db_path
+            .to_str()
+            .ok_or_else(|| std::io::Error::other("Invalid database path"))?;
+        debug!("Database path: {}", db_path_str);
+
         // Start sidecar using Tauri shell plugin
         // Tauri automatically finds any-sync-{target-triple} in plugin's binaries/
         debug!("Creating sidecar command for 'any-sync'");
@@ -71,6 +97,7 @@ impl SidecarManager {
         debug!("Spawning sidecar process...");
         let (_rx, child) = sidecar_command
             .env("ANY_SYNC_PORT_FILE", port_file_path)
+            .env("ANY_SYNC_DB_PATH", db_path_str)
             .spawn()
             .map_err(|e| {
                 error!("Failed to spawn sidecar: {}", e);
@@ -95,8 +122,12 @@ impl SidecarManager {
             error!("Failed to connect to gRPC server: {}", e);
             std::io::Error::other(format!("Failed to connect: {}", e))
         })?;
-        let mut client = HealthServiceClient::new(channel);
-        debug!("gRPC client created successfully");
+        // Clone the channel to create both HealthServiceClient and StorageServiceClient.
+        // Channels are designed to be cheaply cloneable in tonic, allowing multiple service clients
+        // to share the same underlying connection. This ensures efficient resource usage.
+        let mut client = HealthServiceClient::new(channel.clone());
+        let storage_client = StorageServiceClient::new(channel);
+        debug!("gRPC clients created successfully");
 
         // Test the connection
         debug!("Testing gRPC connection with health check...");
@@ -106,6 +137,7 @@ impl SidecarManager {
         self.child = Some(child);
         self.port = Some(port);
         self.client = Some(client);
+        self.storage_client = Some(storage_client);
         self.is_running = true;
 
         info!("Sidecar startup complete");
@@ -190,6 +222,7 @@ impl SidecarManager {
         self.is_running = false;
         self.port = None;
         self.client = None;
+        self.storage_client = None;
 
         info!("Sidecar stopped");
         Ok(())
@@ -242,6 +275,191 @@ impl SidecarManager {
             )
         }
     }
+
+    pub async fn storage_put<R: Runtime>(
+        &mut self,
+        app: &AppHandle<R>,
+        collection: String,
+        id: String,
+        document_json: String,
+    ) -> Result<GrpcPutResponse> {
+        if !self.is_running {
+            info!("Sidecar not running, starting it first");
+            self.start(app).await?;
+        }
+
+        if let Some(client) = &mut self.storage_client {
+            debug!(
+                "Sending put request for collection='{}', id='{}'",
+                collection, id
+            );
+
+            let request = Request::new(GrpcPutRequest {
+                collection,
+                id,
+                document_json,
+            });
+
+            match timeout(Duration::from_secs(10), client.put(request)).await {
+                Ok(Ok(response)) => {
+                    let response = response.into_inner();
+                    info!("Put successful: success={}", response.success);
+                    Ok(response)
+                }
+                Ok(Err(e)) => {
+                    error!("Put failed: {}", e);
+                    Err(crate::Error::Storage(format!(
+                        "Put operation failed: {}",
+                        e
+                    )))
+                }
+                Err(_) => {
+                    error!("Put timed out after 10 seconds");
+                    Err(crate::Error::Storage("Put operation timed out".to_string()))
+                }
+            }
+        } else {
+            error!("No storage gRPC client available");
+            Err(crate::Error::Storage(
+                "Storage client not available".to_string(),
+            ))
+        }
+    }
+
+    pub async fn storage_get<R: Runtime>(
+        &mut self,
+        app: &AppHandle<R>,
+        collection: String,
+        id: String,
+    ) -> Result<GrpcGetResponse> {
+        if !self.is_running {
+            info!("Sidecar not running, starting it first");
+            self.start(app).await?;
+        }
+
+        if let Some(client) = &mut self.storage_client {
+            debug!(
+                "Sending get request for collection='{}', id='{}'",
+                collection, id
+            );
+
+            let request = Request::new(GrpcGetRequest { collection, id });
+
+            match timeout(Duration::from_secs(10), client.get(request)).await {
+                Ok(Ok(response)) => {
+                    let response = response.into_inner();
+                    info!("Get successful: found={}", response.found);
+                    Ok(response)
+                }
+                Ok(Err(e)) => {
+                    error!("Get failed: {}", e);
+                    Err(crate::Error::Storage(format!(
+                        "Get operation failed: {}",
+                        e
+                    )))
+                }
+                Err(_) => {
+                    error!("Get timed out after 10 seconds");
+                    Err(crate::Error::Storage("Get operation timed out".to_string()))
+                }
+            }
+        } else {
+            error!("No storage gRPC client available");
+            Err(crate::Error::Storage(
+                "Storage client not available".to_string(),
+            ))
+        }
+    }
+
+    pub async fn storage_delete<R: Runtime>(
+        &mut self,
+        app: &AppHandle<R>,
+        collection: String,
+        id: String,
+    ) -> Result<GrpcDeleteResponse> {
+        if !self.is_running {
+            info!("Sidecar not running, starting it first");
+            self.start(app).await?;
+        }
+
+        if let Some(client) = &mut self.storage_client {
+            debug!(
+                "Sending delete request: collection='{}', id='{}'",
+                collection, id
+            );
+
+            let request = Request::new(GrpcDeleteRequest { collection, id });
+
+            match timeout(Duration::from_secs(10), client.delete(request)).await {
+                Ok(Ok(response)) => {
+                    let response = response.into_inner();
+                    info!("Delete successful: existed={}", response.existed);
+                    Ok(response)
+                }
+                Ok(Err(e)) => {
+                    error!("Delete failed: {}", e);
+                    Err(crate::Error::Storage(format!(
+                        "Delete operation failed: {}",
+                        e
+                    )))
+                }
+                Err(_) => {
+                    error!("Delete timed out after 10 seconds");
+                    Err(crate::Error::Storage(
+                        "Delete operation timed out".to_string(),
+                    ))
+                }
+            }
+        } else {
+            error!("No storage gRPC client available");
+            Err(crate::Error::Storage(
+                "Storage client not available".to_string(),
+            ))
+        }
+    }
+
+    pub async fn storage_list<R: Runtime>(
+        &mut self,
+        app: &AppHandle<R>,
+        collection: String,
+    ) -> Result<GrpcListResponse> {
+        if !self.is_running {
+            info!("Sidecar not running, starting it first");
+            self.start(app).await?;
+        }
+
+        if let Some(client) = &mut self.storage_client {
+            debug!("Sending list request for collection='{}'", collection);
+
+            let request = Request::new(GrpcListRequest { collection });
+
+            match timeout(Duration::from_secs(10), client.list(request)).await {
+                Ok(Ok(response)) => {
+                    let response = response.into_inner();
+                    info!("List successful: {} documents found", response.ids.len());
+                    Ok(response)
+                }
+                Ok(Err(e)) => {
+                    error!("List failed: {}", e);
+                    Err(crate::Error::Storage(format!(
+                        "List operation failed: {}",
+                        e
+                    )))
+                }
+                Err(_) => {
+                    error!("List timed out after 10 seconds");
+                    Err(crate::Error::Storage(
+                        "List operation timed out".to_string(),
+                    ))
+                }
+            }
+        } else {
+            error!("No storage gRPC client available");
+            Err(crate::Error::Storage(
+                "Storage client not available".to_string(),
+            ))
+        }
+    }
 }
 
 /// Access to any-sync APIs.
@@ -258,6 +476,56 @@ impl<R: Runtime> AnySync<R> {
         Ok(PingResponse {
             value: Some(response.message),
         })
+    }
+
+    pub async fn storage_put(&self, payload: PutRequest) -> crate::Result<PutResponse> {
+        let mut manager = self.manager.write().await;
+        let response = manager
+            .storage_put(
+                &self.app,
+                payload.collection,
+                payload.id,
+                payload.document_json,
+            )
+            .await?;
+
+        Ok(PutResponse {
+            success: response.success,
+        })
+    }
+
+    pub async fn storage_get(&self, payload: GetRequest) -> crate::Result<GetResponse> {
+        let mut manager = self.manager.write().await;
+        let response = manager
+            .storage_get(&self.app, payload.collection, payload.id)
+            .await?;
+
+        Ok(GetResponse {
+            document_json: if response.found {
+                Some(response.document_json)
+            } else {
+                None
+            },
+            found: response.found,
+        })
+    }
+
+    pub async fn storage_delete(&self, payload: DeleteRequest) -> crate::Result<DeleteResponse> {
+        let mut manager = self.manager.write().await;
+        let response = manager
+            .storage_delete(&self.app, payload.collection, payload.id)
+            .await?;
+
+        Ok(DeleteResponse {
+            existed: response.existed,
+        })
+    }
+
+    pub async fn storage_list(&self, payload: ListRequest) -> crate::Result<ListResponse> {
+        let mut manager = self.manager.write().await;
+        let response = manager.storage_list(&self.app, payload.collection).await?;
+
+        Ok(ListResponse { ids: response.ids })
     }
 }
 

@@ -38,7 +38,13 @@ impl<R: Runtime, T: Manager<R>> crate::AnySyncExt<R> for T {
 /// Initializes the plugin.
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("any-sync")
-        .invoke_handler(tauri::generate_handler![commands::ping])
+        .invoke_handler(tauri::generate_handler![
+            commands::ping,
+            commands::storage_put,
+            commands::storage_get,
+            commands::storage_delete,
+            commands::storage_list
+        ])
         .setup(|app, api| {
             log::debug!("Initializing any-sync plugin");
 

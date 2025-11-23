@@ -30,3 +30,6 @@ opencode.json*
 /.opencode/**/openspec-*.md
 /.github/prompts/openspec-*.md
 /.claude/commands/openspec/*.md
+
+# local MCP
+/.*mcp*

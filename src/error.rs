@@ -6,6 +6,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     #[error(transparent)]
     Io(#[from] std::io::Error),
+    #[error("Storage error: {0}")]
+    Storage(String),
     #[cfg(mobile)]
     #[error(transparent)]
     PluginInvoke(#[from] tauri::plugin::mobile::PluginInvokeError),

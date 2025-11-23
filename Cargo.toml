@@ -1,13 +1,13 @@
 [package]
 name = "tauri-plugin-any-sync"
 version = "0.1.0"
-authors = [ "Alexey Alekhin <laughedelic@gmail.com>" ]
+authors = ["Alexey Alekhin <laughedelic@gmail.com>"]
 description = ""
 edition = "2021"
 rust-version = "1.77.2"
-exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules"]
-include = ["src/**/*", "src-tauri/**/*", "build.rs", "build-go-backend.sh", "binaries/**/*"]
-links = "tauri_plugin_any_sync"
+exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules", "/binaries"]
+include = ["src/**/*", "src-tauri/**/*", "build.rs", "build-go-backend.sh"]
+links = "tauri-plugin-any-sync"
 
 [features]
 x86_64-apple-darwin = []

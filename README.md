@@ -314,7 +314,110 @@ ANY_SYNC_GO_BINARIES_DIR = { value = "/absolute/path/to/binaries", force = true 
 
 ## Usage
 
-### Basic API
+### Storage API (CRUD Operations)
+
+The plugin provides a complete CRUD (Create, Read, Update, Delete) API for local document storage using AnyStore. Documents are organized into collections (similar to MongoDB collections or SQL tables) and stored as JSON objects.
+
+```typescript
+import { storagePut, storageGet, storageDelete, storageList } from 'tauri-plugin-any-sync-api'
+
+// Store a document (create or update)
+await storagePut('users', 'user123', {
+  name: 'Alice',
+  email: 'alice@example.com',
+  created: new Date().toISOString()
+})
+
+// Retrieve a document by ID
+const user = await storageGet('users', 'user123')
+if (user) {
+  console.log(user.name) // "Alice"
+} else {
+  console.log('User not found')
+}
+
+// Delete a document
+const existed = await storageDelete('users', 'user123')
+if (existed) {
+  console.log('User was deleted')
+} else {
+  console.log('User did not exist')
+}
+
+// List all document IDs in a collection
+const userIds = await storageList('users')
+console.log(`Found ${userIds.length} users:`, userIds)
+// ["user123", "user456", ...]
+```
+
+#### Storage API Details
+
+**`storagePut(collection: string, id: string, document: any): Promise<void>`**
+- Stores or updates a document in the specified collection
+- Document is automatically JSON-serialized
+- Creates collection if it doesn't exist
+- Throws error if document cannot be serialized or stored
+
+**`storageGet(collection: string, id: string): Promise<any | null>`**
+- Retrieves a document by ID from the specified collection
+- Returns parsed JavaScript object or `null` if not found
+- Throws error if document cannot be retrieved or parsed
+
+**`storageDelete(collection: string, id: string): Promise<boolean>`**
+- Deletes a document from the specified collection
+- Returns `true` if document existed and was deleted, `false` if it didn't exist
+- Operation is idempotent - deleting non-existent documents succeeds without error
+- Throws error only on database or connection failures
+
+**`storageList(collection: string): Promise<string[]>`**
+- Lists all document IDs in the specified collection
+- Returns empty array if collection doesn't exist or is empty
+- Throws error if collection cannot be listed
+
+#### Error Handling
+
+```typescript
+try {
+  await storagePut('users', 'user123', { name: 'Alice' })
+  console.log('Document stored successfully')
+} catch (error) {
+  console.error('Storage operation failed:', error)
+}
+```
+
+#### Complete CRUD Example
+
+```typescript
+// Create: Store a new document
+await storagePut('notes', 'note1', {
+  title: 'Meeting Notes',
+  content: 'Discussed project roadmap',
+  tags: ['work', 'important'],
+  created: '2025-11-23'
+})
+
+// Read: Retrieve the document
+const note = await storageGet('notes', 'note1')
+console.log(note.title) // "Meeting Notes"
+
+// Update: Modify and store again
+note.tags.push('archived')
+await storagePut('notes', 'note1', note)
+
+// Delete: Remove the document
+const existed = await storageDelete('notes', 'note1')
+console.log(existed) // true
+
+// Verify deletion
+const deletedNote = await storageGet('notes', 'note1')
+console.log(deletedNote) // null
+
+// List remaining documents
+const noteIds = await storageList('notes')
+console.log(noteIds) // []
+```
+
+### Health Check API
 
 ```typescript
 import { ping } from 'tauri-plugin-any-sync-api'
@@ -322,11 +425,7 @@ import { ping } from 'tauri-plugin-any-sync-api'
 // Ping the Go backend
 const response = await ping('Hello from TypeScript!')
 console.log(response) // "Echo: Hello from TypeScript!"
-```
 
-### Advanced Usage
-
-```typescript
 // Error handling
 try {
   const response = await ping('test message')
@@ -334,9 +433,6 @@ try {
 } catch (error) {
   console.error('Ping failed:', error)
 }
-
-// With custom message
-const response = await ping('Custom message')
 ```
 
 ## Configuration
@@ -384,6 +480,40 @@ cargo test
 
 ## Architecture Details
 
+### AnyStore Integration
+
+The plugin uses [AnyStore](https://github.com/anyproto/any-store) for local document storage. AnyStore provides:
+
+- **Document-oriented database** with MongoDB-style API
+- **SQLite backend** for reliable local persistence
+- **Schema-less storage** with flexible JSON documents
+- **Collection-based organization** for logical grouping
+
+**Storage Architecture**:
+1. **TypeScript Layer**: JSON serialization/deserialization
+2. **Rust Layer**: Command routing and error handling
+3. **gRPC Layer**: Type-safe protocol buffer communication
+4. **Go Layer**: Storage wrapper abstracting AnyStore types
+5. **AnyStore**: SQLite-backed document storage
+
+**Data Flow** (Storage Put Example):
+```
+TypeScript: storagePut('users', 'user123', {name: 'Alice'})
+    ↓ JSON.stringify()
+Rust: storage_put command with JSON string
+    ↓ gRPC StorageService.Put()
+Go: Parse JSON → AnyStore anyenc.Value
+    ↓ db.Collection().Put()
+AnyStore: Store in SQLite database
+```
+
+**Key Design Decisions**:
+- Documents stored as JSON strings for maximum flexibility
+- Collections created automatically on first use
+- Single database instance per application
+- Desktop-only for Phase 1 (mobile support planned)
+- Local storage only (no sync capabilities yet)
+
 ### Communication Flow
 
 ```mermaid
@@ -393,7 +523,19 @@ sequenceDiagram
     participant RS as Tauri Plugin (Rust)
     participant GO as Any-Sync Backend (Go)
     
-    Note over UI,GO: Ping Request (Normal Flow)
+    Note over UI,GO: Storage Put Request (CRUD Flow)
+    UI->>TS: storagePut('users', 'user123', {name: 'Alice'})
+    TS->>TS: JSON.stringify(document)
+    TS->>RS: Tauri invoke('plugin:any-sync|storage_put')
+    RS->>RS: Spawn sidecar if needed
+    RS->>GO: gRPC StorageService.Put(collection, id, json)
+    GO->>GO: Parse JSON → AnyStore value
+    GO->>GO: Store in SQLite via AnyStore
+    GO->>RS: gRPC PutResponse {success: true}
+    RS->>TS: Rust response
+    TS->>UI: Promise resolved
+    
+    Note over UI,GO: Health Check Flow
     UI->>TS: ping("Hello from UI")
     TS->>RS: Tauri invoke('plugin:any-sync|ping', {message})
     RS->>RS: Create gRPC client (reuse connection)

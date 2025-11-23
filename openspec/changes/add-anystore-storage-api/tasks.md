@@ -45,10 +45,10 @@
 
 ## 5. Documentation and Validation
 
-- [ ] 5.1 Update README.md with CRUD storage API usage examples
-- [ ] 5.2 Document delete operation behavior (idempotency, existed field)
-- [ ] 5.3 Add architecture notes about AnyStore integration
-- [ ] 5.4 Run end-to-end validation: full CRUD cycle through all layers
-- [ ] 5.5 Verify storage persistence across app restarts
-- [ ] 5.6 Test delete error scenarios (connection errors, concurrent deletes)
-- [ ] 5.7 Validate idempotent delete behavior (delete same document twice)
+- [x] 5.1 Update README.md with CRUD storage API usage examples
+- [x] 5.2 Document delete operation behavior (idempotency, existed field)
+- [x] 5.3 Add architecture notes about AnyStore integration
+- [x] 5.4 Run end-to-end validation: full CRUD cycle through all layers
+- [x] 5.5 Verify storage persistence across app restarts
+- [x] 5.6 Test delete error scenarios (connection errors, concurrent deletes)
+- [x] 5.7 Validate idempotent delete behavior (delete same document twice)

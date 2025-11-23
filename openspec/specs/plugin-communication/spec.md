@@ -1,6 +1,9 @@
 # Plugin Communication Specification
 
-## ADDED Requirements
+## Purpose
+Enables type-safe communication between TypeScript frontend, Rust plugin, and Go backend via gRPC with proper serialization and error handling.
+
+## Requirements
 
 ### Requirement: TypeScript Command Integration
 The plugin SHALL route TypeScript commands through the Rust plugin to the Go backend via gRPC.
@@ -44,8 +47,6 @@ Given the communication crosses language boundaries
 When defining the API
 Then all messages should have strongly typed definitions in TypeScript, Rust, and Go
 
-## MODIFIED Requirements
-
 ### Requirement: Command Handler
 The existing ping command SHALL route through the desktop integration layer to the Go backend.
 #### Scenario:
@@ -59,7 +60,3 @@ The existing models.rs SHALL include Protocol Buffer message types and conversio
 Given the existing models.rs file
 When adding gRPC communication
 Then it should include Protocol Buffer message types and conversion logic
-
-## REMOVED Requirements
-
-None

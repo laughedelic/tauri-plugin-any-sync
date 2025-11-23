@@ -40,6 +40,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("any-sync")
         .invoke_handler(tauri::generate_handler![commands::ping])
         .setup(|app, api| {
+            log::debug!("Initializing any-sync plugin");
+
             // Initialize shell plugin for sidecar support
             #[cfg(desktop)]
             let _shell = app.shell();
@@ -49,6 +51,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             #[cfg(desktop)]
             let any_sync = desktop::init(app, api)?;
             app.manage(any_sync);
+
+            log::debug!("any-sync plugin initialized successfully");
             Ok(())
         })
         .build()

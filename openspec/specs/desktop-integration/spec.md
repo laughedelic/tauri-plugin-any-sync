@@ -1,7 +1,8 @@
 # Desktop Integration Specification
 
-## ADDED Requirements
-
+## Purpose
+Manages the Go backend as a sidecar process on desktop platforms with health monitoring, gRPC communication, and graceful lifecycle management.
+## Requirements
 ### Requirement: Sidecar Process Spawning
 The plugin SHALL spawn the Go backend as a separate process with proper lifecycle management.
 #### Scenario:
@@ -51,8 +52,6 @@ Given the sidecar process fails to start or crashes
 When errors occur during process management
 Then they should be properly propagated to the TypeScript layer with meaningful error messages
 
-## MODIFIED Requirements
-
 ### Requirement: Plugin Initialization
 The existing plugin setup SHALL include sidecar process initialization and gRPC client creation.
 #### Scenario:
@@ -61,18 +60,26 @@ When: adding desktop integration
 Then: the setup should include sidecar process initialization and gRPC client creation
 
 ### Requirement: Binary Distribution Strategy
-The plugin SHALL use pre-compiled Go binaries distributed within the plugin crate for desktop platforms.
-#### Scenario:
-Given: plugin needs to support desktop platforms (Windows, macOS, Linux)
-When: users install the plugin
-Then: the plugin should include all necessary platform binaries that are automatically bundled by Tauri
+The plugin SHALL use automated binary downloads from GitHub Releases via Cargo links for desktop platforms.
+#### Scenario: Automated binary provisioning
+- **WHEN** users install the plugin in their Tauri application
+- **THEN** the plugin's build script automatically downloads platform-specific binaries from GitHub Releases
+- **AND** propagates binary locations via Cargo environment variables
+- **AND** consumers link binaries to their src-tauri/binaries/ directory using build scripts (symlink on Unix, copy on Windows)
+
+#### Scenario: Feature-based platform selection
+- **WHEN** consumers configure plugin dependency features in Cargo.toml
+- **THEN** only binaries for selected platforms are downloaded
+- **AND** reduces download size and build time for single-platform projects
 
 ### Requirement: User Configuration Requirements
-The plugin SHALL require one-time externalBin configuration for desktop platforms only.
-#### Scenario:
-Given: developer wants to use the plugin on desktop
-When: they install the plugin
-Then: they should add externalBin configuration to their app's tauri.conf.json and copy binaries to the correct location
+The plugin SHALL require consumers to add a build script for binary copying on desktop platforms.
+#### Scenario: Consumer build script setup
+- **WHEN** developers install the plugin for desktop usage
+- **THEN** they add a build.rs file that reads DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR
+- **AND** copies binaries to src-tauri/binaries/ with proper naming
+- **AND** configures externalBin in tauri.conf.json (unchanged from previous approach)
+- **AND** configures shell permissions in capabilities (unchanged from previous approach)
 
 ### Requirement: Mobile Zero Configuration
 The plugin SHALL require zero additional configuration for mobile platforms using gomobile.
@@ -82,11 +89,13 @@ When: they install the plugin
 Then: it should work immediately without any sidecar configuration
 
 ### Requirement: Installation Documentation
-The plugin SHALL provide clear platform-specific installation instructions.
-#### Scenario:
-Given: developer installs the plugin for desktop usage
-When: they read the documentation
-Then: they should find step-by-step instructions for externalBin configuration and binary setup
+The plugin SHALL provide clear examples of consumer build scripts for automated binary setup.
+#### Scenario: Documented consumer setup
+- **WHEN** developers read the installation documentation
+- **THEN** they find copy-paste ready build.rs examples
+- **AND** understand how to configure Cargo features for their target platforms
+- **AND** see step-by-step instructions for externalBin and permissions configuration
+- **AND** have troubleshooting guidance for download failures
 
 ### Requirement: Binary Discovery Enhancement
 The plugin SHALL enhance binary discovery to work with Tauri's sidecar naming conventions.
@@ -94,7 +103,3 @@ The plugin SHALL enhance binary discovery to work with Tauri's sidecar naming co
 Given: Tauri expects binaries with target-triple suffixes
 When: the plugin searches for Go backend binary
 Then: it should find the correct platform-specific binary in the expected location
-
-## REMOVED Requirements
-
-None

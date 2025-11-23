@@ -106,17 +106,115 @@ bun run tauri dev
 
 ## Build System Integration
 
+### Binary Distribution Architecture
+
+The plugin uses an automated binary distribution system with two distinct modes:
+
+**Consumer/CI Mode (Production)**:
+- Plugin downloads pre-compiled Go binaries from GitHub Releases
+- Binaries are verified using SHA256 checksums
+- Consumer's `build.rs` copies binaries to `src-tauri/binaries/`
+- Enabled via Cargo features (e.g., `features = ["all"]` or `["macos"]`)
+
+**Local Development Mode**:
+- Set `ANY_SYNC_GO_BINARIES_DIR` environment variable to local binaries path
+- Plugin copies binaries from local directory instead of downloading
+- Allows developers to test Go backend changes immediately
+- No network dependency for development workflows
+
+### Build Flow
+
+**Plugin Build** (`build.rs`):
+1. Check for `ANY_SYNC_GO_BINARIES_DIR` environment variable
+2. **If set** (development mode):
+   - Copy binaries from local path to `OUT_DIR/binaries/`
+   - Emit warning message
+3. **If not set** (consumer/CI mode):
+   - Determine enabled features (e.g., `macos`, `windows`)
+   - Download binaries from GitHub Releases for plugin version
+   - Download and parse `checksums.txt` from release assets
+   - Verify SHA256 checksums for each binary
+   - Store verified binaries in `OUT_DIR/binaries/`
+   - Fail build with clear error if download or verification fails
+4. Emit `cargo:binaries_dir=<path>` for consumer propagation (both modes)
+
+**Note**: In development mode, symlinks are used instead of copying to save disk space and improve build times. On Windows, files are copied as a fallback since symlinks require admin privileges.
+
+**Consumer Build** (`build.rs` in consuming app):
+1. Read `DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR` environment variable from plugin
+2. Create symlink to binaries directory (or copy on Windows) at `src-tauri/binaries/`
+3. Configure `externalBin` in `tauri.conf.json` to bundle binaries
+4. Add `.taurignore` to prevent rebuild loops from file watcher
+
+### Cargo Configuration
+
+**Features** (select which platforms to download):
+- Individual targets: `x86_64-apple-darwin`, `aarch64-apple-darwin`, `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-pc-windows-msvc`
+- Platform groups: `macos`, `linux`, `windows`
+- All: `all`
+
+**Links** (`links = "tauri-plugin-any-sync"`):
+- Enables metadata propagation via environment variables
+- Allows consumer `build.rs` to receive `DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR`
+
+### Development Workflow
+
+1. **Edit Go backend code**:
+   ```bash
+   # Edit files in go-backend/
+   vim go-backend/cmd/server/main.go
+   ```
+
+2. **Build binaries locally**:
+   ```bash
+   ./build-go-backend.sh
+   # or for all platforms:
+   ./build-go-backend.sh --cross
+   ```
+
+3. **Set environment variable**:
+   ```bash
+   # One-off
+   export ANY_SYNC_GO_BINARIES_DIR=./binaries
+   
+   # Or persistent in .cargo/config.toml:
+   [env]
+   ANY_SYNC_GO_BINARIES_DIR = { value = "/path/to/binaries", force = true }
+   ```
+
+4. **Build plugin**:
+   ```bash
+   cargo build
+   # Plugin will use local binaries instead of downloading
+   ```
+
+### Release Workflow
+
+1. **Bump version** in `Cargo.toml`
+2. **Create Git tag**: `git tag v0.2.0`
+3. **Push tag**: `git push origin v0.2.0`
+4. **GitHub Actions triggers** `.github/workflows/release.yml`:
+   - Builds Go binaries for all platforms (`./build-go-backend.sh --cross`)
+   - Generates SHA256 checksums
+   - Creates GitHub Release
+   - Uploads binaries + `checksums.txt`
+5. **Consumers update** dependency version
+6. **Plugin downloads** matching binaries on next `cargo build`
+
 ### Automated Build Process
+
 1. **Rust Build**: `cargo build` triggers `build.rs`
-2. **Go Backend**: `build.rs` calls `./build-go-backend.sh`
+2. **Plugin build.rs**: Downloads or uses local binaries (depending on env var)
 3. **Protobuf**: Both Go and Rust code generated from same `.proto` file
-4. **Binaries**: Output to `binaries/` directory
-5. **Package**: All components packaged together
+4. **Binaries**: Output to `OUT_DIR/binaries/` (not committed)
+5. **Consumer build.rs**: Copies to `src-tauri/binaries/` via metadata propagation
 
 ### Cross-Platform Support
-- **macOS**: `server-darwin-arm64`, `server-darwin-amd64`
-- **Linux**: `server-linux-amd64`, `server-linux-arm64`
-- **Windows**: `server-windows-amd64.exe`
+
+**Available Platforms**:
+- **macOS**: `any-sync-x86_64-apple-darwin` (Intel), `any-sync-aarch64-apple-darwin` (Apple Silicon)
+- **Linux**: `any-sync-x86_64-unknown-linux-gnu` (x64), `any-sync-aarch64-unknown-linux-gnu` (ARM64)
+- **Windows**: `any-sync-x86_64-pc-windows-msvc` (x64)
 
 ## Communication Flow
 
@@ -217,7 +315,7 @@ cargo install cargo-audit
 export ANY_SYNC_LOG_LEVEL=debug
 
 # Check Go backend logs
-./binaries/server --port 8080
+./binaries/any-sync-aarch64-apple-darwin --port 8080
 
 # Check Rust plugin logs
 RUST_LOG=debug cargo run

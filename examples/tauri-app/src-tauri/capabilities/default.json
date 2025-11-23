@@ -12,7 +12,7 @@
       "identifier": "shell:allow-execute",
       "allow": [
         {
-          "name": "binaries/server",
+          "name": "binaries/any-sync",
           "sidecar": true
         }
       ]

@@ -31,6 +31,8 @@ The example app demonstrates the complete any-sync plugin integration:
 
 ### 2. End-to-End Testing
 
+Use tauri-webdriver MCP server tools to run the application and interact with it.
+
 Test the complete communication flow:
 
 1. **UI Layer**: Svelte component calls `ping()` function
@@ -171,7 +173,7 @@ killall server
    **Solution**: 
    - Check Go installation: `go version`
    - Verify binary exists: `ls ../binaries/`
-   - Check permissions: `chmod +x ../binaries/server`
+   - Check permissions: `chmod +x ../binaries/any-sync-aarch64-apple-darwin`
 
 3. **gRPC Connection Failed**
    ```
@@ -210,7 +212,7 @@ bun run tauri dev
 
 # Go backend logs only
 export ANY_SYNC_LOG_LEVEL=debug
-./binaries/server --port 8080
+./binaries/any-sync-aarch64-apple-darwin --port 8080
 
 # Check sidecar process
 ps aux | grep "[s]erver"

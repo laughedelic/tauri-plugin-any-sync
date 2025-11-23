@@ -10,20 +10,23 @@ yarn.lock
 
 /.tauri
 /target
-Cargo.lock
 node_modules/
+.cargo/
 
 dist-js
 dist
 
 # Go backend binaries (source)
 /binaries/
-/binaries/*.exe
-/binaries/server*
-/binaries/*-*
 
 # Plugin binaries (for distribution)
 /src-tauri/binaries/
-/src-tauri/binaries/*.exe
-/src-tauri/binaries/server*
-/src-tauri/binaries/*-*
+
+# Generated protobuf code
+/src/proto/anysync.rs
+
+# OpenSpec prompts
+opencode.json*
+/.opencode/**/openspec-*.md
+/.github/prompts/openspec-*.md
+/.claude/commands/openspec/*.md

@@ -81,7 +81,7 @@ generate_proto() {
 # Build for a specific target
 build_target() {
     local target=$1
-    local output_name=$2
+    local output_name=${2:-any-sync-$1}
     
     print_status "Building for target: $target"
     
@@ -136,22 +136,23 @@ main() {
     # Generate protobuf code
     generate_proto
     
-    # Build for current platform first
-    print_status "Building for current platform..."
-    cd go-backend
-    mkdir -p ../binaries
-    go build -o "../binaries/server" ./cmd/server
-    cd ..
-    
     # Build for common platforms if cross-compilation is requested
     if [[ "$1" == "--cross" ]]; then
         print_status "Cross-compiling for multiple platforms..."
+        rm -f binaries/*
         
-        build_target "x86_64-apple-darwin" "server-x86_64-apple-darwin"
-        build_target "aarch64-apple-darwin" "server-aarch64-apple-darwin"
-        build_target "x86_64-unknown-linux-gnu" "server-x86_64-unknown-linux-gnu"
-        build_target "aarch64-unknown-linux-gnu" "server-aarch64-unknown-linux-gnu"
-        build_target "x86_64-pc-windows-msvc" "server-x86_64-pc-windows-msvc"
+        build_target "x86_64-apple-darwin"
+        build_target "aarch64-apple-darwin"
+        build_target "x86_64-unknown-linux-gnu"
+        build_target "aarch64-unknown-linux-gnu"
+        build_target "x86_64-pc-windows-msvc"
+    elif [[ -n "$1" ]]; then
+        print_status "Building for specified target: $1"
+        build_target "$1"
+    else
+        HOST_TARGET=$(rustc -Vv | grep host | cut -f2 -d' ')
+        print_status "Building for host platform: $HOST_TARGET"
+        build_target "$HOST_TARGET"
     fi
     
     print_status "Build process completed successfully!"

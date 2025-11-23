@@ -75,72 +75,154 @@ graph LR
 
 ### Installation
 
-#### For Plugin Users
+The plugin automatically downloads pre-compiled Go backend binaries from GitHub Releases. This is the easiest way to integrate the plugin.
 
 1. **Add the plugin to your Tauri app:**
+
    ```bash
    tauri add tauri-plugin-any-sync
    ```
 
-2. **Download or copy sidecar binaries:**
+2. **Select platform features** in your `src-tauri/Cargo.toml`:
+
+   For macOS + Linux + Windows (all platforms):
    
-   The plugin requires Go backend binaries to be placed in your app's `src-tauri/binaries/` directory. Download the correct binary for your platform from the [GitHub Releases](https://github.com/tauri-apps/tauri-plugin-any-sync/releases) and place it in `src-tauri/binaries/`:
+   ```toml
+   [dependencies]
+   tauri-plugin-any-sync = { version = "0.1", features = ["all"] }
+   ```
+   
+   Or
+   
+   ```toml
+   tauri-plugin-any-sync = { version = "0.1", features = ["macos", "linux"] }
+   ```
+   
+   Or for specific platforms:
+
+   ```toml
+   tauri-plugin-any-sync = { version = "0.1", features = ["x86_64-apple-darwin", "aarch64-apple-darwin"] }
+   ```
+
+   **Available Features:**
+   - Platform-specific: `x86_64-apple-darwin`, `aarch64-apple-darwin`, `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-pc-windows-msvc` (based on `$TARGET_TRIPLE`)
+   - Platform groups: `macos`, `linux`, `windows`
+   - All platforms: `all`
+
+3. **Update `src-tauri/build.rs` script** to link binaries directory:
+
+   ```rust
+   use std::{env, fs, path::Path};
+   
+   fn main() {
+       // Link binaries directory from plugin
+       if let Ok(binaries_dir) = env::var("DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR") {
+           let dest_dir = Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap()).join("binaries");
+           let _ = fs::remove_dir_all(&dest_dir).or_else(|_| fs::remove_file(&dest_dir));
+           let source = Path::new(&binaries_dir).canonicalize().unwrap();
+           
+           #[cfg(unix)]
+           std::os::unix::fs::symlink(&source, &dest_dir).unwrap();
+           
+           #[cfg(windows)]
+           {
+               fs::create_dir_all(&dest_dir).unwrap();
+               for entry in fs::read_dir(&source).unwrap().flatten() {
+                   if entry.path().is_file() {
+                       fs::copy(&entry.path(), dest_dir.join(entry.file_name())).unwrap();
+                   }
+               }
+           }
+       }
+       
+       tauri_build::build()
+   }
+   ```
+
+4. **Create `.taurignore` file** in `src-tauri/` to prevent rebuild loops:
+
+   ```
+   binaries/
+   ```
+
+5. **Add sidecar binary to Tauri config** in `src-tauri/tauri.conf.json`:
+
+   ```json
+   {
+     "bundle": {
+       "externalBin": ["binaries/any-sync"]
+     }
+   }
+   ```
+   
+   Tauri will automatically select the right binaries for the plaforms you are targeting and bundle the binary.
+
+5. **Add permissions** for the sidecar in `src-tauri/capabilities/default.json`:
+
+   ```json
+   {
+     "permissions": [
+       "core:default",
+       "any-sync:default",
+       {
+         "identifier": "shell:allow-execute",
+         "allow": [
+           {
+             "name": "binaries/any-sync",
+             "sidecar": true
+           }
+         ]
+       }
+     ]
+   }
+   ```
+
+6. **Initialize the plugin** in your `src-tauri/src/lib.rs`:
+
+   ```rust
+   tauri::Builder::default()
+       .plugin(tauri_plugin_shell::init())
+       .plugin(tauri_plugin_any_sync::init())
+   ```
+
+7. **Build your app:**
 
    ```bash
-   # Create binaries directory
-   mkdir -p src-tauri/binaries
+   # Using Tauri CLI (recommended)
+   npm run tauri build
    
-   # Download the appropriate binaries for your target platform(s)
-   ```
-   
-   And add it to `.gitignore`:
-   
-   ```diff
-   +  /src-tauri/binaries/
-   ```
-
-3. Configure Tauri to bundle the sidecar binary in your `src-tauri/tauri.conf.json`:
-
-   ```diff
-     "bundle": {
-   +   "externalBin": ["src-tauri/binaries/server"]
-     }
-   ```
-
-4. Add permissions for the sidecar to your `src-tauri/capabilities/default.json`:
-
-   ```diff
-     {
-       "permissions": [
-         "core:default",
-   +     "any-sync:default",
-   +     {
-   +       "identifier": "shell:allow-execute",
-   +       "allow": [
-   +         {
-   +           "name": "binaries/server",
-   +           "sidecar": true
-   +         }
-   +       ]
-   +     }
-       ]
-     }
-   ```
-
-5. Initialize the plugin in your `src-tauri/src/lib.rs`:
-
-   ```diff
-     tauri::Builder::default()
-   +     .plugin(tauri_plugin_shell::init())
-   +     .plugin(tauri_plugin_any_sync::init())
+   # Or with cargo directly from src-tauri directory
+   cd src-tauri && cargo build
    ```
 
 ## Development
 
+### Local Development Setup
+
+When developing the plugin or backend locally, use the `ANY_SYNC_GO_BINARIES_DIR` environment variable to point to your locally-built binaries:
+
+1. **Build Go backend locally:**
+   ```bash
+   ./build-go-backend.sh
+   ```
+
+2. **Set environment variable (one-off):**
+   ```bash
+   export ANY_SYNC_GO_BINARIES_DIR=./binaries
+   cargo build
+   ```
+
+3. **Or configure persistently** via `.cargo/config.toml`:
+   ```toml
+   [env]
+   ANY_SYNC_GO_BINARIES_DIR = { value = "/absolute/path/to/binaries", force = true }
+   ```
+
 ### Go Backend Development
 
-Note: Go backend builds automacally via `cargo build` from the root. You can also build it with the provided script `./build-go-backend.sh`.
+The Go backend can be built locally in two ways:
 
+**Option 1: Manual build**
 ```bash
 cd go-backend
 
@@ -154,13 +236,35 @@ go run cmd/server --port 8080
 protoc --go_out=. --go-grpc_out=. api/proto/health.proto
 ```
 
+**Option 2: Using build script**
+```bash
+# Build for current platform
+./build-go-backend.sh
+
+# Build for all supported platforms (cross-compile)
+./build-go-backend.sh --cross
+```
+
 ### Rust Plugin Development
 
+For local development with your own Go binaries:
+
 ```bash
-# Build plugin
+# Build Go backend first
+./build-go-backend.sh
+
+# Set environment variable to use local binaries
+export ANY_SYNC_GO_BINARIES_DIR=./binaries
+
+# Build plugin from src-tauri directory (ensures features are applied)
+cd examples/tauri-app/src-tauri
 cargo build
 
-# Run tests
+# Or use Tauri CLI which handles build orchestration automatically
+cd examples/tauri-app
+npm run tauri dev  # or: tauri dev
+
+# Run tests (from root or src-tauri)
 cargo test
 
 # Check code
@@ -168,6 +272,14 @@ cargo clippy
 
 # Format code
 cargo fmt
+```
+
+**Important**: When building the plugin directly with `cargo build`, run it from the `src-tauri/` subdirectory to ensure Cargo.toml features are properly applied. The Tauri CLI (e.g., `tauri dev`, `tauri build`) automatically handles this.
+
+**Persistent configuration** via `.cargo/config.toml`:
+```toml
+[env]
+ANY_SYNC_GO_BINARIES_DIR = { value = "/absolute/path/to/binaries", force = true }
 ```
 
 ### TypeScript API Development
@@ -179,9 +291,25 @@ bun run build
 
 ### Example Application
 
+To run the example app, you need to set the environment variable for local binaries (since v0.1.0 release doesn't exist on GitHub yet):
+
 ```bash
+# Set environment variable
+export ANY_SYNC_GO_BINARIES_DIR=./binaries
+
+# Build Go backend first (if not already built)
+./build-go-backend.sh
+
+# Run example app
 cd examples/tauri-app
-tauri dev
+npm run tauri dev
+```
+
+Or configure persistently in `.cargo/config.toml` at the project root:
+
+```toml
+[env]
+ANY_SYNC_GO_BINARIES_DIR = { value = "/absolute/path/to/binaries", force = true }
 ```
 
 ## Usage
@@ -215,13 +343,13 @@ const response = await ping('Custom message')
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|-----------|----------|-------------|
-| `ANY_SYNC_HOST` | localhost | Server bind address |
-| `ANY_SYNC_PORT` | 0 (random) | Server port |
-| `ANY_SYNC_LOG_LEVEL` | info | Logging level |
-| `ANY_SYNC_LOG_FORMAT` | json | Log format |
-| `ANY_SYNC_HEALTH_CHECK_INTERVAL` | 30 | Health check interval (seconds) |
+| Variable                         | Default    | Description                     |
+| -------------------------------- | ---------- | ------------------------------- |
+| `ANY_SYNC_HOST`                  | localhost  | Server bind address             |
+| `ANY_SYNC_PORT`                  | 0 (random) | Server port                     |
+| `ANY_SYNC_LOG_LEVEL`             | info       | Logging level                   |
+| `ANY_SYNC_LOG_FORMAT`            | json       | Log format                      |
+| `ANY_SYNC_HEALTH_CHECK_INTERVAL` | 30         | Health check interval (seconds) |
 
 ## Testing
 
@@ -239,7 +367,7 @@ cargo test
 
 1. **Start Go server manually**:
    ```bash
-   ./binaries/server --port 8080
+   ./binaries/any-sync --port 8080
    ```
 
 2. **Test gRPC directly**:
@@ -309,6 +437,42 @@ sequenceDiagram
 
 ## Troubleshooting
 
+### Binary Distribution Issues
+
+**Download failures**:
+```bash
+# If downloads fail, check GitHub connectivity
+curl -I https://github.com/sst/tauri-plugin-any-sync/releases
+
+# Use local binaries as workaround
+export ANY_SYNC_GO_BINARIES_DIR=./binaries
+./build-go-backend.sh
+cargo build
+```
+
+**Checksum verification failures**:
+- Indicates corrupted download or network issue
+- Solution: Delete Cargo cache and rebuild
+```bash
+rm -rf target/
+cargo build
+```
+
+**Invalid local binaries path**:
+```bash
+# Verify path exists and contains binaries
+ls -la ./binaries/
+
+# If missing, build them
+./build-go-backend.sh
+```
+
+**Feature selection guidance**:
+- For single-platform development: Use specific target feature (e.g., `x86_64-apple-darwin`)
+- For desktop apps: Use `macos`, `linux`, `windows`
+- For distribution to multiple platforms: Use `all`
+- For offline builds: Use `ANY_SYNC_GO_BINARIES_DIR` environment variable
+
 ### Common Issues
 
 #### Build Problems
@@ -341,7 +505,7 @@ pkg-config --list-all | grep -i libffi
 ```bash
 # Check binary permissions
 ls -la binaries/
-chmod +x binaries/server
+chmod +x binaries/any-sync
 
 # Verify Go installation
 go version
@@ -353,7 +517,7 @@ netstat -an | grep LISTEN
 **gRPC connection failed**:
 ```bash
 # Test server directly
-./binaries/server --port 8080
+./binaries/any-sync --port 8080
 
 # Check network connectivity
 telnet localhost 8080
@@ -382,14 +546,14 @@ export RUST_LOG=debug
 export ANY_SYNC_LOG_LEVEL=debug
 
 # Start with verbose output
-./binaries/server --port 8080 -v
+./binaries/any-sync --port 8080 -v
 ```
 
 ### Getting Help
 
 ```bash
 # Get help for Go server
-./binaries/server --help
+./binaries/any-sync --help
 
 # Check plugin commands
 cd examples/tauri-app

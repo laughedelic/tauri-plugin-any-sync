@@ -242,6 +242,23 @@ go run test_client.go
 
 ## Dependencies
 
+### Managing Dependencies
+
+**Always use native Go tools to manage dependencies:**
+
+```bash
+# Add a new dependency (automatically updates go.mod and go.sum)
+go get github.com/anyproto/any-store@latest
+
+# Remove unused dependencies and download missing ones
+go mod tidy
+
+# Verify dependencies
+go mod verify
+```
+
+**Never manually edit go.mod or go.sum** - let Go tooling handle version resolution and checksums.
+
 ### Core Dependencies
 
 - `google.golang.org/grpc` - gRPC framework

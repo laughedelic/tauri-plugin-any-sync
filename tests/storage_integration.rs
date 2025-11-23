@@ -84,14 +84,19 @@ fn test_list_response_structure() {
 }
 
 #[test]
-fn test_json_document_validation() {
-    // Valid JSON
+fn test_json_document_strings() {
+    // Test that PutRequest accepts various JSON string formats
+    // Note: Actual JSON validation happens in the Go backend
+
+    // Simple JSON object
     let request = PutRequest {
         collection: "users".to_string(),
         id: "user1".to_string(),
         document_json: r#"{"name": "Alice", "age": 30}"#.to_string(),
     };
-    assert!(request.document_json.contains("Alice"));
+    assert!(!request.document_json.is_empty());
+    assert!(request.document_json.starts_with('{'));
+    assert!(request.document_json.ends_with('}'));
 
     // Empty JSON object
     let request = PutRequest {
@@ -100,4 +105,21 @@ fn test_json_document_validation() {
         document_json: "{}".to_string(),
     };
     assert_eq!(request.document_json, "{}");
+
+    // Complex nested JSON
+    let request = PutRequest {
+        collection: "config".to_string(),
+        id: "app1".to_string(),
+        document_json: r#"{"user": {"name": "Bob", "settings": {"theme": "dark"}}}"#.to_string(),
+    };
+    assert!(request.document_json.contains("theme"));
+
+    // JSON array
+    let request = PutRequest {
+        collection: "items".to_string(),
+        id: "list1".to_string(),
+        document_json: r#"[1, 2, 3, 4, 5]"#.to_string(),
+    };
+    assert!(request.document_json.starts_with('['));
+    assert!(request.document_json.ends_with(']'));
 }

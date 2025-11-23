@@ -380,7 +380,10 @@ impl SidecarManager {
         }
 
         if let Some(client) = &mut self.storage_client {
-            debug!("Sending delete request: collection='{}', id='{}'", collection, id);
+            debug!(
+                "Sending delete request: collection='{}', id='{}'",
+                collection, id
+            );
 
             let request = Request::new(GrpcDeleteRequest { collection, id });
 
@@ -399,7 +402,9 @@ impl SidecarManager {
                 }
                 Err(_) => {
                     error!("Delete timed out after 10 seconds");
-                    Err(crate::Error::Storage("Delete operation timed out".to_string()))
+                    Err(crate::Error::Storage(
+                        "Delete operation timed out".to_string(),
+                    ))
                 }
             }
         } else {

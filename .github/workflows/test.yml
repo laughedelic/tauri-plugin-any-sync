@@ -37,4 +37,5 @@ jobs:
       - name: Run tests
         env:
           RUSTFLAGS: -D warnings
+          ANY_SYNC_GO_BINARIES_DIR: ./binaries
         run: cargo test --all-targets --all-features

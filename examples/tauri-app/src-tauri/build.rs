@@ -4,7 +4,7 @@ use std::path::Path;
 
 fn main() {
     // Copy binaries from plugin
-    if let Ok(binaries_dir) = env::var("DEP_ANY_SYNC_GO_BINARIES_DIR") {
+    if let Ok(binaries_dir) = env::var("DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR") {
         println!(
             "cargo:warning=Copying binaries from plugin output directory: {}",
             binaries_dir

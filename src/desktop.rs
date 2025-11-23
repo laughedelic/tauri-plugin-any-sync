@@ -1,3 +1,4 @@
+use log::{debug, error, info, warn};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -48,54 +49,82 @@ impl SidecarManager {
 
     async fn start<R: Runtime>(&mut self, app: &AppHandle<R>) -> Result<()> {
         if self.is_running {
+            info!("Sidecar already running, skipping startup");
             return Ok(());
         }
+
+        info!("Starting Go backend sidecar...");
 
         // Create a temporary file for port communication
         let port_file = tempfile::NamedTempFile::new()?;
         let port_file_path = port_file.path().to_str().unwrap();
+        debug!("Created port file: {}", port_file_path);
 
         // Start sidecar using Tauri shell plugin
-        // Tauri automatically finds server-{target-triple} in plugin's binaries/
-        let sidecar_command = app.shell().sidecar("server").map_err(|e| {
+        // Tauri automatically finds any-sync-{target-triple} in plugin's binaries/
+        debug!("Creating sidecar command for 'any-sync'");
+        let sidecar_command = app.shell().sidecar("any-sync").map_err(|e| {
+            error!("Failed to create sidecar command: {}", e);
             std::io::Error::other(format!("Failed to create sidecar command: {}", e))
         })?;
 
+        debug!("Spawning sidecar process...");
         let (_rx, child) = sidecar_command
             .env("ANY_SYNC_PORT_FILE", port_file_path)
             .spawn()
-            .map_err(|e| std::io::Error::other(format!("Failed to spawn sidecar: {}", e)))?;
+            .map_err(|e| {
+                error!("Failed to spawn sidecar: {}", e);
+                std::io::Error::other(format!("Failed to spawn sidecar: {}", e))
+            })?;
+        debug!("Sidecar process spawned successfully");
 
         // Wait for server to write port
+        debug!("Waiting for server to write port to file...");
         let port = self
             .wait_for_port(port_file_path, Duration::from_secs(10))
             .await?;
-
+        debug!("Server listening on port {}", port);
         // Connect to server
-        let endpoint = Endpoint::from_shared(format!("http://localhost:{}", port))
-            .map_err(|e| std::io::Error::other(format!("Invalid endpoint: {}", e)))?;
-        let channel = endpoint
-            .connect()
-            .await
-            .map_err(|e| std::io::Error::other(format!("Failed to connect: {}", e)))?;
+        debug!("Connecting to gRPC server at localhost:{}", port);
+        let endpoint =
+            Endpoint::from_shared(format!("http://localhost:{}", port)).map_err(|e| {
+                error!("Invalid endpoint: {}", e);
+                std::io::Error::other(format!("Invalid endpoint: {}", e))
+            })?;
+        let channel = endpoint.connect().await.map_err(|e| {
+            error!("Failed to connect to gRPC server: {}", e);
+            std::io::Error::other(format!("Failed to connect: {}", e))
+        })?;
         let mut client = HealthServiceClient::new(channel);
+        debug!("gRPC client created successfully");
 
         // Test the connection
+        debug!("Testing gRPC connection with health check...");
         self.test_connection(&mut client).await?;
+        debug!("Health check passed, sidecar is ready");
 
         self.child = Some(child);
         self.port = Some(port);
         self.client = Some(client);
         self.is_running = true;
 
+        info!("Sidecar startup complete");
         Ok(())
     }
 
     async fn wait_for_port(&self, port_file: &str, timeout_duration: Duration) -> Result<u16> {
         let start_time = tokio::time::Instant::now();
+        debug!(
+            "Waiting for port file with timeout of {:?}",
+            timeout_duration
+        );
 
         loop {
             if start_time.elapsed() > timeout_duration {
+                error!(
+                    "Timeout waiting for server to start after {:?}",
+                    timeout_duration
+                );
                 return Err(std::io::Error::new(
                     std::io::ErrorKind::TimedOut,
                     "Timeout waiting for server to start",
@@ -104,8 +133,12 @@ impl SidecarManager {
             }
 
             if let Ok(content) = tokio::fs::read_to_string(port_file).await {
+                debug!("Port file content: {}", content);
                 if let Ok(port) = content.trim().parse::<u16>() {
+                    info!("Successfully read port {} from file", port);
                     return Ok(port);
+                } else {
+                    warn!("Failed to parse port from file content: {}", content);
                 }
             }
 
@@ -115,38 +148,50 @@ impl SidecarManager {
 
     async fn test_connection(&mut self, client: &mut HealthServiceClient<Channel>) -> Result<()> {
         let request = Request::new(HealthCheckRequest {});
+        debug!("Sending health check request");
 
         match timeout(Duration::from_secs(5), client.check(request)).await {
             Ok(Ok(response)) => {
                 let response = response.into_inner();
+                debug!("Health check response status: {:?}", response.status());
                 if response.status()
                     == crate::proto::anysync::health_check_response::ServingStatus::Serving
                 {
+                    info!("Health check successful - server is serving");
                     Ok(())
                 } else {
+                    error!("Server is not serving: {:?}", response.status());
                     Err(std::io::Error::other("Server is not serving").into())
                 }
             }
             Ok(Err(e)) => {
+                error!("Connection test failed: {}", e);
                 Err(std::io::Error::other(format!("Connection test failed: {}", e)).into())
             }
-            Err(_) => Err(std::io::Error::new(
-                std::io::ErrorKind::TimedOut,
-                "Connection test timed out",
-            )
-            .into()),
+            Err(_) => {
+                error!("Connection test timed out after 5 seconds");
+                Err(
+                    std::io::Error::new(std::io::ErrorKind::TimedOut, "Connection test timed out")
+                        .into(),
+                )
+            }
         }
     }
 
     pub async fn stop(&mut self) -> Result<()> {
+        info!("Stopping sidecar process");
         if let Some(child) = self.child.take() {
-            let _ = child.kill();
+            match child.kill() {
+                Ok(_) => info!("Sidecar process killed successfully"),
+                Err(e) => warn!("Failed to kill sidecar process: {}", e),
+            }
         }
 
         self.is_running = false;
         self.port = None;
         self.client = None;
 
+        info!("Sidecar stopped");
         Ok(())
     }
 
@@ -156,6 +201,7 @@ impl SidecarManager {
         message: Option<String>,
     ) -> Result<GrpcPingResponse> {
         if !self.is_running {
+            info!("Sidecar not running, starting it first");
             self.start(app).await?;
         }
 
@@ -165,19 +211,31 @@ impl SidecarManager {
                 .unwrap()
                 .as_secs();
 
+            let msg = message.clone().unwrap_or_default();
+            debug!("Sending ping request with message: '{}'", msg);
+
             let request = Request::new(GrpcPingRequest {
                 message: message.unwrap_or_default(),
                 timestamp: timestamp as i64,
             });
 
             match timeout(Duration::from_secs(10), client.ping(request)).await {
-                Ok(Ok(response)) => Ok(response.into_inner()),
-                Ok(Err(e)) => Err(std::io::Error::other(format!("Ping failed: {}", e)).into()),
+                Ok(Ok(response)) => {
+                    let response = response.into_inner();
+                    info!("Ping successful, received: '{}'", response.message);
+                    Ok(response)
+                }
+                Ok(Err(e)) => {
+                    error!("Ping failed: {}", e);
+                    Err(std::io::Error::other(format!("Ping failed: {}", e)).into())
+                }
                 Err(_) => {
+                    error!("Ping timed out after 10 seconds");
                     Err(std::io::Error::new(std::io::ErrorKind::TimedOut, "Ping timed out").into())
                 }
             }
         } else {
+            error!("No gRPC client available");
             Err(
                 std::io::Error::new(std::io::ErrorKind::NotConnected, "No gRPC client available")
                     .into(),

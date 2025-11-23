@@ -118,7 +118,7 @@ The plugin automatically downloads pre-compiled Go backend binaries from GitHub 
    
    fn main() {
        // Read binary path from plugin
-       if let Ok(binaries_dir) = env::var("DEP_ANY_SYNC_GO_BINARIES_DIR") {
+       if let Ok(binaries_dir) = env::var("DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR") {
            let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
            let dest_dir = Path::new(&manifest_dir).join("binaries");
            
@@ -143,7 +143,7 @@ The plugin automatically downloads pre-compiled Go backend binaries from GitHub 
    ```json
    {
      "bundle": {
-       "externalBin": ["binaries/server"]
+       "externalBin": ["binaries/any-sync"]
      }
    }
    ```
@@ -161,7 +161,7 @@ The plugin automatically downloads pre-compiled Go backend binaries from GitHub 
          "identifier": "shell:allow-execute",
          "allow": [
            {
-             "name": "binaries/server",
+             "name": "binaries/any-sync",
              "sidecar": true
            }
          ]
@@ -360,7 +360,7 @@ cargo test
 
 1. **Start Go server manually**:
    ```bash
-   ./binaries/server --port 8080
+   ./binaries/any-sync --port 8080
    ```
 
 2. **Test gRPC directly**:
@@ -498,7 +498,7 @@ pkg-config --list-all | grep -i libffi
 ```bash
 # Check binary permissions
 ls -la binaries/
-chmod +x binaries/server
+chmod +x binaries/any-sync
 
 # Verify Go installation
 go version
@@ -510,7 +510,7 @@ netstat -an | grep LISTEN
 **gRPC connection failed**:
 ```bash
 # Test server directly
-./binaries/server --port 8080
+./binaries/any-sync --port 8080
 
 # Check network connectivity
 telnet localhost 8080
@@ -539,14 +539,14 @@ export RUST_LOG=debug
 export ANY_SYNC_LOG_LEVEL=debug
 
 # Start with verbose output
-./binaries/server --port 8080 -v
+./binaries/any-sync --port 8080 -v
 ```
 
 ### Getting Help
 
 ```bash
 # Get help for Go server
-./binaries/server --help
+./binaries/any-sync --help
 
 # Check plugin commands
 cd examples/tauri-app

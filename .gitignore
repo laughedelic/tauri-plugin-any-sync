@@ -12,6 +12,7 @@ yarn.lock
 /target
 Cargo.lock
 node_modules/
+.cargo/
 
 dist-js
 dist

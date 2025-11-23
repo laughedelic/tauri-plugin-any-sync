@@ -14,7 +14,7 @@ The installation guide SHALL include step-by-step build script configuration for
 
 #### Scenario: Feature selection guidance
 - **WHEN** developers need to choose which platform binaries to download
-- **THEN** the guide explains the available features (all-platforms, desktop-only, platform-specific)
+- **THEN** the guide explains the available features (all, macos, linux, windows, platform-specific targets)
 - **AND** provides recommendations based on target platforms
 - **AND** shows example Cargo.toml dependency configurations
 
@@ -23,7 +23,7 @@ The installation guide SHALL include concrete build.rs code examples for consume
 #### Scenario: Copy-paste ready consumer build script
 - **WHEN** developers need to configure binary copying
 - **THEN** they find a complete build.rs example that:
-  - Reads DEP_ANY_SYNC_GO_BINARIES_DIR environment variable
+  - Reads DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR environment variable
   - Handles missing environment variable gracefully
   - Creates the binaries directory if needed
   - Copies and renames binaries for the target platform

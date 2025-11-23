@@ -31,19 +31,19 @@ The plugin SHALL use Cargo's links mechanism to broadcast binary paths to consum
 #### Scenario: Metadata broadcasting
 - **WHEN** the plugin's build script completes successfully
 - **THEN** it emits cargo:binaries_dir=<path> to standard output
-- **AND** Cargo propagates this as DEP_ANY_SYNC_GO_BINARIES_DIR environment variable to consumer build scripts
+- **AND** Cargo propagates this as DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR environment variable to consumer build scripts
 
 ### Requirement: Platform-Selective Downloads via Features
 The plugin SHALL provide Cargo features for selective platform binary downloads.
 #### Scenario: Feature-based platform selection
 - **WHEN** a consumer specifies features in their Cargo.toml dependency declaration
 - **THEN** the plugin downloads only the binaries for enabled platforms
-- **AND** supports features: all-platforms, desktop-only (default), macos, linux, windows
+- **AND** supports features: all, macos, linux, windows, and platform-specific targets
 
-#### Scenario: Default feature behavior
+#### Scenario: No default features
 - **WHEN** no features are explicitly specified by the consumer
-- **THEN** the desktop-only feature is enabled by default
-- **AND** downloads binaries for macOS, Linux, and Windows platforms
+- **THEN** no platform binaries are downloaded (no default features)
+- **AND** users must explicitly select which platforms they need
 
 ### Requirement: Checksum Verification Security
 The plugin SHALL verify the integrity of downloaded binaries using SHA256 checksums.
@@ -63,7 +63,7 @@ The plugin SHALL verify the integrity of downloaded binaries using SHA256 checks
 The plugin SHALL provide documentation and examples for consumer build scripts to copy binaries to their application.
 #### Scenario: Consumer build script pattern
 - **WHEN** a consumer application builds with the plugin as a dependency
-- **THEN** their build.rs can read DEP_ANY_SYNC_GO_BINARIES_DIR
+- **THEN** their build.rs can read DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR
 - **AND** copy the appropriate platform binaries to their src-tauri/binaries/ directory
 - **AND** rename binaries following Tauri's sidecar naming convention (binary-<target-triple>)
 
@@ -89,12 +89,13 @@ The plugin SHALL support local development using environment variable override t
 - **AND** binaries are copied to OUT_DIR maintaining the same downstream flow as downloaded binaries
 
 ### Requirement: Build Caching
-The plugin SHALL leverage Cargo's target directory for caching downloaded binaries.
-#### Scenario: Cached binary reuse
+The plugin SHALL leverage Cargo's incremental build system for caching.
+#### Scenario: Cargo-based caching
 - **WHEN** binaries have been previously downloaded for a specific version
-- **THEN** build.rs checks the cache before attempting new downloads
-- **AND** reuses cached binaries if checksums match
-- **AND** reduces build time and bandwidth usage
+- **THEN** Cargo's incremental build system avoids re-running build.rs
+- **AND** binaries stored in OUT_DIR are reused automatically
+- **AND** reduces build time and bandwidth usage on subsequent builds
+**Note:** Explicit cache checking in build.rs is not implemented; we rely on Cargo's built-in incremental build mechanism which skips build.rs re-execution when dependencies haven't changed.
 
 ### Requirement: Cross-Compilation Support
 The plugin SHALL support cross-compilation scenarios where target platform differs from host.
@@ -124,8 +125,6 @@ The plugin SHALL provide clear error messages for binary distribution failures.
 
 #### Scenario: Build progress feedback
 - **WHEN** downloading binaries during build
-- **THEN** build.rs outputs progress messages indicating:
+- **THEN** build.rs outputs basic progress messages indicating:
   - Which binaries are being downloaded
-  - Download progress for large files
-  - Checksum verification status
-  - Whether using cached or freshly downloaded binaries
+**Note:** Detailed download progress bars and verbose checksum verification logging are not currently implemented. Basic logging (which binary is downloading) is considered sufficient for now.

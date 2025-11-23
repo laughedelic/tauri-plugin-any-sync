@@ -182,7 +182,7 @@ ANY_SYNC_GO_BINARIES_DIR = { value = "/absolute/path/to/binaries", force = true 
 
 ### Decision 6: Consumer Build Script Pattern
 
-**What:** Consumers add a `build.rs` that reads `DEP_ANY_SYNC_GO_BINARIES_DIR` and copies binaries to `src-tauri/binaries/`.
+**What:** Consumers add a `build.rs` that reads `DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR` and copies binaries to `src-tauri/binaries/`.
 
 **Why:**
 - Simple, explicit, and transparent
@@ -193,11 +193,11 @@ ANY_SYNC_GO_BINARIES_DIR = { value = "/absolute/path/to/binaries", force = true 
 **Example consumer build.rs:**
 ```rust
 fn main() {
-    if let Ok(binaries_dir) = env::var("DEP_ANY_SYNC_GO_BINARIES_DIR") {
+    if let Ok(binaries_dir) = env::var("DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR") {
         let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
         let dest_dir = Path::new(&manifest_dir).join("binaries");
         fs::create_dir_all(&dest_dir).unwrap();
-        
+
         // Copy binaries for target platform
         let target = env::var("TARGET").unwrap();
         // ... copy logic
@@ -218,11 +218,11 @@ Plugin Build:
 4. Verify checksums
 5. Store in OUT_DIR/binaries/
 6. Emit cargo:binaries_dir=<OUT_DIR>/binaries
-7. Cargo propagates as DEP_ANY_SYNC_GO_BINARIES_DIR
+7. Cargo propagates as DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR
 
 Consumer Build:
 1. Consumer build.rs runs
-2. Reads DEP_ANY_SYNC_GO_BINARIES_DIR
+2. Reads DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR
 3. Copies binaries to src-tauri/binaries/
 4. Tauri bundles via externalBin config
 ```
@@ -234,7 +234,7 @@ Plugin Build:
 2. Check ANY_SYNC_GO_BINARIES_DIR env var (set to ./binaries)
 3. Copy binaries from local path to OUT_DIR/binaries/
 4. Emit cargo:binaries_dir=<OUT_DIR>/binaries
-5. Cargo propagates as DEP_ANY_SYNC_GO_BINARIES_DIR
+5. Cargo propagates as DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR
    (Same downstream flow - consumers don't know the difference)
 
 Developer Workflow:
@@ -274,7 +274,7 @@ Consumer:
 
 **Mitigation:**
 - Feature flags allow downloading only needed platforms
-- Default to desktop-only (3 platforms vs 5+ with mobile)
+- No features enabled by default - users must explicitly choose platforms
 - Document minimal feature set for single-platform builds
 - Consider separate mobile distribution in future
 

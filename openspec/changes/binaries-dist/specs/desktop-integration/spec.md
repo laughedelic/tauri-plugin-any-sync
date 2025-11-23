@@ -19,7 +19,7 @@ The plugin SHALL use automated binary downloads from GitHub Releases via Cargo l
 The plugin SHALL require consumers to add a build script for binary copying on desktop platforms.
 #### Scenario: Consumer build script setup
 - **WHEN** developers install the plugin for desktop usage
-- **THEN** they add a build.rs file that reads DEP_ANY_SYNC_GO_BINARIES_DIR
+- **THEN** they add a build.rs file that reads DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR
 - **AND** copies binaries to src-tauri/binaries/ with proper naming
 - **AND** configures externalBin in tauri.conf.json (unchanged from previous approach)
 - **AND** configures shell permissions in capabilities (unchanged from previous approach)

@@ -139,7 +139,7 @@ The plugin uses an automated binary distribution system with two distinct modes:
 4. Emit `cargo:binaries_dir=<path>` for consumer propagation (both modes)
 
 **Consumer Build** (`build.rs` in consuming app):
-1. Read `DEP_ANY_SYNC_GO_BINARIES_DIR` environment variable from plugin
+1. Read `DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR` environment variable from plugin
 2. Copy binaries to `src-tauri/binaries/` directory
 3. Configure `externalBin` in `tauri.conf.json` to bundle binaries
 
@@ -150,9 +150,9 @@ The plugin uses an automated binary distribution system with two distinct modes:
 - Platform groups: `macos`, `linux`, `windows`
 - All: `all`
 
-**Links** (`links = "any_sync_go"`):
+**Links** (`links = "tauri-plugin-any-sync"`):
 - Enables metadata propagation via environment variables
-- Allows consumer `build.rs` to receive `DEP_ANY_SYNC_GO_BINARIES_DIR`
+- Allows consumer `build.rs` to receive `DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR`
 
 ### Development Workflow
 

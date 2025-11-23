@@ -36,7 +36,7 @@
 
 ## 3. Cargo Configuration
 
-- [x] 3.1 Add `links = "any_sync_go"` to `[package]` section in `Cargo.toml`
+- [x] 3.1 Add `links = "tauri-plugin-any-sync"` to `[package]` section in `Cargo.toml`
 - [x] 3.2 Define feature flags in `Cargo.toml` matching go-backend build targets:
   - [x] 3.2.1 Individual target features:
     - `x86_64-apple-darwin` (macOS Intel)
@@ -55,7 +55,7 @@
 ## 4. Documentation Updates
 
 - [x] 4.1 Update README.md installation section:
-  - [x] 4.1.1 Add consumer build script example with DEP_ANY_SYNC_GO_BINARIES_DIR
+  - [x] 4.1.1 Add consumer build script example with DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR
   - [x] 4.1.2 Document feature selection (individual targets, platform groups, all)
   - [x] 4.1.3 Show example Cargo.toml dependency with features
   - [x] 4.1.4 Document ANY_SYNC_GO_BINARIES_DIR environment variable for local development
@@ -92,7 +92,7 @@
   - [x] 5.2.3 Verify warning message is emitted
   - [x] 5.2.4 Test invalid path produces clear error
 - [x] 5.3 Test consumer build script in example app
-  - [x] 5.3.1 Verify DEP_ANY_SYNC_GO_BINARIES_DIR propagation
+  - [x] 5.3.1 Verify DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR propagation
   - [x] 5.3.2 Test binary copying to src-tauri/binaries/
 - [x] 5.4 Test with different feature combinations
   - [x] 5.4.1 No features (should skip downloads)

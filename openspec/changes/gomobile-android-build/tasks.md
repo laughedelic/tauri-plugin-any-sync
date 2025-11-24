@@ -20,8 +20,8 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 4. Create basic README documenting gomobile API
 
 **Validation:**
-- [ ] Directory structure matches design
-- [ ] Package compiles with `go build`
+- [x] Directory structure matches design
+- [x] Package compiles with `go build`
 
 ---
 
@@ -40,9 +40,9 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 7. Add proper error handling and logging
 
 **Validation:**
-- [ ] All functions compile without errors
-- [ ] No complex types in signatures (only string, bool, error)
-- [ ] Internal tests pass (if added)
+- [x] All functions compile without errors
+- [x] No complex types in signatures (only string, bool, error)
+- [x] Internal tests pass (if added)
 
 ---
 
@@ -60,10 +60,10 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 6. Document any issues or warnings
 
 **Validation:**
-- [ ] .aar file builds successfully
-- [ ] Contains libgojni.so for all ABIs
-- [ ] Generated Java classes match expected API
-- [ ] File size reasonable (<25MB)
+- [x] .aar file builds successfully
+- [x] Contains libgojni.so for all ABIs
+- [x] Generated Java classes match expected API
+- [x] File size reasonable (<25MB) - 22MB actual
 
 ---
 
@@ -141,15 +141,15 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 **Steps:**
 1. Create `build-go-mobile.sh` in repository root
 2. Add functions: `check_gomobile()`, `build_android_aar()`
-3. Build .aar with proper naming: `anysync-mobile.aar`
+3. Build .aar with proper naming: `any-sync-android.aar`
 4. Generate SHA256 checksum
 5. Add option for architecture-specific builds
 6. Test script on clean machine (or clean environment)
 
 **Validation:**
-- [ ] Script runs without errors
-- [ ] Produces .aar in `binaries/` directory
-- [ ] Checksum file generated
+- [x] Script runs without errors
+- [x] Produces .aar in `binaries/` directory
+- [x] Checksum file generated
 - [ ] Documentation added to README
 
 ---

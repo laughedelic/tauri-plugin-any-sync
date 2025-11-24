@@ -278,15 +278,38 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 **Validation:**
 - [ ] App launches on emulator without crashes
 - [ ] UI renders correctly
-- [ ] Database initialized at correct path (check logs)
+- [ ] Database initialized at correct path (check logs: `adb logcat | grep AnySync`)
 - [ ] All storage operations work identically to desktop
-- [ ] Errors propagate correctly (reject with "STORAGE_ERROR")
+- [ ] Response formats match Rust models (documentJson/found, existed, ids fields)
+- [ ] Errors propagate correctly (reject with descriptive messages)
 - [ ] Data persists across app restarts
-- [ ] Logging visible in logcat
+- [ ] Logging visible in logcat with "AnySync" tag
+- [ ] Empty/missing documents handled correctly
 - [ ] UI renders correctly
 - [ ] All storage operations work
 - [ ] Errors handled gracefully
 - [ ] Data persists across app restarts
+
+---
+
+#### Task 4.4: Minimal UI adaptation for mobile
+**Estimated effort:** 1 hour  
+**Dependencies:** Task 4.3  
+**Deliverable:** UI usable on Android vertical screens
+
+**Steps:**
+1. Open `examples/tauri-app/src/App.svelte`
+2. Add CSS media query for narrow screens (max-width: 768px)
+3. Change layout from horizontal to vertical stack on mobile
+4. Ensure buttons have minimum touch target size (44x44px)
+5. Adjust font sizes for mobile readability
+6. Test on emulator in portrait orientation
+
+**Validation:**
+- [ ] UI fits within mobile screen bounds
+- [ ] All interactive elements accessible
+- [ ] Text readable without zooming
+- [ ] No horizontal scrolling required
 
 ---
 
@@ -313,6 +336,8 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 - [x] Documentation complete and accurate
 - [x] Android section added to README.md
 - [x] android/AGENTS.md updated with architecture and implementation details
+- [ ] Debugging procedures documented (adb logcat setup)
+- [ ] Common error patterns and solutions documented
 
 ---
 
@@ -330,10 +355,12 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 6. Document any platform differences found
 
 **Validation:**
-- [ ] Same TypeScript code works on both
-- [ ] Data format compatible
-- [ ] Error messages similar
+- [ ] Same TypeScript code works on both platforms
+- [ ] Response formats identical (field names and structure)
+- [ ] Data format compatible across platforms
+- [ ] Error messages similar and descriptive
 - [ ] Performance acceptable on Android
+- [ ] Empty/missing document handling consistent
 
 ---
 
@@ -353,11 +380,7 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 - [x] All scenarios pass
 - [x] Specs accurate and complete
 
----
-
 ## Task Summary
-
-**Total Estimated Effort:** ~27 hours (~4 days)
 
 **Parallelizable Work:**
 - Phase 1 (Go) and Phase 2.1 (Kotlin structure) can run in parallel

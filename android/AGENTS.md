@@ -18,23 +18,35 @@ cd android
 
 ## Architecture Overview
 
-The Android plugin follows Tauri's plugin architecture:
+The Android plugin integrates the Go backend via gomobile, using JNI to call Go functions directly.
 
 ```
 android/
+├── libs/
+│   └── any-sync-android.aar    # Go mobile library (gomobile build)
 ├── src/main/java/
-│   ├── ExamplePlugin.kt    # Main plugin class with Tauri commands
-│   └── Example.kt          # Implementation logic
-├── build.gradle.kts        # Gradle build configuration
-├── proguard-rules.pro      # ProGuard configuration
-└── settings.gradle.kts     # Gradle settings
+│   └── ExamplePlugin.kt        # Main plugin with storage commands + JNI calls
+├── build.gradle.kts            # Gradle build configuration (includes .aar)
+├── proguard-rules.pro          # ProGuard configuration
+└── settings.gradle.kts         # Gradle settings
 ```
 
 ### Key Components
 
-- **Plugin Class** (`ExamplePlugin.kt`): Tauri plugin interface with command handlers
-- **Implementation** (`Example.kt`): Core business logic separate from Tauri framework
-- **Build Config** (`build.gradle.kts`): Dependencies and build settings
+- **Plugin Class** (`ExamplePlugin.kt`): Tauri plugin interface with storage command handlers
+- **Go Mobile Library** (`libs/any-sync-android.aar`): Native Go backend compiled with gomobile
+- **JNI Integration**: Direct function calls from Kotlin to Go via `mobile.Mobile` class
+- **Build Config** (`build.gradle.kts`): Dependencies including .aar library
+
+### Communication Flow
+
+```
+TypeScript API → Tauri Command → Kotlin Plugin → JNI → Go Mobile → AnyStore
+```
+
+Unlike desktop (which uses gRPC sidecar), Android embeds the Go backend as a native library:
+- **Desktop**: Process IPC via gRPC (separate sidecar process)
+- **Android**: In-process JNI calls (embedded library)
 
 ## Development Workflow
 

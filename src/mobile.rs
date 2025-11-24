@@ -25,9 +25,27 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
 pub struct AnySync<R: Runtime>(PluginHandle<R>);
 
 impl<R: Runtime> AnySync<R> {
-    pub fn ping(&self, payload: PingRequest) -> crate::Result<PingResponse> {
+    pub fn storage_get(&self, payload: GetRequest) -> crate::Result<GetResponse> {
         self.0
-            .run_mobile_plugin("ping", payload)
+            .run_mobile_plugin("storageGet", payload)
+            .map_err(Into::into)
+    }
+
+    pub fn storage_put(&self, payload: PutRequest) -> crate::Result<PutResponse> {
+        self.0
+            .run_mobile_plugin("storagePut", payload)
+            .map_err(Into::into)
+    }
+
+    pub fn storage_delete(&self, payload: DeleteRequest) -> crate::Result<DeleteResponse> {
+        self.0
+            .run_mobile_plugin("storageDelete", payload)
+            .map_err(Into::into)
+    }
+
+    pub fn storage_list(&self, payload: ListRequest) -> crate::Result<ListResponse> {
+        self.0
+            .run_mobile_plugin("storageList", payload)
             .map_err(Into::into)
     }
 }

@@ -83,6 +83,13 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
     // Emit metadata for consumer crates
     println!("cargo:binaries_dir={}", binaries_out_dir.display());
 
+    // For Android builds, also emit the .aar path
+    #[cfg(target_os = "android")]
+    {
+        let aar_path = binaries_out_dir.join("any-sync-android.aar");
+        println!("cargo:aar_path={}", aar_path.display());
+    }
+
     Ok(())
 }
 
@@ -249,6 +256,12 @@ fn determine_binaries_to_download() -> Result<Vec<String>, Box<dyn std::error::E
     }
     if cfg!(feature = "x86_64-pc-windows-msvc") {
         binaries.push("any-sync-x86_64-pc-windows-msvc.exe".to_string());
+    }
+
+    // Add Android .aar if building for Android
+    #[cfg(target_os = "android")]
+    {
+        binaries.push("any-sync-android.aar".to_string());
     }
 
     Ok(binaries)

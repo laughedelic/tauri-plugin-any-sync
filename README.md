@@ -289,6 +289,39 @@ bun install
 bun run build
 ```
 
+### Android Mobile Development
+
+The plugin supports Android via gomobile, which compiles the Go backend as an Android .aar library.
+
+**Prerequisites**:
+- Android SDK with NDK (API level 21+)
+- gomobile: `go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init`
+
+**Building Android .aar**:
+```bash
+# Build .aar for Android
+./build-go-mobile.sh
+
+# Output: binaries/any-sync-android.aar (~22MB)
+```
+
+**Architecture**:
+- Go backend compiled to native library (libgojni.so)
+- Kotlin plugin calls Go functions via JNI
+- Supports all Android ABIs: arm64-v8a, armeabi-v7a, x86, x86_64
+
+**Development workflow**:
+1. Build .aar: `./build-go-mobile.sh`
+2. .aar is copied to `android/libs/` automatically
+3. Plugin downloads .aar from GitHub releases in production
+4. Local development uses `ANY_SYNC_GO_BINARIES_DIR` override
+
+**Database location** on Android:
+- `context.getFilesDir()/anysync.db`
+- Typically: `/data/data/{package-name}/files/anysync.db`
+
+See `go-backend/cmd/mobile/README.md` for detailed mobile API documentation.
+
 ### Example Application
 
 To run the example app, you need to set the environment variable for local binaries (since v0.1.0 release doesn't exist on GitHub yet):

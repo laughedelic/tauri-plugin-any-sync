@@ -20,7 +20,7 @@ class StorageGetArgs {
 class StoragePutArgs {
     var collection: String = ""
     var id: String = ""
-    var document: String = ""
+    var documentJson: String = ""
 }
 
 @InvokeArg
@@ -76,7 +76,14 @@ class ExamplePlugin(private val activity: Activity): Plugin(activity) {
             
             val result = Mobile.storageGet(args.collection, args.id)
             val ret = JSObject()
-            ret.put("document", result)
+            // Match GetResponse: documentJson and found fields
+            if (result.isNullOrEmpty()) {
+                ret.put("documentJson", null)
+                ret.put("found", false)
+            } else {
+                ret.put("documentJson", result)
+                ret.put("found", true)
+            }
             invoke.resolve(ret)
         } catch (e: Exception) {
             Log.e(TAG, "storageGet failed", e)
@@ -92,7 +99,7 @@ class ExamplePlugin(private val activity: Activity): Plugin(activity) {
             
             Log.d(TAG, "storagePut: collection=${args.collection}, id=${args.id}")
             
-            Mobile.storagePut(args.collection, args.id, args.document)
+            Mobile.storagePut(args.collection, args.id, args.documentJson)
             val ret = JSObject()
             ret.put("success", true)
             invoke.resolve(ret)
@@ -110,9 +117,10 @@ class ExamplePlugin(private val activity: Activity): Plugin(activity) {
             
             Log.d(TAG, "storageDelete: collection=${args.collection}, id=${args.id}")
             
-            val deleted = Mobile.storageDelete(args.collection, args.id)
+            val existed = Mobile.storageDelete(args.collection, args.id)
             val ret = JSObject()
-            ret.put("deleted", deleted)
+            // Match DeleteResponse: existed field
+            ret.put("existed", existed)
             invoke.resolve(ret)
         } catch (e: Exception) {
             Log.e(TAG, "storageDelete failed", e)
@@ -128,9 +136,23 @@ class ExamplePlugin(private val activity: Activity): Plugin(activity) {
             
             Log.d(TAG, "storageList: collection=${args.collection}")
             
+            // Go backend returns JSON array string like ["id1","id2"]
             val result = Mobile.storageList(args.collection)
             val ret = JSObject()
-            ret.put("documents", result)
+            
+            // Handle empty/null results gracefully
+            if (result.isNullOrEmpty()) {
+                Log.d(TAG, "storageList returned empty/null, using empty array")
+                ret.put("ids", org.json.JSONArray())
+            } else {
+                try {
+                    ret.put("ids", org.json.JSONArray(result))
+                } catch (e: org.json.JSONException) {
+                    Log.w(TAG, "Failed to parse list result as JSON array: $result", e)
+                    // Return empty array on parse error
+                    ret.put("ids", org.json.JSONArray())
+                }
+            }
             invoke.resolve(ret)
         } catch (e: Exception) {
             Log.e(TAG, "storageList failed", e)

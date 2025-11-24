@@ -103,7 +103,7 @@ flowchart TB
         GO_LIB[Go Library<br/>cmd/mobile]
     end
     
-    subgraph "Shared Go Backend >95%"
+    subgraph "Shared Go Backend"
         STORE[internal/storage]
         ANY[AnyStore]
     end

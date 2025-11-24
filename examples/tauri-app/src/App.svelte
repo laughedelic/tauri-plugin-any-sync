@@ -5,16 +5,23 @@
   let documentId = $state('note1')
   let documentJson = $state('')
   
-  let collections = $state([])
+  let collections = $state(['notes', 'tasks', 'users', 'settings'])
   let documents = $state([])
   let result = $state('')
   let error = $state('')
   let pingStatus = $state('')
+  let initialized = $state(false)
 
   // Load example data on mount
   $effect(() => {
-    loadExample()
-    initializeCollections()
+    if (!initialized) {
+      loadExample()
+      // If collections exist, select the first one
+      if (collections.length > 0) {
+        selectCollection(collections[0])
+      }
+      initialized = true
+    }
   })
 
   function loadExample() {
@@ -23,31 +30,6 @@
       content: "Hello, AnyStore!",
       created: new Date().toISOString().split('T')[0]
     }, null, 2)
-  }
-
-  async function initializeCollections() {
-    await refreshCollections()
-    // If collections exist, select the first one
-    if (collections.length > 0) {
-      await selectCollection(collections[0])
-    }
-  }
-
-  async function refreshCollections() {
-    // Try common collection names
-    const names = ['notes', 'tasks', 'users', 'settings']
-    const found = []
-    for (const name of names) {
-      try {
-        const ids = await storageList(name)
-        if (ids.length > 0) {
-          found.push(name)
-        }
-      } catch (e) {
-        // Skip errors
-      }
-    }
-    collections = found
   }
 
   async function refreshDocuments() {
@@ -64,8 +46,10 @@
     try {
       const doc = JSON.parse(documentJson)
       await storagePut(collection, documentId, doc)
+      if (!collections.includes(collection)) {
+        collections = [...collections, collection]
+      }
       result = `✓ Stored ${collection}/${documentId}`
-      await refreshCollections()
       await refreshDocuments()
     } catch (e) {
       result = `✗ ${e.message}`
@@ -100,7 +84,6 @@
         result = `✓ Deleted ${collection}/${documentId}`
         
         // Refresh the UI
-        await refreshCollections()
         await refreshDocuments()
         
         // Select adjacent document

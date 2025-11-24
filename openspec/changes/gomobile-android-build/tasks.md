@@ -31,17 +31,20 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 **Deliverable:** Exported Go functions callable from Android
 
 **Steps:**
-1. Implement `InitStorage(dbPath string) error`
+1. Implement `InitStorage(dbPath string) error` - initializes DB at specified path
 2. Implement `StoragePut(collection, id, documentJson string) error`
-3. Implement `StorageGet(collection, id string) (string, error)`
-4. Implement `StorageDelete(collection, id string) (bool, error)`
-5. Implement `StorageList(collection string) (string, error)` - returns JSON array
-6. Add internal state management for DB instance
+3. Implement `StorageGet(collection, id string) (string, error)` - returns empty string if not found
+4. Implement `StorageDelete(collection, id string) (bool, error)` - returns false if not existed
+5. Implement `StorageList(collection string) (string, error)` - returns JSON array `["id1","id2"]`
+6. Add internal state management for DB instance (package-level variable)
 7. Add proper error handling and logging
+8. Ensure all signatures use only gomobile-compatible types (string, bool, error)
 
 **Validation:**
 - [x] All functions compile without errors
-- [x] No complex types in signatures (only string, bool, error)
+- [x] No complex types in signatures (only string, bool, error allowed)
+- [x] Return semantics match spec (Get returns empty string if not found, Delete returns false if didn't exist)
+- [x] Reuses >95% of existing internal/storage code
 - [x] Internal tests pass (if added)
 
 ---
@@ -77,14 +80,19 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 **Steps:**
 1. Open `android/src/main/java/ExamplePlugin.kt`
 2. Add argument classes: `StorageGetArgs`, `StoragePutArgs`, `StorageDeleteArgs`, `StorageListArgs`
-3. Add command method stubs: `@Command fun storageGet(invoke: Invoke)`
-4. Add companion object with library loading: `System.loadLibrary("gojni")`
-5. Add initialization logic in constructor
+3. Add command method stubs: `@Command fun storageGet(invoke: Invoke)`, etc.
+4. Add companion object with library loading: `System.loadLibrary("gojni")` in init block
+5. Add initialization logic in constructor:
+   - Get dbPath from `activity.filesDir.absolutePath + "/anystore.db"`
+   - Call `Mobile.initStorage(dbPath)` in try-catch
+   - Log initialization with Android Log (tag "AnySync")
+6. Add private lateinit property for activity reference
 
 **Validation:**
 - [x] Kotlin code compiles
 - [x] Plugin structure follows Tauri conventions
 - [x] All 4 storage commands defined
+- [x] InitStorage called during plugin construction
 
 ---
 
@@ -97,17 +105,20 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 1. Place .aar in `android/libs/` for testing
 2. Update `android/build.gradle.kts` to include .aar dependency
 3. Import generated Mobile class: `import mobile.Mobile`
-4. Implement `storageGet` calling `Mobile.storageGet()`
-5. Implement `storagePut` calling `Mobile.storagePut()`
-6. Implement `storageDelete` calling `Mobile.storageDelete()`
-7. Implement `storageList` calling `Mobile.storageList()`
-8. Add try-catch blocks and error propagation
-9. Add Android logging for debugging
+4. Implement `storageGet` calling `Mobile.storageGet()` - construct JSObject with `documentJson` and `found` fields
+5. Implement `storagePut` calling `Mobile.storagePut()` - construct JSObject with `success: true`
+6. Implement `storageDelete` calling `Mobile.storageDelete()` - construct JSObject with `existed` boolean
+7. Implement `storageList` calling `Mobile.storageList()` - parse JSON array string, construct JSObject with `ids` array
+8. Add try-catch blocks and error propagation via `invoke.reject("STORAGE_ERROR", message)`
+9. Add Android logging with `android.util.Log` (tag "AnySync") for all operations
+10. Verify native library name matches gomobile output ("gojni")
 
 **Validation:**
 - [x] Code compiles with .aar dependency
 - [x] No compilation errors or warnings
 - [x] Error handling implemented for all commands
+- [x] Response format matches desktop plugin (JSObject structure)
+- [x] Logging added for debugging
 
 ---
 
@@ -172,9 +183,6 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 - [x] .aar build added to workflow
 - [x] Checksum generation included
 - [x] Upload to release configured
-
----
-
 #### Task 3.3: Implement .aar download in plugin build.rs
 **Estimated effort:** 2 hours  
 **Dependencies:** Task 3.2  
@@ -182,16 +190,21 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 
 **Steps:**
 1. Open `build.rs`
-2. Add Android-specific build logic (with `#[cfg(target_os = "android")]`)
-3. Implement `download_android_aar()` function (similar to binary download)
-4. Download .aar from GitHub releases
-5. Verify checksum
-6. Place in appropriate target directory
-7. Emit cargo metadata for consumer build.rs
-8. Test with example app
+2. Detect Android target via enabled features or target architecture (not `cfg(target_os)` - build.rs runs on host)
+3. Implement `download_android_aar()` function (similar to binary download logic)
+4. Download `any-sync-android.aar` from GitHub releases for plugin version
+5. Verify SHA256 checksum against `checksums.txt`
+6. Store verified .aar in `OUT_DIR/binaries/` (same as desktop)
+7. Emit `cargo:aar_path=<path>` (not `binaries_dir`) for consumer build.rs
+8. Support local override: check `ANY_SYNC_GO_BINARIES_DIR` and use `any-sync-android.aar` from there if set
+9. Test with example app Android build
 
 **Validation:**
-- [x] Plugin builds successfully for Android
+- [x] Plugin builds successfully for Android target
+- [x] .aar downloaded from correct GitHub release
+- [x] Checksum verification works (reuses existing logic)
+- [x] Metadata emitted correctly (`cargo:aar_path=...`)
+- [x] Local override works with same env var as desktopd
 - [x] .aar included in binary downloads
 - [x] Checksum verification reuses existing logic
 - [x] Metadata emitted correctly (aar_path)
@@ -217,8 +230,6 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 - [x] Android project structure valid
 - [x] Gradle builds successfully
 
----
-
 #### Task 4.2: Update example app build configuration
 **Estimated effort:** 2 hours  
 **Dependencies:** Task 3.3, Task 4.1  
@@ -226,40 +237,52 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 
 **Steps:**
 1. Open `examples/tauri-app/src-tauri/build.rs`
-2. Add Android-specific logic to copy .aar
-3. Read `DEP_TAURI_PLUGIN_ANY_SYNC_AAR_PATH` env var
-4. Copy .aar to `gen/android/libs/`
-5. Update `gen/android/app/build.gradle` if needed
-6. Test build: `tauri android build`
+2. Add Android-specific logic to copy .aar:
+   - Read `DEP_TAURI_PLUGIN_ANY_SYNC_AAR_PATH` env var (from plugin build.rs)
+   - Determine target is Android (check CARGO_CFG_TARGET_OS)
+   - Copy .aar to `gen/android/app/libs/` (or appropriate Gradle libs directory)
+3. Update `gen/android/app/build.gradle.kts` if needed (add libs directory to dependencies)
+4. Test build: `tauri android build`
+5. Verify .aar is bundled in APK
 
 **Validation:**
 - [x] Build completes successfully
-- [x] .aar present in Android project
+- [x] .aar copied to correct Android project location
+- [ ] APK generated without errors
+- [ ] APK size reasonable (<50MB including all ABIs)roid project
 - [ ] APK generated
 - [ ] APK size reasonable
 
 ---
 
 #### Task 4.3: Test on Android emulator
-**Estimated effort:** 3 hours  
-**Dependencies:** Task 4.2, Task 2.3  
-**Deliverable:** Working app on Android
-
 **Steps:**
 1. Create Android Virtual Device (AVD) if needed (API 24+, arm64 or x86_64)
 2. Start emulator
-3. Run `tauri android dev`
-4. Test storage operations:
-   - Put a document
-   - Get the document
-   - List documents
-   - Delete document
-5. Check logcat for errors
-6. Test error cases (invalid JSON, missing docs)
-7. Document any issues found
+3. Run `tauri android dev` or `tauri android build` and install APK
+4. Monitor logcat: `adb logcat | grep AnySync` to see initialization logs
+5. Test storage operations in app:
+   - Put a document (verify success)
+   - Get the document (verify returns correct data)
+   - List documents (verify array contains ID)
+   - Delete document (verify existed=true)
+   - Get deleted document (verify found=false)
+6. Test error cases:
+   - Invalid JSON in put operation
+   - Missing documents in get/delete
+   - Empty collections in list
+7. Test persistence: close app, reopen, verify data still accessible
+8. Check logs for "AnySync" tag messages
+9. Document any issues found
 
 **Validation:**
-- [ ] App launches on emulator
+- [ ] App launches on emulator without crashes
+- [ ] UI renders correctly
+- [ ] Database initialized at correct path (check logs)
+- [ ] All storage operations work identically to desktop
+- [ ] Errors propagate correctly (reject with "STORAGE_ERROR")
+- [ ] Data persists across app restarts
+- [ ] Logging visible in logcat
 - [ ] UI renders correctly
 - [ ] All storage operations work
 - [ ] Errors handled gracefully
@@ -276,16 +299,20 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 
 **Steps:**
 1. Update `README.md` with Android build instructions
-2. Update `android/AGENTS.md` with gomobile details
-3. Document required tools (Android SDK, gomobile)
-4. Add troubleshooting section
+2. Update `android/AGENTS.md` with:
+   - gomobile architecture details
+   - Database path management (`filesDir/anystore.db`)
+   - JNI integration flow
+   - Logging strategy (tag "AnySync")
+3. Document required tools (Android SDK, gomobile, NDK)
+4. Add troubleshooting section (common gomobile/JNI issues)
 5. Document known limitations
-6. Add example output/screenshots
+6. Add example output/screenshots from emulator
 
 **Validation:**
 - [x] Documentation complete and accurate
 - [x] Android section added to README.md
-- [x] android/AGENTS.md updated with architecture
+- [x] android/AGENTS.md updated with architecture and implementation details
 
 ---
 

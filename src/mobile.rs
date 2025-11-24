@@ -15,7 +15,7 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
     api: PluginApi<R, C>,
 ) -> crate::Result<AnySync<R>> {
     #[cfg(target_os = "android")]
-    let handle = api.register_android_plugin("com.plugin.any-sync", "ExamplePlugin")?;
+    let handle = api.register_android_plugin("com.plugin.anysync", "ExamplePlugin")?;
     #[cfg(target_os = "ios")]
     let handle = api.register_ios_plugin(init_plugin_any_sync)?;
     Ok(AnySync(handle))

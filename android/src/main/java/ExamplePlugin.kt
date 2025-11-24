@@ -1,4 +1,4 @@
-package com.plugin.any-sync
+package com.plugin.anysync
 
 import android.app.Activity
 import android.util.Log

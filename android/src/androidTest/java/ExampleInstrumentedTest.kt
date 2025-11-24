@@ -1,4 +1,4 @@
-package com.plugin.any-sync
+package com.plugin.anysync
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

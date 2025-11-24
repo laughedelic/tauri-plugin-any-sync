@@ -1,4 +1,4 @@
-package com.plugin.any-sync
+package com.plugin.anysync
 
 import org.junit.Test
 

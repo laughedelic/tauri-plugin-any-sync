@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.plugin.any-sync"
+    namespace = "com.plugin.anysync"
     compileSdk = 36
 
     defaultConfig {

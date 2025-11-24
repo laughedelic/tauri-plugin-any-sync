@@ -16,24 +16,13 @@ mod commands;
 mod error;
 mod models;
 mod proto;
+mod service;
 
 pub use error::{Error, Result};
 
-#[cfg(desktop)]
-use desktop::AnySync;
-#[cfg(mobile)]
-use mobile::AnySync;
-
-/// Extensions to [`tauri::App`], [`tauri::AppHandle`] and [`tauri::Window`] to access the any-sync APIs.
-pub trait AnySyncExt<R: Runtime> {
-    fn any_sync(&self) -> &AnySync<R>;
-}
-
-impl<R: Runtime, T: Manager<R>> crate::AnySyncExt<R> for T {
-    fn any_sync(&self) -> &AnySync<R> {
-        self.state::<AnySync<R>>().inner()
-    }
-}
+// Note: The AnySyncExt trait and direct AnySync access has been removed.
+// All functionality is now accessed through the AnySyncService trait,
+// which provides a unified interface for both desktop and mobile platforms.
 
 /// Initializes the plugin.
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
@@ -52,11 +41,18 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             #[cfg(desktop)]
             let _shell = app.shell();
 
+            // Create the service trait object based on platform
             #[cfg(mobile)]
-            let any_sync = mobile::init(app, api)?;
+            let service: Box<dyn service::AnySyncService> = {
+                Box::new(service::mobile::MobileService::new(app, api)?)
+            };
             #[cfg(desktop)]
-            let any_sync = desktop::init(app, api)?;
-            app.manage(any_sync);
+            let service: Box<dyn service::AnySyncService> = {
+                Box::new(service::desktop::DesktopService::new(app, api)?)
+            };
+            
+            // Manage the service for use in commands
+            app.manage(service);
 
             log::debug!("any-sync plugin initialized successfully");
             Ok(())

@@ -1,19 +1,19 @@
 use log::{debug, error, info};
-use tauri::{command, AppHandle, Runtime};
+use tauri::{command, State};
 
 use crate::models::*;
-use crate::AnySyncExt;
+use crate::service::AnySyncService;
 use crate::Result;
 
 #[command]
-pub(crate) async fn ping<R: Runtime>(
-    app: AppHandle<R>,
+pub(crate) async fn ping(
+    service: State<'_, Box<dyn AnySyncService>>,
     payload: PingRequest,
 ) -> Result<PingResponse> {
     info!("Received ping command from frontend");
     debug!("Ping payload: {:?}", payload);
 
-    match app.any_sync().ping(payload).await {
+    match service.ping(payload).await {
         Ok(response) => {
             info!("Ping command completed successfully");
             debug!("Ping response: {:?}", response);
@@ -27,8 +27,8 @@ pub(crate) async fn ping<R: Runtime>(
 }
 
 #[command]
-pub(crate) async fn storage_put<R: Runtime>(
-    app: AppHandle<R>,
+pub(crate) async fn storage_put(
+    service: State<'_, Box<dyn AnySyncService>>,
     payload: PutRequest,
 ) -> Result<PutResponse> {
     info!("Received storage_put command from frontend");
@@ -37,7 +37,7 @@ pub(crate) async fn storage_put<R: Runtime>(
         payload.collection, payload.id
     );
 
-    match app.any_sync().storage_put(payload).await {
+    match service.storage_put(payload).await {
         Ok(response) => {
             info!("Storage put command completed successfully");
             Ok(response)
@@ -50,8 +50,8 @@ pub(crate) async fn storage_put<R: Runtime>(
 }
 
 #[command]
-pub(crate) async fn storage_get<R: Runtime>(
-    app: AppHandle<R>,
+pub(crate) async fn storage_get(
+    service: State<'_, Box<dyn AnySyncService>>,
     payload: GetRequest,
 ) -> Result<GetResponse> {
     info!("Received storage_get command from frontend");
@@ -60,7 +60,7 @@ pub(crate) async fn storage_get<R: Runtime>(
         payload.collection, payload.id
     );
 
-    match app.any_sync().storage_get(payload).await {
+    match service.storage_get(payload).await {
         Ok(response) => {
             info!("Storage get command completed successfully");
             Ok(response)
@@ -73,8 +73,8 @@ pub(crate) async fn storage_get<R: Runtime>(
 }
 
 #[command]
-pub(crate) async fn storage_delete<R: Runtime>(
-    app: AppHandle<R>,
+pub(crate) async fn storage_delete(
+    service: State<'_, Box<dyn AnySyncService>>,
     payload: DeleteRequest,
 ) -> Result<DeleteResponse> {
     info!("Received storage_delete command from frontend");
@@ -83,7 +83,7 @@ pub(crate) async fn storage_delete<R: Runtime>(
         payload.collection, payload.id
     );
 
-    match app.any_sync().storage_delete(payload).await {
+    match service.storage_delete(payload).await {
         Ok(response) => {
             info!("Storage delete command completed successfully");
             Ok(response)
@@ -96,14 +96,14 @@ pub(crate) async fn storage_delete<R: Runtime>(
 }
 
 #[command]
-pub(crate) async fn storage_list<R: Runtime>(
-    app: AppHandle<R>,
+pub(crate) async fn storage_list(
+    service: State<'_, Box<dyn AnySyncService>>,
     payload: ListRequest,
 ) -> Result<ListResponse> {
     info!("Received storage_list command from frontend");
     debug!("List payload: collection={}", payload.collection);
 
-    match app.any_sync().storage_list(payload).await {
+    match service.storage_list(payload).await {
         Ok(response) => {
             info!("Storage list command completed successfully");
             Ok(response)

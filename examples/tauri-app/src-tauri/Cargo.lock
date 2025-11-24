@@ -4079,6 +4079,7 @@ dependencies = [
 name = "tauri-plugin-any-sync"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "log",
  "prost",
  "reqwest",

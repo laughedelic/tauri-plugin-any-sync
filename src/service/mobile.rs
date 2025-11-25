@@ -24,47 +24,45 @@ impl<R: Runtime> MobileService<R> {
 
 #[async_trait]
 impl<R: Runtime> super::AnySyncService for MobileService<R> {
+    async fn call_blocking<F, T>(&self, f: F) -> Result<T>
+    where
+        F: FnOnce() -> Result<T> + Send + 'static,
+        T: Send + 'static,
+    {
+        tokio::task::spawn_blocking(f)
+            .await
+            .map_err(|e| crate::Error::Storage(format!("Task join error: {}", e)))?
+    }
+
+    // Mobile ping is a no-op, just return success
     async fn ping(&self, payload: PingRequest) -> Result<PingResponse> {
         info!("Mobile service: ping");
-        tokio::task::spawn_blocking(move || {
-            // Mobile ping is a no-op, just return success
-            Ok(PingResponse {
-                value: Some("pong (mobile)".to_string()),
-            })
+        Ok(PingResponse {
+            value: Some("pong (mobile)".to_string()),
         })
-        .await
-        .map_err(|e| crate::Error::Storage(format!("Task join error: {}", e)))?
     }
 
     async fn storage_put(&self, payload: PutRequest) -> Result<PutResponse> {
         info!("Mobile service: storage_put");
-        let any_sync = self.any_sync.clone();
-        tokio::task::spawn_blocking(move || any_sync.storage_put(payload))
+        self.call_blocking(move || self.any_sync.clone().storage_put(payload))
             .await
-            .map_err(|e| crate::Error::Storage(format!("Task join error: {}", e)))?
     }
 
     async fn storage_get(&self, payload: GetRequest) -> Result<GetResponse> {
         info!("Mobile service: storage_get");
-        let any_sync = self.any_sync.clone();
-        tokio::task::spawn_blocking(move || any_sync.storage_get(payload))
+        self.call_blocking(move || self.any_sync.clone().storage_get(payload))
             .await
-            .map_err(|e| crate::Error::Storage(format!("Task join error: {}", e)))?
     }
 
     async fn storage_delete(&self, payload: DeleteRequest) -> Result<DeleteResponse> {
         info!("Mobile service: storage_delete");
-        let any_sync = self.any_sync.clone();
-        tokio::task::spawn_blocking(move || any_sync.storage_delete(payload))
+        self.call_blocking(move || self.any_sync.clone().storage_delete(payload))
             .await
-            .map_err(|e| crate::Error::Storage(format!("Task join error: {}", e)))?
     }
 
     async fn storage_list(&self, payload: ListRequest) -> Result<ListResponse> {
         info!("Mobile service: storage_list");
-        let any_sync = self.any_sync.clone();
-        tokio::task::spawn_blocking(move || any_sync.storage_list(payload))
+        self.call_blocking(move || self.any_sync.clone().storage_list(payload))
             .await
-            .map_err(|e| crate::Error::Storage(format!("Task join error: {}", e)))?
     }
 }

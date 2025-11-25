@@ -43,14 +43,12 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
 
             // Create the service trait object based on platform
             #[cfg(mobile)]
-            let service: Box<dyn service::AnySyncService> = {
-                Box::new(service::mobile::MobileService::new(app, api)?)
-            };
+            let service: Box<dyn service::AnySyncService> =
+                { Box::new(service::mobile::MobileService::new(app, api)?) };
             #[cfg(desktop)]
-            let service: Box<dyn service::AnySyncService> = {
-                Box::new(service::desktop::DesktopService::new(app, api)?)
-            };
-            
+            let service: Box<dyn service::AnySyncService> =
+                { Box::new(service::desktop::DesktopService::new(app, api)?) };
+
             // Manage the service for use in commands
             app.manage(service);
 

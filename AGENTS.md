@@ -182,3 +182,39 @@ TypeScript → Rust Commands → Mobile Service → Kotlin/Swift Plugin → JNI/
 - Direct in-process function calls via gomobile
 
 **Shared:** Same TypeScript API, same Go storage layer (>95% code reuse)
+
+## Integration Tests
+
+Integration tests verify end-to-end functionality of the plugin with the Go backend, without requiring a GUI. They use `tauri::test` to create a headless app instance.
+
+**Location**: `example-app/src-tauri/tests/integration.rs`
+
+**What is tested**:
+- **Process Management**: Automatic sidecar startup when commands are invoked
+- **gRPC Communication**: All commands (ping, storage_put, storage_get, storage_delete, storage_list)
+- **Error Handling**: Proper error propagation across all layers
+- **Data Integrity**: Complex JSON documents, multiple collections, updates, deletes
+- **Edge Cases**: Empty collections, nonexistent documents, concurrent operations
+
+**Running integration tests**:
+
+```bash
+# Run integration tests from the example app
+cd examples/tauri-app/src-tauri
+cargo test --test integration -- --test-threads=1
+
+# With detailed logging
+RUST_LOG=debug cargo test --test integration -- --test-threads=1 --nocapture
+```
+
+**Important notes**:
+- Tests run with `--test-threads=1` to avoid database conflicts (each test uses the same sidecar instance)
+- The Go backend binary must be built before running tests
+- Tests are platform-specific (each platform needs its own binary)
+- The `create_app_builder()` function in `lib.rs` ensures tests use the same configuration as production
+
+**CI Integration**:
+- The `test-integration` job in `.github/workflows/test.yml` runs these tests on every push/PR
+- Runs on both Ubuntu and macOS
+- Automatically builds the Go backend before running tests
+- Uses `ANY_SYNC_GO_BINARIES_DIR` to point to local binaries

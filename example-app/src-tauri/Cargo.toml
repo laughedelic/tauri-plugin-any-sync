@@ -23,3 +23,7 @@ tauri-plugin-shell = "2.3.3"
 tauri-plugin-any-sync = { path = "../../plugin-rust-core", features = ["all"] }
 log = "0.4"
 env_logger = "0.11"
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["full"] }
+serde_json = "1.0"

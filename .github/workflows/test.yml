@@ -88,3 +88,52 @@ jobs:
 
       - name: Run tests
         run: task core:test
+
+  test-integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - ubuntu-latest
+          - macos-latest
+          # - windows-latest # TODO: reenable (too slow currently)
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go-backend/go.mod'
+          cache-dependency-path: 'go-backend/go.sum'
+
+      - name: Set up protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          version: '28.x'
+          repo-token: ${{ github.token }}
+
+      - name: install webkit2gtk
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y webkit2gtk-4.1
+
+      - name: Build Go backend for current platform
+        run: |
+          if [ "${{ matrix.platform }}" = "ubuntu-latest" ]; then
+            ./build-go-backend.sh x86_64-unknown-linux-gnu
+          elif [ "${{ matrix.platform }}" = "macos-latest" ]; then
+            ./build-go-backend.sh "$(uname -m)-apple-darwin"
+          fi
+
+      - name: Set up local binaries for testing
+        run: echo "ANY_SYNC_GO_BINARIES_DIR=$(pwd)/binaries" >> $GITHUB_ENV
+
+      - name: Run integration tests
+        working-directory: examples/tauri-app/src-tauri
+        run: cargo test --test integration -- --test-threads=1
+        env:
+          RUST_LOG: debug
+          RUST_BACKTRACE: 1

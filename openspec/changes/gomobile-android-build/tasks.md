@@ -320,10 +320,10 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 6. Test on emulator in portrait orientation
 
 **Validation:**
-- [ ] UI fits within mobile screen bounds
-- [ ] All interactive elements accessible
-- [ ] Text readable without zooming
-- [ ] No horizontal scrolling required
+- [x] UI fits within mobile screen bounds
+- [x] All interactive elements accessible
+- [x] Text readable without zooming
+- [x] No horizontal scrolling required
 
 ---
 
@@ -350,8 +350,8 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 - [x] Documentation complete and accurate
 - [x] Android section added to README.md
 - [x] android/AGENTS.md updated with architecture and implementation details
-- [ ] Debugging procedures documented (adb logcat setup)
-- [ ] Common error patterns and solutions documented
+- [x] Debugging procedures documented (adb logcat setup)
+- [x] Common error patterns and solutions documented
 
 ---
 

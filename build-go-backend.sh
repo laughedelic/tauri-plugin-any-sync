@@ -115,7 +115,8 @@ build_target() {
     mkdir -p ../binaries
     
     # Build
-    go build -o "../binaries/${output_name}" ./cmd/server
+    # Set ldflags to strip debug symbols and disable DWARF generation in CI builds for smaller binaries
+    go build${CI:+ -ldflags "-s -w"} -o "../binaries/${output_name}" ./cmd/server
     
     # Reset environment
     unset GOOS GOARCH

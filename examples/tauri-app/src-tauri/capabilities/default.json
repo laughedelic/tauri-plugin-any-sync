@@ -1,21 +1,12 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "enables the default permissions",
+  "description": "Common permissions for all platforms",
   "windows": [
     "main"
   ],
   "permissions": [
     "core:default",
-    "any-sync:default",
-    {
-      "identifier": "shell:allow-execute",
-      "allow": [
-        {
-          "name": "binaries/any-sync",
-          "sidecar": true
-        }
-      ]
-    }
+    "any-sync:default"
   ]
 }

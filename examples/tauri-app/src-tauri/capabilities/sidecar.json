@@ -1,0 +1,20 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "sidecar",
+  "description": "Allows executing the Go backend as a sidecar process (desktop only)",
+  "windows": [
+    "main"
+  ],
+  "platforms": ["linux", "macOS", "windows"],
+  "permissions": [
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "binaries/any-sync",
+          "sidecar": true
+        }
+      ]
+    }
+  ]
+}

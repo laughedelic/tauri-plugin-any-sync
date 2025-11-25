@@ -275,10 +275,7 @@ fn determine_binaries_to_download() -> Result<Vec<String>, Box<dyn std::error::E
     if cfg!(feature = "x86_64-pc-windows-msvc") {
         binaries.push("any-sync-x86_64-pc-windows-msvc.exe".to_string());
     }
-
-    // Add Android .aar if building for Android
-    #[cfg(target_os = "android")]
-    {
+    if cfg!(feature = "android") {
         binaries.push("any-sync-android.aar".to_string());
     }
 

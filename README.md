@@ -105,9 +105,18 @@ The plugin automatically downloads pre-compiled Go backend binaries from GitHub 
    ```
 
    **Available Features:**
-   - Platform-specific: `x86_64-apple-darwin`, `aarch64-apple-darwin`, `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-pc-windows-msvc` (based on `$TARGET_TRIPLE`)
-   - Platform groups: `macos`, `linux`, `windows`
-   - All platforms: `all`
+   - `all`
+     - `desktop`
+       - `macos`
+         - `x86_64-apple-darwin`
+         - `aarch64-apple-darwin`
+       - `linux`
+         - `x86_64-unknown-linux-gnu`
+         - `aarch64-unknown-linux-gnu`
+       - `windows`
+         - `x86_64-pc-windows-msvc`
+     - `mobile`
+       - `android`
 
 3. **Update `src-tauri/build.rs` script** to link binaries directory:
 
@@ -229,12 +238,24 @@ The plugin automatically downloads pre-compiled Go backend binaries from GitHub 
 
 The plugin includes Android support with no additional configuration required:
 
-1. **Initialize Android support:**
+1. **Add Android feature** in your `src-tauri/Cargo.toml`:
+
+   ```toml
+   tauri-plugin-any-sync = { version = "0.1", features = ["android"] }
+   ```
+
+   Or if you're including all platforms:
+   
+   ```toml
+   tauri-plugin-any-sync = { version = "0.1", features = ["all"] }
+   ```
+
+2. **Initialize Android support:**
    ```bash
    npm run tauri android init
    ```
 
-2. **Build and run:**
+3. **Build and run:**
    ```bash
    # Development (emulator or device)
    npm run tauri android dev
@@ -244,7 +265,7 @@ The plugin includes Android support with no additional configuration required:
    ```
 
 **How it works:**
-- The plugin's `build.rs` automatically downloads `any-sync-android.aar` (includes all ABIs)
+- The plugin's `build.rs` automatically downloads `any-sync-android.aar` when the `android` feature is enabled (includes all ABIs)
 - The .aar is symlinked to the plugin's `android/libs/` directory
 - Gradle loads the Go mobile library as a native dependency
 - No additional setup needed in your app's build scripts

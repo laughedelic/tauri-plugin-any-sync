@@ -139,9 +139,18 @@ The plugin uses an automated binary distribution system with two distinct modes:
 ### Cargo Configuration
 
 **Features** (select which platforms to download):
-- Individual targets: `x86_64-apple-darwin`, `aarch64-apple-darwin`, `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-pc-windows-msvc`
-- Platform groups: `macos`, `linux`, `windows`
-- All: `all`
+- `all`
+  - `desktop`
+    - `macos`
+      - `x86_64-apple-darwin`
+      - `aarch64-apple-darwin`
+    - `linux`
+      - `x86_64-unknown-linux-gnu`
+      - `aarch64-unknown-linux-gnu`
+    - `windows`
+      - `x86_64-pc-windows-msvc`
+  - `mobile`
+    - `android`
 
 **Links** (`links = "tauri-plugin-any-sync"`):
 - Enables metadata propagation via environment variables

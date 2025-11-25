@@ -22,7 +22,14 @@ The installation guide SHALL include step-by-step build script configuration for
 
 #### Scenario: Feature selection guidance
 - **WHEN** developers need to choose which platform binaries to download
-- **THEN** the guide explains the available features (all, macos, linux, windows, platform-specific targets)
+- **THEN** the guide explains the available features:
+  - `all`
+    - `desktop`
+      - `macos` (`x86_64-apple-darwin`, `aarch64-apple-darwin`)
+      - `linux` (`x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`)
+      - `windows` (`x86_64-pc-windows-msvc`)
+    - `mobile`
+      - `android`
 - **AND** provides recommendations based on target platforms
 - **AND** shows example Cargo.toml dependency configurations
 

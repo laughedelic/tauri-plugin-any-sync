@@ -7,7 +7,7 @@
 //! the Go sidecar process and communicates via gRPC without requiring a GUI.
 
 use serde_json::json;
-use tauri::test::{mock_builder, mock_context, MockRuntime};
+use tauri::test::{mock_context, noop_assets, MockRuntime};
 use tauri_app_lib::create_app_builder;
 use tauri_plugin_any_sync::AnySyncExt;
 
@@ -21,7 +21,7 @@ fn create_test_app() -> tauri::App<MockRuntime> {
 
     // Create the app using the same builder as production
     create_app_builder()
-        .build(mock_context(mock_builder()))
+        .build(mock_context(noop_assets()))
         .expect("failed to build test app")
 }
 

@@ -215,6 +215,6 @@ RUST_LOG=debug cargo test --test integration -- --test-threads=1 --nocapture
 
 **CI Integration**:
 - The `test-integration` job in `.github/workflows/test.yml` runs these tests on every push/PR
-- Runs on both Ubuntu and macOS
+- Runs on Ubuntu (Linux-only for faster CI execution)
 - Automatically builds the Go backend before running tests
 - Uses `ANY_SYNC_GO_BINARIES_DIR` to point to local binaries

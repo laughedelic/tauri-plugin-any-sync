@@ -26,13 +26,19 @@ The integration tests cover:
 
 ### Prerequisites
 
-1. **Build the Go backend** for your platform:
+1. **Tauri test feature**: The `Cargo.toml` includes `tauri` with the `test` feature in `dev-dependencies`:
+   ```toml
+   [dev-dependencies]
+   tauri = { version = "2.9.2", features = ["test"] }
+   ```
+
+2. **Build the Go backend** for your platform:
    ```bash
    # From project root
    ./build-go-backend.sh
    ```
 
-2. **Set environment variable** to use local binaries:
+3. **Set environment variable** to use local binaries:
    ```bash
    export ANY_SYNC_GO_BINARIES_DIR=$(pwd)/binaries
    ```
@@ -85,8 +91,9 @@ Tests are run sequentially to avoid conflicts:
 The `test-integration` job in `.github/workflows/test.yml` runs these tests automatically:
 
 - Runs on every push and pull request
-- Tests on both Ubuntu and macOS
+- Tests on Ubuntu (Linux-only for faster CI execution)
 - Automatically builds the Go backend before running tests
+- Installs all required system dependencies (webkit2gtk, protoc)
 - Fails the build if any test fails
 
 ## Troubleshooting

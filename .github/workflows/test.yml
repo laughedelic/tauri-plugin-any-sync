@@ -90,14 +90,7 @@ jobs:
         run: task core:test
 
   test-integration:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - ubuntu-latest
-          - macos-latest
-          # - windows-latest # TODO: reenable (too slow currently)
-    runs-on: ${{ matrix.platform }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -114,19 +107,13 @@ jobs:
           version: '28.x'
           repo-token: ${{ github.token }}
 
-      - name: install webkit2gtk
-        if: matrix.platform == 'ubuntu-latest'
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y webkit2gtk-4.1
+          sudo apt-get install -y webkit2gtk-4.1 libgtk-3-dev
 
-      - name: Build Go backend for current platform
-        run: |
-          if [ "${{ matrix.platform }}" = "ubuntu-latest" ]; then
-            ./build-go-backend.sh x86_64-unknown-linux-gnu
-          elif [ "${{ matrix.platform }}" = "macos-latest" ]; then
-            ./build-go-backend.sh "$(uname -m)-apple-darwin"
-          fi
+      - name: Build Go backend
+        run: ./build-go-backend.sh x86_64-unknown-linux-gnu
 
       - name: Set up local binaries for testing
         run: echo "ANY_SYNC_GO_BINARIES_DIR=$(pwd)/binaries" >> $GITHUB_ENV

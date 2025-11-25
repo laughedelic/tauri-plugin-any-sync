@@ -26,7 +26,6 @@ impl<R: Runtime> MobileService<R> {
 impl<R: Runtime> super::AnySyncService for MobileService<R> {
     async fn ping(&self, payload: PingRequest) -> Result<PingResponse> {
         info!("Mobile service: ping");
-        let any_sync = self.any_sync.clone();
         tokio::task::spawn_blocking(move || {
             // Mobile ping is a no-op, just return success
             Ok(PingResponse {

@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use tauri::{
     plugin::{Builder, TauriPlugin},
     Manager, Runtime,
@@ -16,13 +17,28 @@ mod commands;
 mod error;
 mod models;
 mod proto;
-mod service;
 
 pub use error::{Error, Result};
 
-// Note: The AnySyncExt trait and direct AnySync access has been removed.
-// All functionality is now accessed through the AnySyncService trait,
-// which provides a unified interface for both desktop and mobile platforms.
+/// Service trait that abstracts platform-specific implementations.
+/// Desktop uses async gRPC calls, Mobile uses sync FFI wrapped in spawn_blocking.
+#[async_trait]
+pub trait AnySyncService: Send + Sync {
+    /// Ping the backend service
+    async fn ping(&self, payload: PingRequest) -> Result<PingResponse>;
+
+    /// Store a document in a collection
+    async fn storage_put(&self, payload: PutRequest) -> Result<PutResponse>;
+
+    /// Retrieve a document from a collection
+    async fn storage_get(&self, payload: GetRequest) -> Result<GetResponse>;
+
+    /// Delete a document from a collection
+    async fn storage_delete(&self, payload: DeleteRequest) -> Result<DeleteResponse>;
+
+    /// List all document IDs in a collection
+    async fn storage_list(&self, payload: ListRequest) -> Result<ListResponse>;
+}
 
 /// Initializes the plugin.
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
@@ -43,11 +59,9 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
 
             // Create the service trait object based on platform
             #[cfg(mobile)]
-            let service: Box<dyn service::AnySyncService> =
-                { Box::new(service::mobile::MobileService::new(app, api)?) };
+            let service: Box<dyn AnySyncService> = { Box::new(mobile::AnySync::new(app, api)?) };
             #[cfg(desktop)]
-            let service: Box<dyn service::AnySyncService> =
-                { Box::new(service::desktop::DesktopService::new(app, api)?) };
+            let service: Box<dyn AnySyncService> = { Box::new(desktop::AnySync::new(app, api)?) };
 
             // Manage the service for use in commands
             app.manage(service);

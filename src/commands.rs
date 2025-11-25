@@ -2,7 +2,7 @@ use log::{debug, error, info};
 use tauri::{command, State};
 
 use crate::models::*;
-use crate::service::AnySyncService;
+use crate::AnySyncService;
 use crate::Result;
 
 #[command]

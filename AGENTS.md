@@ -205,18 +205,21 @@ The plugin uses an automated binary distribution system with two distinct modes:
 
 ## Communication Flow
 
+### Desktop (gRPC Sidecar)
 ```
-TypeScript UI → Tauri Commands → Rust Plugin → gRPC Client → Go Backend → gRPC Server → Response → UI
+TypeScript → Rust Commands → Desktop Service → gRPC Client → Go Sidecar → AnyStore
 ```
+- Go backend runs as separate process (bundled binary)
+- IPC via gRPC over localhost
 
-### Data Flow
-1. UI calls `ping("test message")` in TypeScript
-2. Tauri invokes Rust `ping` command
-3. Rust spawns Go sidecar if not running
-4. Rust sends gRPC `PingRequest` to Go backend
-5. Go backend processes and returns `PingResponse`
-6. Rust converts response and returns to TypeScript
-7. UI receives Promise with echoed message
+### Mobile (gomobile binaries Embedded)
+```
+TypeScript → Rust Commands → Mobile Service → Kotlin/Swift Plugin → JNI/FFI → Go Library → AnyStore
+```
+- Go backend compiled as native library (.aar/.xcframework)
+- Direct in-process function calls via gomobile
+
+**Shared:** Same TypeScript API, same Go storage layer (>95% code reuse)
 
 ## Tooling Requirements
 

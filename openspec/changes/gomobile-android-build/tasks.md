@@ -256,6 +256,10 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 ---
 
 #### Task 4.3: Test on Android emulator
+**Estimated effort:** 3 hours  
+**Dependencies:** Task 4.2, Task 2.3  
+**Deliverable:** Working app on Android
+
 **Steps:**
 1. Create Android Virtual Device (AVD) if needed (API 24+, arm64 or x86_64)
 2. Start emulator
@@ -276,19 +280,32 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 9. Document any issues found
 
 **Validation:**
-- [ ] App launches on emulator without crashes
-- [ ] UI renders correctly
-- [ ] Database initialized at correct path (check logs: `adb logcat | grep AnySync`)
-- [ ] All storage operations work identically to desktop
-- [ ] Response formats match Rust models (documentJson/found, existed, ids fields)
-- [ ] Errors propagate correctly (reject with descriptive messages)
-- [ ] Data persists across app restarts
-- [ ] Logging visible in logcat with "AnySync" tag
-- [ ] Empty/missing documents handled correctly
-- [ ] UI renders correctly
-- [ ] All storage operations work
-- [ ] Errors handled gracefully
-- [ ] Data persists across app restarts
+- [x] App launches on emulator without crashes
+- [x] UI renders correctly
+- [x] Database initialized at correct path (`/data/user/0/com.github.laughedelic.tauri/files/anysync.db`)
+- [x] All storage operations work identically to desktop
+- [x] Response formats match Rust models (documentJson/found, existed, ids fields)
+- [x] Errors propagate correctly (descriptive error messages)
+- [x] Data persists across app restarts
+- [x] Logging visible in logcat with "AnySync" tag
+- [x] Empty/missing documents handled correctly (returns empty arrays/null)
+- [x] Collections discovery works (dynamic collection detection)
+- [x] No errors in recent logs (all operations successful)
+- [x] Data persists across app restarts
+
+**Testing Evidence (November 25, 2025):**
+- ✅ Library loaded: "Successfully loaded gojni library"
+- ✅ DB initialized: "/data/user/0/com.github.laughedelic.tauri/files/anysync.db"
+- ✅ Operations logged: storagePut, storageGet, storageDelete, storageList all working
+- ✅ Multiple collections tested: notes, users, tasks, settings
+- ✅ No errors in today's logs (previous errors were from 11-24 before fixes)
+- ✅ Cross-app restarts: Multiple app launches show persistent data access
+
+**Issues Fixed During Testing:**
+1. Data format mismatches (Kotlin ↔ Rust models) - Fixed
+2. Empty collection handling (Go backend) - Fixed
+3. Collection discovery (UI logic) - Fixed
+4. JSON array parsing (Kotlin null handling) - Fixed
 
 ---
 

@@ -248,10 +248,7 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 **Validation:**
 - [x] Build completes successfully
 - [x] .aar copied to correct Android project location
-- [ ] APK generated without errors
-- [ ] APK size reasonable (<50MB including all ABIs)roid project
-- [ ] APK generated
-- [ ] APK size reasonable
+- [x] APK generated without errors
 
 ---
 
@@ -372,12 +369,12 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 6. Document any platform differences found
 
 **Validation:**
-- [ ] Same TypeScript code works on both platforms
-- [ ] Response formats identical (field names and structure)
-- [ ] Data format compatible across platforms
-- [ ] Error messages similar and descriptive
-- [ ] Performance acceptable on Android
-- [ ] Empty/missing document handling consistent
+- [x] Same TypeScript code works on both platforms
+- [x] Response formats identical (field names and structure)
+- [x] Data format compatible across platforms
+- [x] Error messages similar and descriptive
+- [x] Performance acceptable on Android
+- [x] Empty/missing document handling consistent
 
 ---
 

@@ -59,10 +59,10 @@ graph LR
 ```
 
 **Key Design Patterns**:
-- **Desktop**: Sidecar process (Go executable bundled with app)
-- **Mobile**: gomobile FFI (Go compiled as native library)
-- **Unified API**: Single TypeScript interface across all platforms
-- **Communication**: gRPC protocol for type-safe, efficient message passing
+- **Desktop** (macOS/Linux/Windows): Sidecar process (Go executable bundled with app, gRPC IPC)
+- **Mobile** (Android/iOS): gomobile embedded library (Go compiled as .aar/.xcframework, direct JNI/FFI calls)
+- **Unified API**: Single TypeScript interface across all platforms (>95% shared Go code)
+- **Communication**: Platform-appropriate transport (gRPC for desktop, native calls for mobile)
 
 ## Quick Start
 
@@ -185,15 +185,69 @@ The plugin automatically downloads pre-compiled Go backend binaries from GitHub 
        .plugin(tauri_plugin_any_sync::init())
    ```
 
-7. **Build your app:**
+7. **Configure capabilities** in `src-tauri/capabilities/`:
+
+   Update `default.json` with the `any-sync` permissions:
+   ```json
+    "permissions": [
+      ...
+      "any-sync:default"
+    ]
+   ```
+
+   Create `sidecar.json` for desktop sidecar:
+   ```json
+   {
+     "$schema": "../gen/schemas/desktop-schema.json",
+     "identifier": "sidecar",
+     "description": "Desktop sidecar process execution",
+     "windows": ["main"],
+     "platforms": ["linux", "macOS", "windows"],
+     "permissions": [
+       {
+         "identifier": "shell:allow-execute",
+         "allow": [{"name": "binaries/any-sync", "sidecar": true}]
+       }
+     ]
+   }
+   ```
+
+8. **Build your app:**
 
    ```bash
-   # Using Tauri CLI (recommended)
+   # Desktop
    npm run tauri build
+   
+   # Android
+   npm run tauri android build
    
    # Or with cargo directly from src-tauri directory
    cd src-tauri && cargo build
    ```
+
+### Android Setup
+
+The plugin includes Android support with no additional configuration required:
+
+1. **Initialize Android support:**
+   ```bash
+   npm run tauri android init
+   ```
+
+2. **Build and run:**
+   ```bash
+   # Development (emulator or device)
+   npm run tauri android dev
+   
+   # Production build
+   npm run tauri android build
+   ```
+
+**How it works:**
+- The plugin's `build.rs` automatically downloads `any-sync-android.aar` (includes all ABIs)
+- The .aar is symlinked to the plugin's `android/libs/` directory
+- Gradle loads the Go mobile library as a native dependency
+- No additional setup needed in your app's build scripts
 
 ## Development
 
@@ -238,11 +292,14 @@ protoc --go_out=. --go-grpc_out=. api/proto/health.proto
 
 **Option 2: Using build script**
 ```bash
-# Build for current platform
+# Build desktop binaries for current platform
 ./build-go-backend.sh
 
-# Build for all supported platforms (cross-compile)
+# Build for all supported desktop platforms (cross-compile)
 ./build-go-backend.sh --cross
+
+# Build Android .aar (requires gomobile)
+./build-go-mobile.sh
 ```
 
 ### Rust Plugin Development

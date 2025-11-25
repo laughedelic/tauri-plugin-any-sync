@@ -133,4 +133,4 @@ None.
 
 **Logging Strategy:** Use Android's `android.util.Log` with tag "AnySync" for all plugin logging. This makes debugging easier via `adb logcat | grep AnySync`.
 
-**Gradle Configuration:** The plugin's `build.gradle.kts` must include the .aar dependency. This is handled by the consumer's build.rs copying the .aar to the appropriate location.
+**Gradle Configuration:** The plugin's `build.gradle.kts` references the .aar from its local `libs/` directory: `implementation(files("libs/any-sync-android.aar"))`. The plugin's build.rs ensures this file is present by symlinking/copying it from the binaries directory during the build process.

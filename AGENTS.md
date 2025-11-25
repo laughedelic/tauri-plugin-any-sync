@@ -120,12 +120,15 @@ The plugin uses an automated binary distribution system with two distinct modes:
    - Determine enabled features (e.g., `macos`, `windows`)
    - Download binaries from GitHub Releases for plugin version
    - Download and parse `checksums.txt` from release assets
-   - Verify SHA256 checksums for each binary
+   - Verify SHA256 checksums for each binary (desktop + mobile)
    - Store verified binaries in `OUT_DIR/binaries/`
    - Fail build with clear error if download or verification fails
-4. Emit `cargo:binaries_dir=<path>` for consumer propagation (both modes)
+4. **For Android**: Symlink (Unix) or copy (Windows) `any-sync-android.aar` from binaries to `android/libs/`
+5. Emit `cargo:binaries_dir=<path>` for consumer propagation (both modes)
 
 **Note**: In development mode, symlinks are used instead of copying to save disk space and improve build times. On Windows, files are copied as a fallback since symlinks require admin privileges.
+
+**Android .aar Placement**: The plugin's build.rs automatically manages the .aar placement by creating a symlink/copy to `android/libs/any-sync-android.aar`. This allows the plugin's `android/build.gradle.kts` to reference `implementation(files("libs/any-sync-android.aar"))` relative to its own directory, which works in both development (local path) and production (published crate) scenarios.
 
 **Consumer Build** (`build.rs` in consuming app):
 1. Read `DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR` environment variable from plugin
@@ -202,6 +205,7 @@ The plugin uses an automated binary distribution system with two distinct modes:
 - **macOS**: `any-sync-x86_64-apple-darwin` (Intel), `any-sync-aarch64-apple-darwin` (Apple Silicon)
 - **Linux**: `any-sync-x86_64-unknown-linux-gnu` (x64), `any-sync-aarch64-unknown-linux-gnu` (ARM64)
 - **Windows**: `any-sync-x86_64-pc-windows-msvc` (x64)
+- **Android**: `any-sync-android.aar` (arm64-v8a, armeabi-v7a, x86, x86_64)
 
 ## Communication Flow
 

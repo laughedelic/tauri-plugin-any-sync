@@ -183,31 +183,30 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 - [x] .aar build added to workflow
 - [x] Checksum generation included
 - [x] Upload to release configured
-#### Task 3.3: Implement .aar download in plugin build.rs
+#### Task 3.3: Implement .aar management in plugin build.rs
 **Estimated effort:** 2 hours  
 **Dependencies:** Task 3.2  
-**Deliverable:** Plugin downloads .aar during build
+**Deliverable:** Plugin manages .aar placement for Gradle
 
 **Steps:**
 1. Open `build.rs`
-2. Detect Android target via enabled features or target architecture (not `cfg(target_os)` - build.rs runs on host)
-3. Implement `download_android_aar()` function (similar to binary download logic)
-4. Download `any-sync-android.aar` from GitHub releases for plugin version
-5. Verify SHA256 checksum against `checksums.txt`
-6. Store verified .aar in `OUT_DIR/binaries/` (same as desktop)
-7. Emit `cargo:aar_path=<path>` (not `binaries_dir`) for consumer build.rs
-8. Support local override: check `ANY_SYNC_GO_BINARIES_DIR` and use `any-sync-android.aar` from there if set
-9. Test with example app Android build
+2. Download/link `any-sync-android.aar` to `OUT_DIR/binaries/` (same as desktop binaries)
+3. Verify SHA256 checksum against `checksums.txt` (reuses existing logic)
+4. Symlink (Unix) or copy (Windows) the .aar from binaries to `android/libs/any-sync-android.aar`
+5. Update `android/build.gradle.kts` to reference `implementation(files("libs/any-sync-android.aar"))`
+6. Support local override: check `ANY_SYNC_GO_BINARIES_DIR` and use `any-sync-android.aar` from there if set
+7. Test with example app Android build
+
+**Implementation Note:** The plugin's build.rs handles .aar placement internally by creating a symlink/copy to `android/libs/`. This keeps the plugin self-contained and eliminates the need for consumer build scripts to have Android-specific logic.
 
 **Validation:**
-- [x] Plugin builds successfully for Android target
-- [x] .aar downloaded from correct GitHub release
+- [x] Plugin builds successfully
+- [x] .aar downloaded from correct GitHub release (or used from local path)
 - [x] Checksum verification works (reuses existing logic)
-- [x] Metadata emitted correctly (`cargo:aar_path=...`)
-- [x] Local override works with same env var as desktopd
-- [x] .aar included in binary downloads
-- [x] Checksum verification reuses existing logic
-- [x] Metadata emitted correctly (aar_path)
+- [x] .aar symlinked to android/libs/
+- [x] Gradle can reference libs/any-sync-android.aar
+- [x] Works in both development and production scenarios
+- [x] Consumer build.rs requires no Android-specific changes
 
 ---
 
@@ -230,25 +229,25 @@ Implementation tasks for integrating Go backend with Android via gomobile, organ
 - [x] Android project structure valid
 - [x] Gradle builds successfully
 
-#### Task 4.2: Update example app build configuration
-**Estimated effort:** 2 hours  
-**Dependencies:** Task 3.3, Task 4.1  
-**Deliverable:** Example app builds for Android
+#### Task 4.2: Configure example app capabilities
+**Estimated effort:** 1 hour  
+**Dependencies:** Task 4.1  
+**Deliverable:** Platform-appropriate capabilities configured
 
 **Steps:**
-1. Open `examples/tauri-app/src-tauri/build.rs`
-2. Add Android-specific logic to copy .aar:
-   - Read `DEP_TAURI_PLUGIN_ANY_SYNC_AAR_PATH` env var (from plugin build.rs)
-   - Determine target is Android (check CARGO_CFG_TARGET_OS)
-   - Copy .aar to `gen/android/app/libs/` (or appropriate Gradle libs directory)
-3. Update `gen/android/app/build.gradle.kts` if needed (add libs directory to dependencies)
-4. Test build: `tauri android build`
-5. Verify .aar is bundled in APK
+1. Create `src-tauri/capabilities/default.json` with core plugin permissions (`any-sync:default`)
+2. Create `src-tauri/capabilities/sidecar.json` with desktop-specific permissions (shell:allow-execute for sidecar)
+3. Set `platforms: ["linux", "macOS", "windows"]` in sidecar capability
+4. Test that desktop build includes sidecar permissions
+5. Test that Android build excludes sidecar permissions
+
+**Implementation Note:** Tauri v2 auto-discovers capabilities from the `capabilities/` directory and applies them based on the `platforms` field. No need for platform-specific capability files - group by functionality instead.
 
 **Validation:**
-- [x] Build completes successfully
-- [x] .aar copied to correct Android project location
-- [x] APK generated without errors
+- [x] Capabilities organized by functionality (default, sidecar)
+- [x] Desktop builds with shell:allow-execute permission
+- [x] Android builds without shell permissions
+- [x] Both platforms work correctly
 
 ---
 

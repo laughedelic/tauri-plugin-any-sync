@@ -64,12 +64,24 @@ The plugin SHALL support local development **for all platforms** using environme
 - **AND** **Android artifacts** are copied to OUT_DIR maintaining the same downstream flow as downloaded binaries
 
 ### Requirement: Cargo Links Metadata Propagation
-The plugin SHALL use Cargo's links mechanism to broadcast binary paths **for all platforms** to consuming applications.
+The plugin SHALL use Cargo's links mechanism to broadcast binary paths to consuming applications.
 
-#### Scenario: Metadata broadcasting **for mobile**
-- **WHEN** the plugin's build script completes successfully **for Android target**
-- **THEN** it emits cargo:**aar_path**=<path> to standard output
-- **AND** Cargo propagates this as DEP_TAURI_PLUGIN_ANY_SYNC_**AAR_PATH** environment variable to consumer build scripts
+#### Scenario: Metadata broadcasting
+- **WHEN** the plugin's build script completes successfully
+- **THEN** it emits cargo:**binaries_dir**=<path> to standard output
+- **AND** Cargo propagates this as DEP_TAURI_PLUGIN_ANY_SYNC_**BINARIES_DIR** environment variable to consumer build scripts
+- **AND** this single metadata value covers both desktop binaries and Android .aar (all in same directory)
+
+### Requirement: Android .aar Accessibility
+The plugin SHALL make the Android .aar accessible to the plugin's Gradle build.
+
+#### Scenario: Plugin self-manages .aar placement
+- **WHEN** the plugin's build script completes successfully
+- **AND** `any-sync-android.aar` exists in binaries directory
+- **THEN** build.rs symlinks (Unix) or copies (Windows) the .aar to `android/libs/any-sync-android.aar`
+- **AND** the plugin's `android/build.gradle.kts` references `implementation(files("libs/any-sync-android.aar"))`
+- **AND** this works in both development (local path) and production (published crate) scenarios
+- **AND** consumer's build.rs requires no Android-specific logic
 
 ## REMOVED Requirements
 
@@ -88,3 +100,9 @@ None.
 **Naming Rationale:** `any-sync-android.aar` clearly distinguishes from future `any-sync-ios.xcframework` while maintaining consistency with desktop pattern `any-sync-<platform>`.
 
 **Single Binaries Directory:** All cross-platform artifacts live in `binaries/` directory. Build system selects the correct one based on target platform. No separate mobile-specific environment variables or directories needed.
+
+**Self-Contained Plugin:** The plugin manages its own .aar placement by symlinking it from the binaries directory to `android/libs/`. This design:
+- Keeps the plugin self-contained (Gradle references local `libs/` directory)
+- Works identically in development and production (published crate)
+- Eliminates need for consumer build scripts to handle Android-specific logic
+- Leverages Gradle's project structure where plugin's `projectDir` is set in `tauri.settings.gradle`

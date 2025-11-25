@@ -42,6 +42,6 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     implementation(project(":tauri-android"))
     
-    // Go mobile library (from repository root binaries/)
-    implementation(files("../binaries/any-sync-android.aar"))
+    // Go mobile library (copied to libs/ by consumer's build.rs)
+    implementation(files("libs/any-sync-android.aar"))
 }

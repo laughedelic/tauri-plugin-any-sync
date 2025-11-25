@@ -44,6 +44,7 @@ fn main() {
 /// Manages binaries: either downloads from GitHub or uses local directory
 fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
     use std::env;
+    use std::fs;
     use std::path::PathBuf;
 
     const ENV_VAR_NAME: &str = "ANY_SYNC_GO_BINARIES_DIR";
@@ -80,15 +81,32 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
         download_binaries_from_github(&binaries_out_dir)?;
     }
 
+    // For Android: symlink .aar to plugin's android/libs/ directory
+    // This allows the plugin's gradle file to reference libs/any-sync-android.aar
+    let aar_file = binaries_out_dir.join("any-sync-android.aar");
+    if aar_file.exists() {
+        let android_libs = env::current_dir()?.join("android").join("libs");
+        fs::create_dir_all(&android_libs)?;
+        let aar_dest = android_libs.join("any-sync-android.aar");
+
+        // Remove existing file/symlink if present
+        if aar_dest.exists() || aar_dest.symlink_metadata().is_ok() {
+            fs::remove_file(&aar_dest).ok();
+        }
+
+        // Create symlink (Unix) or copy (Windows)
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(&aar_file, &aar_dest)?;
+        }
+        #[cfg(windows)]
+        {
+            fs::copy(&aar_file, &aar_dest)?;
+        }
+    }
+
     // Emit metadata for consumer crates
     println!("cargo:binaries_dir={}", binaries_out_dir.display());
-
-    // For Android builds, also emit the .aar path
-    #[cfg(target_os = "android")]
-    {
-        let aar_path = binaries_out_dir.join("any-sync-android.aar");
-        println!("cargo:aar_path={}", aar_path.display());
-    }
 
     Ok(())
 }

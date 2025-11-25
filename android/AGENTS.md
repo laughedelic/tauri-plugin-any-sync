@@ -25,7 +25,7 @@ android/
 ├── libs/
 │   └── any-sync-android.aar    # Go mobile library (gomobile build)
 ├── src/main/java/
-│   └── ExamplePlugin.kt        # Main plugin with storage commands + JNI calls
+│   └── AnySyncPlugin.kt        # Main plugin with storage commands + JNI calls
 ├── build.gradle.kts            # Gradle build configuration (includes .aar)
 ├── proguard-rules.pro          # ProGuard configuration
 └── settings.gradle.kts         # Gradle settings
@@ -33,7 +33,7 @@ android/
 
 ### Key Components
 
-- **Plugin Class** (`ExamplePlugin.kt`): Tauri plugin interface with storage command handlers
+- **Plugin Class** (`AnySyncPlugin.kt`): Tauri plugin interface with storage command handlers
 - **Go Mobile Library** (`libs/any-sync-android.aar`): Native Go backend compiled with gomobile
 - **JNI Integration**: Direct function calls from Kotlin to Go via `mobile.Mobile` class
 - **Build Config** (`build.gradle.kts`): Dependencies including .aar library
@@ -52,11 +52,11 @@ Unlike desktop (which uses gRPC sidecar), Android embeds the Go backend as a nat
 
 ### 1. Plugin Command Implementation
 
-Commands are implemented in `ExamplePlugin.kt`:
+Commands are implemented in `AnySyncPlugin.kt`:
 
 ```kotlin
 @TauriPlugin
-class ExamplePlugin(private val activity: Activity): Plugin(activity) {
+class AnySyncPlugin(private val activity: Activity): Plugin(activity) {
     private val implementation = Example()
 
     @Command
@@ -101,7 +101,7 @@ The Android plugin integrates with Go backend via gomobile-generated JNI binding
 ```kotlin
 import mobile.Mobile  // Generated from gomobile
 
-class ExamplePlugin {
+class AnySyncPlugin {
     init {
         System.loadLibrary("gojni")
     }
@@ -166,7 +166,7 @@ Test plugin commands in `src/androidTest/`:
 ```kotlin
 @Test
 fun testPingCommand() {
-    val plugin = ExamplePlugin(activity)
+    val plugin = AnySyncPlugin(activity)
     val invoke = MockInvoke()
     plugin.ping(invoke)
     assertEquals("test", invoke.result)
@@ -327,7 +327,7 @@ val dbPath = activity.filesDir.absolutePath + "/anysync.db"
 
 2. **Runtime Errors**
    ```
-   ClassNotFoundException: ExamplePlugin
+   ClassNotFoundException: AnySyncPlugin
    ```
    **Solution**: Verify plugin is properly registered in Tauri configuration
 

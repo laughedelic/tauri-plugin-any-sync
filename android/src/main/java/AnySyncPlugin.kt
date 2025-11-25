@@ -35,7 +35,7 @@ class StorageListArgs {
 }
 
 @TauriPlugin
-class ExamplePlugin(private val activity: Activity): Plugin(activity) {
+class AnySyncPlugin(private val activity: Activity): Plugin(activity) {
     companion object {
         private const val TAG = "AnySync"
         

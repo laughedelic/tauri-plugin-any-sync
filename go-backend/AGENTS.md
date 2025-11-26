@@ -1,19 +1,28 @@
 # Go Backend Development Guide
 
-This guide covers development, building, and testing of the Go backend for the any-sync Tauri plugin.
-
 ## Quick Start
 
 ```bash
-# Build the Go backend
-./build-go-backend.sh
+# Install build dependencies
+task backend:install-deps
+
+# Build desktop binaries (current platform)
+task backend:build
+
+# Build for all platforms
+task backend:build-all
+
+# Build Android .aar
+task backend:mobile
 
 # Run tests
-cd go-backend && go test ./... -v
+task backend:test
 
-# Run server manually
-./binaries/any-sync-aarch64-apple-darwin --port 8080
+# See all available tasks
+task --list
 ```
+
+All build tasks are orchestrated through Taskfile. See `Taskfile.yml` in `go-backend/` and project root for details.
 
 ## Module Architecture
 
@@ -25,7 +34,13 @@ go-backend/
 │   └── storage/
 ├── desktop/                   # anysync-backend/desktop (gRPC server)
 │   ├── main.go
-│   ├── api/                   # Proto + gRPC implementations
+│   ├── proto/                 # Protocol Buffer definitions + generated code
+│   │   ├── doc.go            # go:generate directive for protoc
+│   │   ├── health.proto
+│   │   ├── storage.proto
+│   │   ├── *.pb.go           # Generated gRPC server code
+│   │   └── *_grpc.pb.go      # Generated gRPC client/server code
+│   ├── api/server/           # gRPC service implementations
 │   ├── config/
 │   └── health/
 └── mobile/                    # anysync-backend/mobile (gomobile bindings)
@@ -39,6 +54,22 @@ go-backend/
 - `mobile`: Adds golang.org/x/mobile
 
 **Development:** Use `go.work` for seamless workspace development across modules. Rebuilt modules use `replace` directives pointing to local paths.
+
+## Proto Generation with go:generate
+
+Proto files are in `desktop/proto/` and automatically generated via `go:generate`:
+
+```bash
+# Auto-generate via go:generate (used by build scripts)
+go generate ./proto
+
+# Manual protoc invocation (equivalent)
+protoc --go_out=. --go-grpc_out=. \
+  --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative \
+  proto/health.proto proto/storage.proto
+```
+
+The `paths=source_relative` option ensures generated `.pb.go` files land next to their `.proto` sources instead of creating nested directories.
 
 ## Development Workflow
 

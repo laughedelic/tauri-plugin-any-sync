@@ -1,23 +1,5 @@
 const COMMANDS: &[&str] = &["ping"];
 
-/// Build Go backend binaries using the build script
-fn build_go_backend() -> Result<(), Box<dyn std::error::Error>> {
-    use std::process::Command;
-
-    println!("cargo:warning=Building Go backend binaries...");
-
-    let status = Command::new("./build-go-backend.sh")
-        .arg("--cross")
-        .status()?;
-
-    if !status.success() {
-        return Err("Failed to build Go backend".into());
-    }
-
-    println!("cargo:warning=Go backend build completed successfully");
-    Ok(())
-}
-
 fn main() {
     println!(
         "cargo:debug=ANY_SYNC_GO_BINARIES_DIR={}",
@@ -47,17 +29,11 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
     use std::fs;
     use std::path::PathBuf;
 
-    const ENV_VAR_NAME: &str = "ANY_SYNC_GO_BINARIES_DIR";
-
-    // Register dependencies for rebuild triggers
-    println!("cargo:rerun-if-changed=go-backend/");
-    println!("cargo:rerun-if-changed=build-go-backend.sh");
-
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
     let binaries_out_dir = out_dir.join("binaries");
 
     // Check if local development mode is enabled
-    if let Ok(local_path) = env::var(ENV_VAR_NAME) {
+    if let Ok(local_path) = env::var("ANY_SYNC_GO_BINARIES_DIR") {
         // LOCAL DEVELOPMENT MODE
         let local_binaries = std::path::Path::new(&local_path);
         println!("cargo:rerun-if-changed={}", local_binaries.display());
@@ -68,11 +44,11 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
             || std::fs::read_dir(local_binaries)?.next().is_none();
 
         if binaries_missing {
-            println!(
-                "cargo:warning=Go binaries not found in [{}], building...",
+            return Err(format!(
+                "Local binaries directory is missing or empty: {}",
                 local_binaries.display()
-            );
-            build_go_backend()?;
+            )
+            .into());
         }
 
         link_local_binaries(&local_path, &binaries_out_dir)?;
@@ -340,18 +316,18 @@ fn compute_sha256(data: &[u8]) -> String {
 }
 
 fn generate_protobuf() -> Result<(), Box<dyn std::error::Error>> {
-    println!("cargo:rerun-if-changed=go-backend/api/proto/health.proto");
-    println!("cargo:rerun-if-changed=go-backend/api/proto/storage.proto");
+    println!("cargo:rerun-if-changed=go-backend/desktop/proto/health.proto");
+    println!("cargo:rerun-if-changed=go-backend/desktop/proto/storage.proto");
 
     // Generate protobuf code
     tonic_build::configure()
         .build_server(false) // We only need the client
         .compile_protos(
             &[
-                "go-backend/api/proto/health.proto",
-                "go-backend/api/proto/storage.proto",
+                "go-backend/desktop/proto/health.proto",
+                "go-backend/desktop/proto/storage.proto",
             ],
-            &["go-backend/api/proto"],
+            &["go-backend/desktop/proto"],
         )?;
 
     Ok(())

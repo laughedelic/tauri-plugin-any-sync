@@ -1,0 +1,32 @@
+version: '3'
+
+vars:
+  BINARIES_DIR: ../../binaries
+
+tasks:
+  build-android:
+    desc: Build the Android .aar file with gomobile
+    status:
+      - '[ -n "${ANDROID_HOME:-}" ]'
+    cmds:
+      - gomobile bind -target=android -androidapi=21 -o '{{.BINARIES_DIR}}/any-sync-android.aar' .
+    sources:
+      - ./**/*.go
+      - ../shared/**/*.go
+    generates:
+      - '{{.BINARIES_DIR}}/any-sync-android*'
+
+  build:
+    desc: "Build mobile binaries"
+    deps: 
+      - build-android
+      # - build-ios
+
+  clean:
+    desc: "Clean mobile build artifacts"
+    cmds:
+      - rm -rf '{{.BINARIES_DIR}}/any-sync-android*'
+
+  mod-tidy:
+    desc: "Clean and verify Go modules"
+    cmd: go mod tidy

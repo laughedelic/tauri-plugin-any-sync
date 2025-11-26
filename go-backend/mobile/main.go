@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"anysync-backend/storage"
+	"anysync-backend/shared/storage"
 )
 
 // MobileService provides exported functions for Android/iOS via gomobile

@@ -14,11 +14,11 @@ import (
 
 	"google.golang.org/grpc"
 
-	pb "anysync-backend/desktop/api/proto"
 	"anysync-backend/desktop/api/server"
 	"anysync-backend/desktop/config"
 	"anysync-backend/desktop/health"
-	"anysync-backend/storage"
+	pb "anysync-backend/desktop/proto"
+	"anysync-backend/shared/storage"
 )
 
 var (

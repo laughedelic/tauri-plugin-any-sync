@@ -1,0 +1,81 @@
+version: '3'
+
+vars:
+  BINARIES_DIR: ../../binaries
+  OS_MAP:
+    map:
+      macos: apple-darwin
+      linux: unknown-linux-gnu
+      windows: pc-windows-msvc
+  ARCH_MAP:
+    map:
+      amd64: x86_64
+      arm64: aarch64
+
+tasks:
+  protoc-plugins:
+    desc: "Install protoc plugins for Go"
+    internal: true
+    run: once
+    status:
+      - command -v protoc-gen-go
+      - command -v protoc-gen-go-grpc
+    cmds:
+      - go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+      - go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+  proto-gen:
+    desc: "Generate protobuf code"
+    deps: [protoc-plugins]
+    run: when_changed
+    cmds:
+      - go generate ./proto
+    sources:
+      - ./proto/*.proto
+    generates:
+      - ./proto/*.pb.go
+
+  build-target:
+    desc: "Build desktop binaries"
+    deps: [proto-gen]
+    vars:
+      TRIPLE: '{{index .ARCH_MAP .ARCH}}-{{index .OS_MAP .OS}}'
+      EXT: '{{if eq .OS "windows"}}.exe{{else}}{{end}}'
+      OUT: '{{.BINARIES_DIR}}/any-sync-{{.TRIPLE}}{{.EXT}}'
+    requires:
+      vars:
+        - name: OS
+          enum: [macos, linux, windows]
+        - name: ARCH
+          enum: [amd64, arm64]
+    env:
+      GOOS: '{{if eq .OS "macos"}}darwin{{else}}{{.OS}}{{end}}'
+      GOARCH: '{{.ARCH}}'
+    cmd: go build -o '{{.OUT}}' ./
+    sources:
+      - ./**/*.go
+      - ../shared/**/*.go
+    generates:
+      - '{{.OUT}}'
+
+  build:
+    desc: "Build desktop binary for all platforms"
+    deps:
+      - for:
+          matrix:
+            OS: [macos, linux, windows]
+            ARCH: [amd64, arm64]
+        task: build-target
+        vars:
+          OS: '{{.ITEM.OS}}'
+          ARCH: '{{.ITEM.ARCH}}'
+
+  clean:
+    desc: "Clean generated binaries"
+    cmds: 
+      - rm -rf {{.BINARIES_DIR}}/any-sync-*
+      - rm -rf ./proto/*.pb.go
+
+  mod-tidy:
+    desc: "Clean and verify Go modules"
+    cmd: go mod tidy

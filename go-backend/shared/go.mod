@@ -1,6 +1,6 @@
-module anysync-backend
+module anysync-backend/shared
 
-go 1.24.0
+go 1.25
 
 require github.com/anyproto/any-store v0.4.3
 

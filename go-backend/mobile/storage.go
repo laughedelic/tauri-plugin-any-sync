@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"sync"
 
-	"anysync-backend/storage"
+	"anysync-backend/shared/storage"
 )
 
 var (

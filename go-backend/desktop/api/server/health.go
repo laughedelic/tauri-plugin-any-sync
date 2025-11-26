@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pb "anysync-backend/desktop/api/proto"
+	pb "anysync-backend/desktop/proto"
 )
 
 // HealthServer implements the HealthService gRPC service

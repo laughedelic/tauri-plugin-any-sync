@@ -6,14 +6,20 @@ The Go backend is structured as **three independent modules** sharing minimal co
 
 ```
 go-backend/
-├── go.mod, go.sum, go.work          # Workspace coordination
+├── go.work                           # Workspace coordination
+├── Taskfile.yml                      # Build task definitions
 ├── shared/                           # Core module: anysync-backend
 │   ├── go.mod
 │   └── storage/                      # Shared storage API
 ├── desktop/                          # Desktop module: anysync-backend/desktop
 │   ├── go.mod
 │   ├── main.go                       # gRPC server entry point
-│   ├── api/proto/                    # Protobuf definitions
+│   ├── proto/                        # Protobuf definitions + generated code
+│   │   ├── doc.go                    # go:generate directive
+│   │   ├── health.proto
+│   │   ├── storage.proto
+│   │   ├── *.pb.go                   # Generated message code
+│   │   └── *_grpc.pb.go              # Generated service code
 │   ├── api/server/                   # gRPC service implementations
 │   ├── config/                       # Server configuration
 │   └── health/                       # Health check service
@@ -23,61 +29,6 @@ go-backend/
     ├── storage.go                    # Mobile-friendly storage wrapper
     └── tools.go                      # Keeps golang.org/x/mobile in go.mod
 ```
-
-## Module Breakdown
-
-### Shared Module (`anysync-backend`)
-- **Location**: `./shared/`
-- **Dependencies**: None (zero external deps)
-- **Exports**: `storage/` — Core storage abstractions and types
-- **Why separate**: Provides clean core that can be embedded in both desktop and mobile without pulling platform-specific dependencies
-
-### Desktop Module (`anysync-backend/desktop`)
-- **Location**: `./desktop/`
-- **Dependencies**: 
-  - `anysync-backend` (shared module via `replace anysync-backend => ../shared`)
-  - `google.golang.org/grpc` (gRPC framework)
-  - `google.golang.org/protobuf` (Protobuf runtime)
-- **Purpose**: gRPC server for desktop sidecar communication
-- **Includes**: Server config, health checks, proto definitions — all gRPC-specific
-- **Builds**: Cross-platform binaries (macOS x86_64/ARM64, Linux x86_64/ARM64, Windows)
-
-### Mobile Module (`anysync-backend/mobile`)
-- **Location**: `./mobile/`
-- **Dependencies**:
-  - `anysync-backend` (shared module via `replace anysync-backend => ../shared`)
-  - `golang.org/x/mobile` (gomobile tools)
-- **Purpose**: Android/iOS native bindings via gomobile
-- **Includes**: Exported functions for JNI/FFI calls, mobile-friendly wrapper
-- **Builds**: Android `.aar` (all architectures); iOS `.xcframework` can be added similarly
-
-## Key Design Decisions
-
-### Why Three Modules?
-
-1. **Desktop doesn't need gomobile** — Keeps gRPC server lean, no unnecessary mobile build overhead
-2. **Mobile doesn't need gRPC** — In-process function calls, not over network
-3. **Shared provides clean core** — Both platforms import same storage API, avoiding duplication
-
-### Why Not Everything in `internal/`?
-
-In a single-module monorepo, internal packages would enforce boundaries. However, three separate modules are more idiomatic for:
-- **Independent versioning** if modules are published separately
-- **Clear public contracts** — Each module declares what it depends on
-- **Better IDE support** — Module boundaries are explicit to tooling
-
-### The `v0.0.0 + replace` Pattern
-
-Both desktop and mobile declare:
-```go
-require anysync-backend v0.0.0
-replace anysync-backend => ../shared
-```
-
-This is **idiomatic Go** for monorepos:
-- `v0.0.0` is required by Go module syntax (dummy version)
-- `replace` tells Go to use local directory instead of registry
-- Makes changes atomic — all modules always use same shared code version
 
 ## Dependency Isolation
 
@@ -96,21 +47,44 @@ Each module only pulls what it needs:
 
 ## Building
 
+Build tasks are orchestrated through **Taskfile**, which provides a unified interface for Go builds and handles tool checking:
+
 ```bash
-# Desktop binaries (current platform)
-./build-go-backend.sh
+# From project root OR go-backend directory:
+task backend:build          # Desktop binaries (current platform)
+task backend:mobile         # Android .aar
+task backend:test           # Run tests
 
-# Desktop binaries (all platforms) — requires cross-compilation toolchains
-./build-go-backend.sh --cross
-
-# Android .aar
-./build-go-mobile.sh
-
-# Individual module builds
-cd shared && go build ./...
-cd desktop && go build ./...
-cd mobile && go build ./...
+# See all available tasks
+task --list
 ```
+
+**What Taskfile does:**
+- Checks that required tools exist (`go`, `protoc`, `gomobile`, etc.)
+- Invokes build scripts in `scripts/` with proper paths
+- Provides consistent interface across different platforms
+
+**Individual script execution** (if needed):
+- Desktop: `go-backend/scripts/build-desktop.sh [--cross]`
+- Mobile: `go-backend/scripts/build-mobile.sh`
+
+Both scripts automatically trigger protobuf code generation via `go generate`.
+
+### Protobuf Code Generation
+
+Proto files in `desktop/proto/` are automatically generated via `go:generate` directives in `doc.go`:
+
+```bash
+# Automatic (via build scripts or go generate)
+go generate ./proto
+
+# Manual (equivalent command)
+protoc --go_out=. --go-grpc_out=. \
+  --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative \
+  proto/health.proto proto/storage.proto
+```
+
+The `paths=source_relative` option ensures `.pb.go` files land next to `.proto` sources, avoiding nested directory structures.
 
 ## Development Workflow
 

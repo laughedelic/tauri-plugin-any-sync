@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.plugin.any-sync"
+    namespace = "com.plugin.anysync"
     compileSdk = 36
 
     defaultConfig {
@@ -41,4 +41,7 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     implementation(project(":tauri-android"))
+    
+    // Go mobile library (copied to libs/ by consumer's build.rs)
+    implementation(files("libs/any-sync-android.aar"))
 }

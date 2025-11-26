@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use log::{debug, error, info, warn};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
@@ -12,29 +13,59 @@ use tonic::Request;
 use crate::models::*;
 use crate::proto::anysync::{
     health_service_client::HealthServiceClient, storage_service_client::StorageServiceClient,
-    DeleteRequest as GrpcDeleteRequest, DeleteResponse as GrpcDeleteResponse,
-    GetRequest as GrpcGetRequest, GetResponse as GrpcGetResponse, HealthCheckRequest,
-    ListRequest as GrpcListRequest, ListResponse as GrpcListResponse,
-    PingRequest as GrpcPingRequest, PingResponse as GrpcPingResponse, PutRequest as GrpcPutRequest,
-    PutResponse as GrpcPutResponse,
+    DeleteRequest as GrpcDeleteRequest, GetRequest as GrpcGetRequest, HealthCheckRequest,
+    ListRequest as GrpcListRequest, PingRequest as GrpcPingRequest, PutRequest as GrpcPutRequest,
 };
-use crate::Result;
+use crate::{AnySyncService, Result};
 
-pub fn init<R: Runtime, C: DeserializeOwned>(
-    app: &AppHandle<R>,
-    _api: PluginApi<R, C>,
-) -> crate::Result<AnySync<R>> {
-    // Initialize sidecar process manager
-    let manager = Arc::new(RwLock::new(SidecarManager::new()));
+/// Access to any-sync APIs.
+pub struct AnySync<R: Runtime> {
+    app: AppHandle<R>,
+    manager: Arc<RwLock<SidecarManager>>,
+}
 
-    Ok(AnySync {
-        app: app.clone(),
-        manager,
-    })
+impl<R: Runtime> AnySync<R> {
+    pub fn new<C: DeserializeOwned>(
+        app: &AppHandle<R>,
+        _api: PluginApi<R, C>,
+    ) -> crate::Result<AnySync<R>> {
+        // Initialize sidecar process manager
+        let manager = Arc::new(RwLock::new(SidecarManager::new()));
+
+        Ok(AnySync {
+            app: app.clone(),
+            manager,
+        })
+    }
+
+    /// Helper to execute a gRPC operation with timeout and error handling
+    async fn call_grpc<F, T>(&self, op_name: &str, f: F) -> Result<T>
+    where
+        F: std::future::Future<Output = std::result::Result<tonic::Response<T>, tonic::Status>>,
+    {
+        match timeout(Duration::from_secs(10), f).await {
+            Ok(Ok(response)) => {
+                info!("{} successful", op_name);
+                Ok(response.into_inner())
+            }
+            Ok(Err(e)) => {
+                error!("{} failed: {}", op_name, e);
+                Err(std::io::Error::other(format!("{} failed: {}", op_name, e)).into())
+            }
+            Err(_) => {
+                error!("{} timed out after 10 seconds", op_name);
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::TimedOut,
+                    format!("{} timed out", op_name),
+                )
+                .into())
+            }
+        }
+    }
 }
 
 /// Manages Go backend sidecar process
-pub struct SidecarManager {
+struct SidecarManager {
     child: Option<tauri_plugin_shell::process::CommandChild>,
     port: Option<u16>,
     client: Option<HealthServiceClient<Channel>>,
@@ -228,278 +259,92 @@ impl SidecarManager {
         Ok(())
     }
 
-    pub async fn ping<R: Runtime>(
+    /// Ensure sidecar is running and return references to both clients.
+    /// This is the main interface for the service implementation.
+    pub async fn get_clients<R: Runtime>(
         &mut self,
         app: &AppHandle<R>,
-        message: Option<String>,
-    ) -> Result<GrpcPingResponse> {
+    ) -> Result<(
+        &mut HealthServiceClient<Channel>,
+        &mut StorageServiceClient<Channel>,
+    )> {
         if !self.is_running {
             info!("Sidecar not running, starting it first");
             self.start(app).await?;
         }
 
-        if let Some(client) = &mut self.client {
-            let timestamp = SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap()
-                .as_secs();
-
-            let msg = message.as_deref().unwrap_or("");
-            debug!("Sending ping request with message: '{}'", msg);
-
-            let request = Request::new(GrpcPingRequest {
-                message: message.unwrap_or_default(),
-                timestamp: timestamp as i64,
-            });
-
-            match timeout(Duration::from_secs(10), client.ping(request)).await {
-                Ok(Ok(response)) => {
-                    let response = response.into_inner();
-                    info!("Ping successful, received: '{}'", response.message);
-                    Ok(response)
-                }
-                Ok(Err(e)) => {
-                    error!("Ping failed: {}", e);
-                    Err(std::io::Error::other(format!("Ping failed: {}", e)).into())
-                }
-                Err(_) => {
-                    error!("Ping timed out after 10 seconds");
-                    Err(std::io::Error::new(std::io::ErrorKind::TimedOut, "Ping timed out").into())
-                }
-            }
-        } else {
-            error!("No gRPC client available");
-            Err(
-                std::io::Error::new(std::io::ErrorKind::NotConnected, "No gRPC client available")
-                    .into(),
+        let health_client = self.client.as_mut().ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::NotConnected,
+                "Health client not available",
             )
-        }
-    }
+        })?;
 
-    pub async fn storage_put<R: Runtime>(
-        &mut self,
-        app: &AppHandle<R>,
-        collection: String,
-        id: String,
-        document_json: String,
-    ) -> Result<GrpcPutResponse> {
-        if !self.is_running {
-            info!("Sidecar not running, starting it first");
-            self.start(app).await?;
-        }
+        let storage_client = self.storage_client.as_mut().ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::NotConnected,
+                "Storage client not available",
+            )
+        })?;
 
-        if let Some(client) = &mut self.storage_client {
-            debug!(
-                "Sending put request for collection='{}', id='{}'",
-                collection, id
-            );
-
-            let request = Request::new(GrpcPutRequest {
-                collection,
-                id,
-                document_json,
-            });
-
-            match timeout(Duration::from_secs(10), client.put(request)).await {
-                Ok(Ok(response)) => {
-                    let response = response.into_inner();
-                    info!("Put successful: success={}", response.success);
-                    Ok(response)
-                }
-                Ok(Err(e)) => {
-                    error!("Put failed: {}", e);
-                    Err(crate::Error::Storage(format!(
-                        "Put operation failed: {}",
-                        e
-                    )))
-                }
-                Err(_) => {
-                    error!("Put timed out after 10 seconds");
-                    Err(crate::Error::Storage("Put operation timed out".to_string()))
-                }
-            }
-        } else {
-            error!("No storage gRPC client available");
-            Err(crate::Error::Storage(
-                "Storage client not available".to_string(),
-            ))
-        }
-    }
-
-    pub async fn storage_get<R: Runtime>(
-        &mut self,
-        app: &AppHandle<R>,
-        collection: String,
-        id: String,
-    ) -> Result<GrpcGetResponse> {
-        if !self.is_running {
-            info!("Sidecar not running, starting it first");
-            self.start(app).await?;
-        }
-
-        if let Some(client) = &mut self.storage_client {
-            debug!(
-                "Sending get request for collection='{}', id='{}'",
-                collection, id
-            );
-
-            let request = Request::new(GrpcGetRequest { collection, id });
-
-            match timeout(Duration::from_secs(10), client.get(request)).await {
-                Ok(Ok(response)) => {
-                    let response = response.into_inner();
-                    info!("Get successful: found={}", response.found);
-                    Ok(response)
-                }
-                Ok(Err(e)) => {
-                    error!("Get failed: {}", e);
-                    Err(crate::Error::Storage(format!(
-                        "Get operation failed: {}",
-                        e
-                    )))
-                }
-                Err(_) => {
-                    error!("Get timed out after 10 seconds");
-                    Err(crate::Error::Storage("Get operation timed out".to_string()))
-                }
-            }
-        } else {
-            error!("No storage gRPC client available");
-            Err(crate::Error::Storage(
-                "Storage client not available".to_string(),
-            ))
-        }
-    }
-
-    pub async fn storage_delete<R: Runtime>(
-        &mut self,
-        app: &AppHandle<R>,
-        collection: String,
-        id: String,
-    ) -> Result<GrpcDeleteResponse> {
-        if !self.is_running {
-            info!("Sidecar not running, starting it first");
-            self.start(app).await?;
-        }
-
-        if let Some(client) = &mut self.storage_client {
-            debug!(
-                "Sending delete request: collection='{}', id='{}'",
-                collection, id
-            );
-
-            let request = Request::new(GrpcDeleteRequest { collection, id });
-
-            match timeout(Duration::from_secs(10), client.delete(request)).await {
-                Ok(Ok(response)) => {
-                    let response = response.into_inner();
-                    info!("Delete successful: existed={}", response.existed);
-                    Ok(response)
-                }
-                Ok(Err(e)) => {
-                    error!("Delete failed: {}", e);
-                    Err(crate::Error::Storage(format!(
-                        "Delete operation failed: {}",
-                        e
-                    )))
-                }
-                Err(_) => {
-                    error!("Delete timed out after 10 seconds");
-                    Err(crate::Error::Storage(
-                        "Delete operation timed out".to_string(),
-                    ))
-                }
-            }
-        } else {
-            error!("No storage gRPC client available");
-            Err(crate::Error::Storage(
-                "Storage client not available".to_string(),
-            ))
-        }
-    }
-
-    pub async fn storage_list<R: Runtime>(
-        &mut self,
-        app: &AppHandle<R>,
-        collection: String,
-    ) -> Result<GrpcListResponse> {
-        if !self.is_running {
-            info!("Sidecar not running, starting it first");
-            self.start(app).await?;
-        }
-
-        if let Some(client) = &mut self.storage_client {
-            debug!("Sending list request for collection='{}'", collection);
-
-            let request = Request::new(GrpcListRequest { collection });
-
-            match timeout(Duration::from_secs(10), client.list(request)).await {
-                Ok(Ok(response)) => {
-                    let response = response.into_inner();
-                    info!("List successful: {} documents found", response.ids.len());
-                    Ok(response)
-                }
-                Ok(Err(e)) => {
-                    error!("List failed: {}", e);
-                    Err(crate::Error::Storage(format!(
-                        "List operation failed: {}",
-                        e
-                    )))
-                }
-                Err(_) => {
-                    error!("List timed out after 10 seconds");
-                    Err(crate::Error::Storage(
-                        "List operation timed out".to_string(),
-                    ))
-                }
-            }
-        } else {
-            error!("No storage gRPC client available");
-            Err(crate::Error::Storage(
-                "Storage client not available".to_string(),
-            ))
-        }
+        Ok((health_client, storage_client))
     }
 }
 
-/// Access to any-sync APIs.
-pub struct AnySync<R: Runtime> {
-    app: AppHandle<R>,
-    manager: Arc<RwLock<SidecarManager>>,
-}
-
-impl<R: Runtime> AnySync<R> {
-    pub async fn ping(&self, payload: PingRequest) -> crate::Result<PingResponse> {
+#[async_trait]
+impl<R: Runtime> AnySyncService for AnySync<R> {
+    async fn ping(&self, payload: PingRequest) -> Result<PingResponse> {
         let mut manager = self.manager.write().await;
-        let response = manager.ping(&self.app, payload.value).await?;
+        manager.get_clients(&self.app).await?;
+        let health_client = manager.client.as_mut().ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::NotConnected, "No health client")
+        })?;
 
+        let timestamp = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        let request = Request::new(GrpcPingRequest {
+            message: payload.value.unwrap_or_default(),
+            timestamp: timestamp as i64,
+        });
+        let response = self.call_grpc("Ping", health_client.ping(request)).await?;
         Ok(PingResponse {
             value: Some(response.message),
         })
     }
 
-    pub async fn storage_put(&self, payload: PutRequest) -> crate::Result<PutResponse> {
+    async fn storage_put(&self, payload: PutRequest) -> Result<PutResponse> {
         let mut manager = self.manager.write().await;
-        let response = manager
-            .storage_put(
-                &self.app,
-                payload.collection,
-                payload.id,
-                payload.document_json,
-            )
-            .await?;
+        manager.get_clients(&self.app).await?;
+        let storage_client = manager.storage_client.as_mut().ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::NotConnected, "No storage client")
+        })?;
 
+        let request = Request::new(GrpcPutRequest {
+            collection: payload.collection,
+            id: payload.id,
+            document_json: payload.document_json,
+        });
+        let response = self.call_grpc("Put", storage_client.put(request)).await?;
         Ok(PutResponse {
             success: response.success,
         })
     }
 
-    pub async fn storage_get(&self, payload: GetRequest) -> crate::Result<GetResponse> {
+    async fn storage_get(&self, payload: GetRequest) -> Result<GetResponse> {
         let mut manager = self.manager.write().await;
-        let response = manager
-            .storage_get(&self.app, payload.collection, payload.id)
-            .await?;
+        manager.get_clients(&self.app).await?;
+        let storage_client = manager.storage_client.as_mut().ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::NotConnected, "No storage client")
+        })?;
 
+        let request = Request::new(GrpcGetRequest {
+            collection: payload.collection,
+            id: payload.id,
+        });
+        let response = self.call_grpc("Get", storage_client.get(request)).await?;
         Ok(GetResponse {
             document_json: if response.found {
                 Some(response.document_json)
@@ -510,21 +355,36 @@ impl<R: Runtime> AnySync<R> {
         })
     }
 
-    pub async fn storage_delete(&self, payload: DeleteRequest) -> crate::Result<DeleteResponse> {
+    async fn storage_delete(&self, payload: DeleteRequest) -> Result<DeleteResponse> {
         let mut manager = self.manager.write().await;
-        let response = manager
-            .storage_delete(&self.app, payload.collection, payload.id)
-            .await?;
+        manager.get_clients(&self.app).await?;
+        let storage_client = manager.storage_client.as_mut().ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::NotConnected, "No storage client")
+        })?;
 
+        let request = Request::new(GrpcDeleteRequest {
+            collection: payload.collection,
+            id: payload.id,
+        });
+        let response = self
+            .call_grpc("Delete", storage_client.delete(request))
+            .await?;
         Ok(DeleteResponse {
             existed: response.existed,
         })
     }
 
-    pub async fn storage_list(&self, payload: ListRequest) -> crate::Result<ListResponse> {
+    async fn storage_list(&self, payload: ListRequest) -> Result<ListResponse> {
         let mut manager = self.manager.write().await;
-        let response = manager.storage_list(&self.app, payload.collection).await?;
+        manager.get_clients(&self.app).await?;
+        let storage_client = manager.storage_client.as_mut().ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::NotConnected, "No storage client")
+        })?;
 
+        let request = Request::new(GrpcListRequest {
+            collection: payload.collection,
+        });
+        let response = self.call_grpc("List", storage_client.list(request)).await?;
         Ok(ListResponse { ids: response.ids })
     }
 }

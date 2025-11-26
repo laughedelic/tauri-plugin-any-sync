@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use tauri::{
     plugin::{Builder, TauriPlugin},
     Manager, Runtime,
@@ -19,20 +20,24 @@ mod proto;
 
 pub use error::{Error, Result};
 
-#[cfg(desktop)]
-use desktop::AnySync;
-#[cfg(mobile)]
-use mobile::AnySync;
+/// Service trait that abstracts platform-specific implementations.
+/// Desktop uses async gRPC calls, Mobile uses sync FFI wrapped in spawn_blocking.
+#[async_trait]
+pub trait AnySyncService: Send + Sync {
+    /// Ping the backend service
+    async fn ping(&self, payload: PingRequest) -> Result<PingResponse>;
 
-/// Extensions to [`tauri::App`], [`tauri::AppHandle`] and [`tauri::Window`] to access the any-sync APIs.
-pub trait AnySyncExt<R: Runtime> {
-    fn any_sync(&self) -> &AnySync<R>;
-}
+    /// Store a document in a collection
+    async fn storage_put(&self, payload: PutRequest) -> Result<PutResponse>;
 
-impl<R: Runtime, T: Manager<R>> crate::AnySyncExt<R> for T {
-    fn any_sync(&self) -> &AnySync<R> {
-        self.state::<AnySync<R>>().inner()
-    }
+    /// Retrieve a document from a collection
+    async fn storage_get(&self, payload: GetRequest) -> Result<GetResponse>;
+
+    /// Delete a document from a collection
+    async fn storage_delete(&self, payload: DeleteRequest) -> Result<DeleteResponse>;
+
+    /// List all document IDs in a collection
+    async fn storage_list(&self, payload: ListRequest) -> Result<ListResponse>;
 }
 
 /// Initializes the plugin.
@@ -52,11 +57,14 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             #[cfg(desktop)]
             let _shell = app.shell();
 
+            // Create the service trait object based on platform
             #[cfg(mobile)]
-            let any_sync = mobile::init(app, api)?;
+            let service: Box<dyn AnySyncService> = { Box::new(mobile::AnySync::new(app, api)?) };
             #[cfg(desktop)]
-            let any_sync = desktop::init(app, api)?;
-            app.manage(any_sync);
+            let service: Box<dyn AnySyncService> = { Box::new(desktop::AnySync::new(app, api)?) };
+
+            // Manage the service for use in commands
+            app.manage(service);
 
             log::debug!("any-sync plugin initialized successfully");
             Ok(())

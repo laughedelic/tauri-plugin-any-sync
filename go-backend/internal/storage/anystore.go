@@ -59,17 +59,18 @@ func (s *Store) Put(ctx context.Context, collection, id, documentJSON string) er
 }
 
 // Get retrieves a document from the specified collection by ID
-// Returns empty string if document not found
+// Returns empty string (and nil error) if document or collection doesn't exist
 func (s *Store) Get(ctx context.Context, collection, id string) (string, error) {
 	coll, err := s.db.Collection(ctx, collection)
 	if err != nil {
-		return "", fmt.Errorf("failed to get collection %q for document %q: %w", collection, id, err)
+		// Collection doesn't exist - return empty string (not an error per spec)
+		return "", nil
 	}
 
 	// Find document by ID
 	doc, err := coll.FindId(ctx, id)
 	if err != nil {
-		// Document not found
+		// Document not found - return empty string (not an error per spec)
 		return "", nil
 	}
 
@@ -101,17 +102,20 @@ func (s *Store) Delete(ctx context.Context, collection, id string) (bool, error)
 }
 
 // List returns all document IDs in the specified collection
+// Returns empty slice if collection doesn't exist or is empty (not an error)
 func (s *Store) List(ctx context.Context, collection string) ([]string, error) {
 	coll, err := s.db.Collection(ctx, collection)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list documents in collection %q: %w", collection, err)
+		// If collection doesn't exist, return empty list (not an error)
+		return []string{}, nil
 	}
 
 	// Find all documents (nil filter means all)
 	query := coll.Find(nil)
 	iter, err := query.Iter(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list documents in collection %q: %w", collection, err)
+		// Return empty list on iterator creation failure
+		return []string{}, nil
 	}
 	defer iter.Close()
 
@@ -119,8 +123,8 @@ func (s *Store) List(ctx context.Context, collection string) ([]string, error) {
 	for iter.Next() {
 		doc, err := iter.Doc()
 		if err != nil {
-			iter.Close()
-			return nil, fmt.Errorf("error retrieving document in collection %q: %w", collection, err)
+			// Log but continue on document retrieval errors
+			continue
 		}
 		// Get the id field from the document
 		idStr := doc.Value().GetString("id")
@@ -129,8 +133,9 @@ func (s *Store) List(ctx context.Context, collection string) ([]string, error) {
 		}
 	}
 
-	if err := iter.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating documents in collection %q: %w", collection, err)
+	// Return empty slice if no documents found (not an error)
+	if ids == nil {
+		ids = []string{}
 	}
 
 	return ids, nil

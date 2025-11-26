@@ -18,33 +18,45 @@ cd android
 
 ## Architecture Overview
 
-The Android plugin follows Tauri's plugin architecture:
+The Android plugin integrates the Go backend via gomobile, using JNI to call Go functions directly.
 
 ```
 android/
+├── libs/
+│   └── any-sync-android.aar    # Go mobile library (gomobile build)
 ├── src/main/java/
-│   ├── ExamplePlugin.kt    # Main plugin class with Tauri commands
-│   └── Example.kt          # Implementation logic
-├── build.gradle.kts        # Gradle build configuration
-├── proguard-rules.pro      # ProGuard configuration
-└── settings.gradle.kts     # Gradle settings
+│   └── AnySyncPlugin.kt        # Main plugin with storage commands + JNI calls
+├── build.gradle.kts            # Gradle build configuration (includes .aar)
+├── proguard-rules.pro          # ProGuard configuration
+└── settings.gradle.kts         # Gradle settings
 ```
 
 ### Key Components
 
-- **Plugin Class** (`ExamplePlugin.kt`): Tauri plugin interface with command handlers
-- **Implementation** (`Example.kt`): Core business logic separate from Tauri framework
-- **Build Config** (`build.gradle.kts`): Dependencies and build settings
+- **Plugin Class** (`AnySyncPlugin.kt`): Tauri plugin interface with storage command handlers
+- **Go Mobile Library** (`libs/any-sync-android.aar`): Native Go backend compiled with gomobile
+- **JNI Integration**: Direct function calls from Kotlin to Go via `mobile.Mobile` class
+- **Build Config** (`build.gradle.kts`): Dependencies including .aar library
+
+### Communication Flow
+
+```
+TypeScript API → Tauri Command → Kotlin Plugin → JNI → Go Mobile → AnyStore
+```
+
+Unlike desktop (which uses gRPC sidecar), Android embeds the Go backend as a native library:
+- **Desktop**: Process IPC via gRPC (separate sidecar process)
+- **Android**: In-process JNI calls (embedded library)
 
 ## Development Workflow
 
 ### 1. Plugin Command Implementation
 
-Commands are implemented in `ExamplePlugin.kt`:
+Commands are implemented in `AnySyncPlugin.kt`:
 
 ```kotlin
 @TauriPlugin
-class ExamplePlugin(private val activity: Activity): Plugin(activity) {
+class AnySyncPlugin(private val activity: Activity): Plugin(activity) {
     private val implementation = Example()
 
     @Command
@@ -82,40 +94,24 @@ class Example {
 }
 ```
 
-## gomobile Integration (Phase 1+)
+## gomobile Integration
 
-### Planned Architecture
-
-For Phase 1+, the Android plugin will integrate with Go backend via gomobile:
+The Android plugin integrates with Go backend via gomobile-generated JNI bindings:
 
 ```kotlin
-class GoMobileBridge {
-    private external fun nativePing(message: String): String
-    
+import mobile.Mobile  // Generated from gomobile
+
+class AnySyncPlugin {
     init {
-        System.loadLibrary("anymobile")
+        System.loadLibrary("gojni")
     }
     
-    fun ping(message: String): String {
-        return try {
-            nativePing(message)
-        } catch (e: Exception) {
-            "Error: ${e.message}"
-        }
+    @Command
+    fun storageGet(invoke: Invoke) {
+        val result = Mobile.storageGet(collection, id)
+        // Handle result...
     }
 }
-```
-
-### gomobile Build Process
-
-```bash
-# Generate Android AAR from Go code
-cd go-backend
-gomobile bind -target=android -o ../android/libs/anymobile.aar
-
-# Build with Android library
-cd android
-./gradlew build
 ```
 
 ## Build System
@@ -170,7 +166,7 @@ Test plugin commands in `src/androidTest/`:
 ```kotlin
 @Test
 fun testPingCommand() {
-    val plugin = ExamplePlugin(activity)
+    val plugin = AnySyncPlugin(activity)
     val invoke = MockInvoke()
     plugin.ping(invoke)
     assertEquals("test", invoke.result)
@@ -225,31 +221,34 @@ android {
 
 ### Logcat Debugging
 
-Use Android Log for debugging:
+All plugin operations log with tag "AnySync":
 
 ```kotlin
 import android.util.Log
 
-class Example {
-    fun pong(value: String): String {
-        Log.d("AnySync", "Processing pong: $value")
-        return value
-    }
-}
+Log.d("AnySync", "storageGet: collection=$collection, id=$id")
+Log.e("AnySync", "Operation failed", exception)
 ```
+
+**View logs:**
+```bash
+adb logcat | grep AnySync
+```
+
+**Common log patterns:**
+- `"Successfully loaded gojni library"` - JNI initialization OK
+- `"Storage initialized at: /data/user/0/.../files/anysync.db"` - Database ready
+- `"storageGet: collection=..."` - Operation started
 
 ### Debug Commands
 
 ```bash
-# View logs
+# Install and monitor
+./gradlew installDebug
 adb logcat | grep AnySync
 
-# Install debug APK
-adb install app/build/outputs/apk/debug/app-debug.apk
-
-# Run with debugger
-./gradlew installDebug
-adb shell am start -n com.plugin.any-sync/.MainActivity
+# Check initialization
+adb logcat -d | grep -E "AnySync.*(init|Storage|gojni)"
 ```
 
 ## Performance Considerations
@@ -257,11 +256,41 @@ adb shell am start -n com.plugin.any-sync/.MainActivity
 ### Memory Management
 
 - Avoid memory leaks in long-running operations
-- Use weak references for Activity contexts
-- Clean up resources in plugin lifecycle methods
-
 ### Threading
 
+- Run heavy operations on background threads
+- Use coroutines for async operations
+- Update UI on main thread only
+
+## Implementation Notes
+
+### Response Format Requirements
+
+**Critical:** Response field names must match Rust models exactly:
+
+```kotlin
+// ✓ Correct
+ret.put("documentJson", json)  // matches GetResponse.document_json
+ret.put("found", true)          // matches GetResponse.found
+ret.put("existed", wasDeleted)  // matches DeleteResponse.existed
+ret.put("ids", jsonArray)       // matches ListResponse.ids
+
+// ✗ Wrong - causes deserialization errors
+ret.put("document", json)       // won't match
+ret.put("deleted", true)        // wrong field name
+```
+
+### Database Path
+
+Always use app's private internal storage:
+```kotlin
+val dbPath = activity.filesDir.absolutePath + "/anysync.db"
+// → /data/user/0/com.package.name/files/anysync.db
+```
+
+### Collection Discovery
+
+**Note:** AnyStore has no "list all collections" API. Collections are created implicitly on first document write. Applications must track collection names explicitly (e.g., hardcoded list + user input).
 - Run heavy operations on background threads
 - Use coroutines for async operations
 - Update UI on main thread only
@@ -298,7 +327,7 @@ adb shell am start -n com.plugin.any-sync/.MainActivity
 
 2. **Runtime Errors**
    ```
-   ClassNotFoundException: ExamplePlugin
+   ClassNotFoundException: AnySyncPlugin
    ```
    **Solution**: Verify plugin is properly registered in Tauri configuration
 

@@ -32,8 +32,19 @@ jobs:
           version: '28.x'
           repo-token: ${{ github.token }}
 
-      - name: Cross-compile binaries
+      - name: Set up Android SDK/NDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install gomobile
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          gomobile init
+
+      - name: Cross-compile desktop binaries
         run: ./build-go-backend.sh --cross
+
+      - name: Build Android .aar
+        run: ./build-go-mobile.sh
 
       - name: Generate checksums
         run: |

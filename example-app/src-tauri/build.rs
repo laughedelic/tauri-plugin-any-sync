@@ -21,6 +21,21 @@ fn main() {
                 }
             }
         }
+
+        // Symlink test binary for integration tests
+        #[cfg(all(test, unix))]
+        if let (Ok(profile), Ok(target)) = (env::var("PROFILE"), env::var("TARGET")) {
+            let src_bin = source.join(format!("any-sync-{}", target));
+            if src_bin.exists() {
+                let dst_bin = Path::new(&manifest_dir)
+                    .join("target")
+                    .join(&profile)
+                    .join("deps")
+                    .join("any-sync");
+                let _ = fs::remove_file(&dst_bin);
+                std::os::unix::fs::symlink(&src_bin, &dst_bin);
+            }
+        }
     }
 
     tauri_build::build()

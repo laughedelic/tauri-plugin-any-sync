@@ -25,7 +25,7 @@ fn create_test_app() -> tauri::App<MockRuntime> {
         .expect("failed to build test app")
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "current_thread")]
 async fn test_ping_command() {
     let app = create_test_app();
 
@@ -40,12 +40,15 @@ async fn test_ping_command() {
     let response = result.unwrap();
     assert!(response.value.is_some(), "Expected a response message");
     assert!(
-        response.value.unwrap().contains("Hello from integration test!"),
+        response
+            .value
+            .unwrap()
+            .contains("Hello from integration test!"),
         "Response should echo the input message"
     );
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "current_thread")]
 async fn test_ping_command_empty_message() {
     let app = create_test_app();
 
@@ -63,7 +66,7 @@ async fn test_ping_command_empty_message() {
     assert!(response.value.is_some(), "Expected a response");
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "current_thread")]
 async fn test_storage_put_and_get() {
     let app = create_test_app();
 
@@ -85,7 +88,11 @@ async fn test_storage_put_and_get() {
     };
 
     let put_result = app.any_sync().storage_put(put_payload).await;
-    assert!(put_result.is_ok(), "Put command failed: {:?}", put_result.err());
+    assert!(
+        put_result.is_ok(),
+        "Put command failed: {:?}",
+        put_result.err()
+    );
     assert!(put_result.unwrap().success, "Put operation should succeed");
 
     // Get the same document
@@ -95,7 +102,11 @@ async fn test_storage_put_and_get() {
     };
 
     let get_result = app.any_sync().storage_get(get_payload).await;
-    assert!(get_result.is_ok(), "Get command failed: {:?}", get_result.err());
+    assert!(
+        get_result.is_ok(),
+        "Get command failed: {:?}",
+        get_result.err()
+    );
 
     let get_response = get_result.unwrap();
     assert!(get_response.found, "Document should be found");
@@ -106,8 +117,14 @@ async fn test_storage_put_and_get() {
 
     // Verify the retrieved document matches what we stored
     let retrieved_json = get_response.document_json.unwrap();
-    let retrieved: serde_json::Value =
+    let mut retrieved: serde_json::Value =
         serde_json::from_str(&retrieved_json).expect("Invalid JSON in response");
+
+    // Remove the 'id' field that AnyStore adds to documents
+    if let serde_json::Value::Object(ref mut map) = retrieved {
+        map.remove("id");
+    }
+
     let original: serde_json::Value =
         serde_json::from_str(&document.to_string()).expect("Invalid JSON in original");
 
@@ -117,7 +134,7 @@ async fn test_storage_put_and_get() {
     );
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "current_thread")]
 async fn test_storage_get_nonexistent() {
     let app = create_test_app();
 
@@ -128,7 +145,11 @@ async fn test_storage_get_nonexistent() {
     };
 
     let get_result = app.any_sync().storage_get(get_payload).await;
-    assert!(get_result.is_ok(), "Get command failed: {:?}", get_result.err());
+    assert!(
+        get_result.is_ok(),
+        "Get command failed: {:?}",
+        get_result.err()
+    );
 
     let get_response = get_result.unwrap();
     assert!(!get_response.found, "Document should not be found");
@@ -138,7 +159,7 @@ async fn test_storage_get_nonexistent() {
     );
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "current_thread")]
 async fn test_storage_list() {
     let app = create_test_app();
 
@@ -153,7 +174,12 @@ async fn test_storage_list() {
         };
 
         let result = app.any_sync().storage_put(put_payload).await;
-        assert!(result.is_ok(), "Put command {} failed: {:?}", i, result.err());
+        assert!(
+            result.is_ok(),
+            "Put command {} failed: {:?}",
+            i,
+            result.err()
+        );
     }
 
     // List all documents in the collection
@@ -186,7 +212,7 @@ async fn test_storage_list() {
     }
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "current_thread")]
 async fn test_storage_list_empty() {
     let app = create_test_app();
 
@@ -210,7 +236,7 @@ async fn test_storage_list_empty() {
     );
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "current_thread")]
 async fn test_storage_delete() {
     let app = create_test_app();
 
@@ -225,7 +251,11 @@ async fn test_storage_delete() {
     };
 
     let put_result = app.any_sync().storage_put(put_payload).await;
-    assert!(put_result.is_ok(), "Put command failed: {:?}", put_result.err());
+    assert!(
+        put_result.is_ok(),
+        "Put command failed: {:?}",
+        put_result.err()
+    );
 
     // Delete the document
     let delete_payload = tauri_plugin_any_sync::DeleteRequest {
@@ -253,7 +283,11 @@ async fn test_storage_delete() {
     };
 
     let get_result = app.any_sync().storage_get(get_payload).await;
-    assert!(get_result.is_ok(), "Get command failed: {:?}", get_result.err());
+    assert!(
+        get_result.is_ok(),
+        "Get command failed: {:?}",
+        get_result.err()
+    );
 
     let get_response = get_result.unwrap();
     assert!(
@@ -262,7 +296,7 @@ async fn test_storage_delete() {
     );
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "current_thread")]
 async fn test_storage_delete_nonexistent() {
     let app = create_test_app();
 
@@ -286,7 +320,7 @@ async fn test_storage_delete_nonexistent() {
     );
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "current_thread")]
 async fn test_storage_update_existing_document() {
     let app = create_test_app();
 
@@ -320,7 +354,11 @@ async fn test_storage_update_existing_document() {
     };
 
     let get_result = app.any_sync().storage_get(get_payload).await;
-    assert!(get_result.is_ok(), "Get command failed: {:?}", get_result.err());
+    assert!(
+        get_result.is_ok(),
+        "Get command failed: {:?}",
+        get_result.err()
+    );
 
     let get_response = get_result.unwrap();
     assert!(get_response.found, "Document should be found");
@@ -338,7 +376,7 @@ async fn test_storage_update_existing_document() {
     );
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "current_thread")]
 async fn test_multiple_collections() {
     let app = create_test_app();
 
@@ -377,7 +415,11 @@ async fn test_multiple_collections() {
         );
 
         let get_response = get_result.unwrap();
-        assert!(get_response.found, "Document should be found in {}", collection);
+        assert!(
+            get_response.found,
+            "Document should be found in {}",
+            collection
+        );
 
         let retrieved: serde_json::Value =
             serde_json::from_str(&get_response.document_json.unwrap()).expect("Invalid JSON");
@@ -389,7 +431,7 @@ async fn test_multiple_collections() {
     }
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "current_thread")]
 async fn test_complex_json_document() {
     let app = create_test_app();
 
@@ -435,7 +477,11 @@ async fn test_complex_json_document() {
     };
 
     let get_result = app.any_sync().storage_get(get_payload).await;
-    assert!(get_result.is_ok(), "Get command failed: {:?}", get_result.err());
+    assert!(
+        get_result.is_ok(),
+        "Get command failed: {:?}",
+        get_result.err()
+    );
 
     let get_response = get_result.unwrap();
     assert!(get_response.found, "Complex document should be found");
@@ -446,7 +492,10 @@ async fn test_complex_json_document() {
     // Verify complex structure is preserved
     assert_eq!(retrieved["string"], "test value");
     assert_eq!(retrieved["number"], 12345);
-    assert_eq!(retrieved["nested"]["level1"]["level2"]["level3"], "deep value");
+    assert_eq!(
+        retrieved["nested"]["level1"]["level2"]["level3"],
+        "deep value"
+    );
     assert_eq!(retrieved["array"][4]["nested"], "object");
     assert_eq!(retrieved["unicode"], "Hello 世界 🌍");
 }

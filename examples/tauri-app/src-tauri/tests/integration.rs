@@ -19,8 +19,8 @@ fn create_test_app() -> tauri::App<MockRuntime> {
         .filter_level(log::LevelFilter::Debug)
         .try_init();
 
-    // Create the app using the same builder as production
-    create_app_builder()
+    // Create the app using the same builder as production but with MockRuntime
+    create_app_builder::<MockRuntime>()
         .build(mock_context(noop_assets()))
         .expect("failed to build test app")
 }

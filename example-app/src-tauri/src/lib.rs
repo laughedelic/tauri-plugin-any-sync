@@ -6,11 +6,24 @@ fn greet(name: &str) -> String {
 
 /// Creates and configures the Tauri application builder with all plugins and handlers.
 /// This function is used by both the production app and integration tests.
-pub fn create_app_builder() -> tauri::Builder<tauri::Wry> {
-    tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet])
-        .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_any_sync::init())
+pub fn create_app_builder<R: tauri::Runtime>() -> tauri::Builder<R> {
+    let mut builder = tauri::Builder::<R>::new().invoke_handler(tauri::generate_handler![greet]);
+
+    // Only add shell plugin for desktop runtimes
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_shell::init());
+    }
+
+    builder = builder.plugin(tauri_plugin_any_sync::init());
+
+    // Disable default macOS menu to avoid main thread requirement in tests
+    #[cfg(target_os = "macos")]
+    {
+        builder = builder.enable_macos_default_menu(false);
+    }
+
+    builder
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -21,7 +34,7 @@ pub fn run() {
     log::info!("Starting Tauri application");
     eprintln!("Starting Tauri application - this should print to stderr");
 
-    create_app_builder()
+    create_app_builder::<tauri::Wry>()
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

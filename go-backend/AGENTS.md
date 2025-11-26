@@ -15,27 +15,30 @@ cd go-backend && go test ./... -v
 ./binaries/any-sync-aarch64-apple-darwin --port 8080
 ```
 
-## Architecture Overview
+## Module Architecture
 
-The Go backend follows a clean architecture pattern:
+The backend is three independent Go modules sharing core storage code:
 
 ```
 go-backend/
-├── api/
-│   ├── proto/           # Protocol Buffer definitions
-│   └── server/          # gRPC server implementations
-├── internal/
-│   ├── health/          # Internal health service logic
-│   └── config/          # Configuration management
-└── cmd/
-    └── server/          # Desktop sidecar entrypoint
+├── shared/                    # anysync-backend (storage API)
+│   └── storage/
+├── desktop/                   # anysync-backend/desktop (gRPC server)
+│   ├── main.go
+│   ├── api/                   # Proto + gRPC implementations
+│   ├── config/
+│   └── health/
+└── mobile/                    # anysync-backend/mobile (gomobile bindings)
+    ├── main.go
+    └── storage.go
 ```
 
-### Key Principles
+**Module dependencies:**
+- `shared`: Zero external dependencies (just any-store)
+- `desktop`: Adds grpc + protobuf
+- `mobile`: Adds golang.org/x/mobile
 
-- **API Layer** (`api/`): Enforces gomobile-compatible types and gRPC contracts
-- **Internal Layer** (`internal/`): Unrestricted Go implementation, not importable by other packages
-- **CMD Layer** (`cmd/`): Application entrypoints and main functions
+**Development:** Use `go.work` for seamless workspace development across modules. Rebuilt modules use `replace` directives pointing to local paths.
 
 ## Development Workflow
 

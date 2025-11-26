@@ -62,19 +62,18 @@ check_protoc_plugins() {
 # Generate protobuf code
 generate_proto() {
     print_status "Generating protobuf code..."
-    cd go-backend
     
     # Add Go bin to PATH for protoc plugins
     export PATH=$PATH:$(go env GOPATH)/bin
     
-    # Generate protobuf code and check for errors
-    if ! protoc --go_out=. --go-grpc_out=. api/proto/*.proto 2>&1; then
-        cd ..
-        print_error "Failed to generate protobuf code"
-        exit 1
-    fi
+    # Generate protobuf code in a subshell to avoid cd issues
+    (
+        cd go-backend/desktop
+        if ! protoc --go_out=. --go-grpc_out=. api/proto/*.proto 2>&1; then
+            exit 1
+        fi
+    ) || exit 1
     
-    cd ..
     print_status "Protobuf code generated successfully"
 }
 
@@ -84,8 +83,6 @@ build_target() {
     local output_name=${2:-any-sync-$1}
     
     print_status "Building for target: $target"
-    
-    cd go-backend
     
     # Set GOOS and GOARCH for cross-compilation
     case $target in
@@ -112,16 +109,17 @@ build_target() {
     esac
     
     # Create output directory
-    mkdir -p ../binaries
+    mkdir -p binaries
     
-    # Build
-    # Set ldflags to strip debug symbols and disable DWARF generation in CI builds for smaller binaries
-    go build${CI:+ -ldflags "-s -w"} -o "../binaries/${output_name}" ./cmd/server
+    # Build from the desktop submodule directory in a subshell
+    (
+        cd go-backend/desktop
+        go build${CI:+ -ldflags "-s -w"} -o ../../binaries/${output_name}
+    ) || return 1
     
     # Reset environment
     unset GOOS GOARCH
     
-    cd ..
     print_status "Built binary: binaries/${output_name}"
 }
 

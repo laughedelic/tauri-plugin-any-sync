@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 
-	pb "anysync-backend/api/proto"
-	"anysync-backend/internal/storage"
+	pb "anysync-backend/desktop/api/proto"
+	"anysync-backend/storage"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

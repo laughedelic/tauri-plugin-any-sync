@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pb "anysync-backend/api/proto"
+	pb "anysync-backend/desktop/api/proto"
 )
 
 func TestHealthServer_Check(t *testing.T) {

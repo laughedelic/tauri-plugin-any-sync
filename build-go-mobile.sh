@@ -46,14 +46,16 @@ check_ndk() {
 build_android_aar() {
     echo -e "${GREEN}Building Android .aar...${NC}"
     
-    cd "${GO_BACKEND_DIR}"
+    cd "${GO_BACKEND_DIR}/mobile"
     
     # Build for Android with API level 21 (minimum supported by NDK)
     gomobile bind \
         -target=android \
         -androidapi=21 \
         -o "${BINARIES_DIR}/${AAR_NAME}" \
-        ./cmd/mobile
+        .
+    
+    cd "${SCRIPT_DIR}"
     
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ Successfully built ${AAR_NAME}${NC}"

@@ -15,7 +15,7 @@
 # vendor/
 
 # Go workspace file
-go.work
+go.work.sum
 
 # Generated protobuf files (will be regenerated)
 *.pb.go

@@ -6,7 +6,7 @@ description = ""
 edition.workspace = true
 rust-version.workspace = true
 exclude = ["/example-app", "/plugin-js-api/dist", "/plugin-js-api/node_modules", "/binaries"]
-include = ["src/**/*", "build.rs", "permissions/**/*", "android/**/*", "ios/**/*"]
+include = ["src/**/*", "build.rs", "tests/**/*", "permissions/**/*", "android/**/*", "ios/**/*"]
 links = "tauri-plugin-any-sync"
 
 [features]

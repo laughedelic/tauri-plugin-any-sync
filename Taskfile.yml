@@ -1,13 +1,12 @@
 version: '3'
 
 includes:
-  go:
-    taskfile: ./go-backend/Taskfile.yml
-    dir: ./go-backend
-    alias: backend
+  backend:
+    taskfile: ./plugin-go-backend/Taskfile.yml
+    dir: ./plugin-go-backend
   app:
-    taskfile: ./examples/tauri-app/Taskfile.yml
-    dir: ./examples/tauri-app
+    taskfile: ./example-app/Taskfile.yml
+    dir: ./example-app
 
 tasks:
   ts-install:
@@ -17,25 +16,26 @@ tasks:
 
   ts-build:
     desc: "Build plugin TypeScript API"
+    dir: plugin-js-api
     cmd: bun run build
     sources:
-      - ./guest-js/*.ts
-      - ./package.json
-      - ./tsconfig.json
-      - ./*.js
+      - ./plugin-js-api/src/*.ts
+      - ./plugin-js-api/package.json
+      - ./plugin-js-api/tsconfig.json
+      - ./plugin-js-api/rollup.config.js
     generates:
-      - ./dist-js/*
+      - ./plugin-js-api/dist/*
 
   cargo-build:
     desc: "Build Rust plugin backend"
-    dir: examples/tauri-app/src-tauri
+    dir: example-app/src-tauri
     deps:
-      - go:build
+      - backend:build
     cmd: cargo build
     sources:
-      - ./src/**/*.rs
-      - ./Cargo.toml
-      - ./*.rs
+      - ./plugin-rust-core/src/**/*.rs
+      - ./plugin-rust-core/Cargo.toml
+      - ./plugin-rust-core/build.rs
     generates:
       - ./target/*
 
@@ -48,11 +48,11 @@ tasks:
   build-all:
     desc: "Build all components for all platforms"
     deps:
-      - go:build-all
+      - backend:build-all
       - build
 
   # Cleanup
   clean:
     desc: "Clean all build artifacts"
     deps:
-      - go:clean
+      - backend:clean

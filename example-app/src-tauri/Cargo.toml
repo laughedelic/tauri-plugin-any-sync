@@ -20,6 +20,6 @@ tauri-build = { version = "2.5.1", default-features = false , features = [] }
 [dependencies]
 tauri = { version = "2.9.2", features = [] }
 tauri-plugin-shell = "2.3.3"
-tauri-plugin-any-sync = { path = "../../../", features = ["all"] }
+tauri-plugin-any-sync = { path = "../../plugin-rust-core", features = ["all"] }
 log = "0.4"
 env_logger = "0.11"

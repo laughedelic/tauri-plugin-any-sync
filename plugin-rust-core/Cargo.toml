@@ -1,0 +1,43 @@
+[package]
+name = "tauri-plugin-any-sync"
+version = "0.1.0"
+authors.workspace = true
+description = ""
+edition.workspace = true
+rust-version.workspace = true
+exclude = ["/example-app", "/plugin-js-api/dist", "/plugin-js-api/node_modules", "/binaries"]
+include = ["src/**/*", "build.rs", "permissions/**/*", "android/**/*", "ios/**/*"]
+links = "tauri-plugin-any-sync"
+
+[features]
+x86_64-apple-darwin = []
+aarch64-apple-darwin = []
+macos = ["x86_64-apple-darwin", "aarch64-apple-darwin"]
+x86_64-unknown-linux-gnu = []
+aarch64-unknown-linux-gnu = []
+linux = ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"]
+x86_64-pc-windows-msvc = []
+windows = ["x86_64-pc-windows-msvc"]
+desktop = ["macos", "linux", "windows"]
+android = []
+mobile = ["android"]
+all = ["desktop", "mobile"]
+
+[dependencies]
+tauri.workspace = true
+tauri-plugin-shell = "2.3.3"
+serde.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tonic.workspace = true
+prost.workspace = true
+tempfile = "3.0"
+uuid = { version = "1.0", features = ["v4"] }
+log = "0.4"
+async-trait = "0.1.89"
+
+[build-dependencies]
+tauri-plugin = { version = "2.5.1", features = ["build"] }
+tonic-build = "0.12"
+reqwest = { version = "0.12", features = ["blocking"] }
+sha2 = "0.10"

@@ -1,43 +1,16 @@
-[package]
-name = "tauri-plugin-any-sync"
-version = "0.1.0"
+[workspace]
+members = ["plugin-rust-core", "example-app/src-tauri"]
+resolver = "2"
+
+[workspace.package]
 authors = ["Alexey Alekhin <laughedelic@gmail.com>"]
-description = ""
 edition = "2021"
 rust-version = "1.77.2"
-exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules", "/binaries"]
-include = ["src/**/*", "src-tauri/**/*", "build.rs", "build-go-backend.sh"]
-links = "tauri-plugin-any-sync"
 
-[features]
-x86_64-apple-darwin = []
-aarch64-apple-darwin = []
-macos = ["x86_64-apple-darwin", "aarch64-apple-darwin"]
-x86_64-unknown-linux-gnu = []
-aarch64-unknown-linux-gnu = []
-linux = ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"]
-x86_64-pc-windows-msvc = []
-windows = ["x86_64-pc-windows-msvc"]
-desktop = ["macos", "linux", "windows"]
-android = []
-mobile = ["android"]
-all = ["desktop", "mobile"]
-
-[dependencies]
+[workspace.dependencies]
 tauri = { version = "2.9.2" }
-tauri-plugin-shell = "2.3.3"
 serde = "1.0"
 thiserror = "2"
 tokio = { version = "1.0", features = ["full"] }
 tonic = "0.12"
 prost = "0.13"
-tempfile = "3.0"
-uuid = { version = "1.0", features = ["v4"] }
-log = "0.4"
-async-trait = "0.1.89"
-
-[build-dependencies]
-tauri-plugin = { version = "2.5.1", features = ["build"] }
-tonic-build = "0.12"
-reqwest = { version = "0.12", features = ["blocking"] }
-sha2 = "0.10"

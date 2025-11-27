@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 vars:
   BINARIES_DIR: ../../binaries
@@ -7,10 +7,23 @@ tasks:
   default:
     deps: [build]
 
+  gomobile-setup:
+    desc: Install gomobile toolchain
+    internal: true
+    silent: true
+    run: once
+    status:
+      - "! command -q gomobile"
+    cmds:
+      - go install golang.org/x/mobile/cmd/gomobile@latest
+      - gomobile init
+
   build-android:
     desc: Build the Android .aar file with gomobile
-    status:
+    preconditions:
       - 'test -n "$ANDROID_HOME"'
+    deps:
+      - gomobile-setup
     cmds:
       - gomobile bind -target=android -androidapi=21 -o '{{.BINARIES_DIR}}/any-sync-android.aar' .
     sources:
@@ -18,12 +31,12 @@ tasks:
       - ./**/*.go
       - ../shared/**/*.go
     generates:
-      - '{{.BINARIES_DIR}}/any-sync-android*'
+      - "{{.BINARIES_DIR}}/any-sync-android*"
 
   build:
     desc: "Build mobile binaries"
     aliases: [build-all]
-    deps: 
+    deps:
       - build-android
       # - build-ios
 

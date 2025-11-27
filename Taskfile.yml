@@ -1,7 +1,7 @@
-version: '3'
+version: 3
 
 includes:
-  backend:
+  go:
     taskfile: ./plugin-go-backend/Taskfile.yml
     dir: ./plugin-go-backend
   app:
@@ -9,50 +9,68 @@ includes:
     dir: ./example-app
 
 tasks:
-  ts-install:
-    desc: "Install TypeScript dependencies"
-    cmd: bun install
-    run: once
-
-  ts-build:
-    desc: "Build plugin TypeScript API"
-    dir: plugin-js-api
-    cmd: bun run build
-    sources:
-      - ./plugin-js-api/src/*.ts
-      - ./plugin-js-api/package.json
-      - ./plugin-js-api/tsconfig.json
-      - ./plugin-js-api/rollup.config.js
-    generates:
-      - ./plugin-js-api/dist/*
-
-  cargo-build:
-    desc: "Build Rust plugin backend"
-    dir: example-app/src-tauri
+  rust:build:
+    desc: Build Rust plugin backend
+    dir: ./plugin-rust-core
     deps:
-      - backend:build
+      - go:build
     cmd: cargo build
     sources:
-      - ./plugin-rust-core/src/**/*.rs
-      - ./plugin-rust-core/Cargo.toml
-      - ./plugin-rust-core/build.rs
+      - ./src/**/*.rs
+      - ./Cargo.toml
+      - ./build.rs
+      - "{{.ROOT_DIR}}/plugin-go-backend/desktop/proto/*.proto"
+      - "{{.ROOT_DIR}}/binaries/*"
     generates:
-      - ./target/*
+      - "{{.ROOT_DIR}}/target/*"
+
+  js:install:
+    desc: Install npm dependencies
+    dir: ./plugin-js-api
+    cmd: bun install
+    internal: true
+    run: once
+    sources:
+      - ./package.json
+
+  js:build:
+    desc: Build CJS/ESM artifacts
+    dir: ./plugin-js-api
+    deps:
+      - js:install
+    cmd: bun run build
+    sources:
+      - ./src/*.ts
+      - ./package.json
+    generates:
+      - ./dist/*
 
   build:
-    desc: "Build all components (backend + mobile)"
+    desc: Build all components (backend + mobile)
     deps:
-      - cargo-build
-      - ts-build
+      - go:build
+      - rust:build
+      - js:build
 
   build-all:
-    desc: "Build all components for all platforms"
+    desc: Build all components for all platforms
     deps:
-      - backend:build-all
+      - go:build-all
       - build
 
-  # Cleanup
+  rust:clean:
+    desc: Clean all build artifacts
+    dir: ./plugin-rust-core
+    cmd: cargo clean
+
+  js:clean:
+    desc: Clean build artifacts
+    dir: ./plugin-js-api
+    cmd: rm -rf ./dist
+
   clean:
-    desc: "Clean all build artifacts"
+    desc: Clean all build artifacts
     deps:
-      - backend:clean
+      - go:clean
+      - rust:clean
+      - js:clean

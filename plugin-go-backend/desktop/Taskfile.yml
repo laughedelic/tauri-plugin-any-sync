@@ -1,4 +1,4 @@
-version: '3'
+version: 3
 
 vars:
   BINARIES_DIR: ../../binaries
@@ -19,20 +19,21 @@ tasks:
     deps: [build]
 
   proto-plugins:
-    desc: "Install protoc plugins for Go"
+    desc: Install protoc plugins for Go
     internal: true
     silent: true
     run: once
     status:
-      - '! command -q protoc-gen-go'
-      - '! command -q protoc-gen-go-grpc'  
+      - "! command -q protoc-gen-go"
+      - "! command -q protoc-gen-go-grpc"
     cmds:
       - go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
       - go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
   proto-gen:
-    desc: "Generate protobuf code"
-    deps: [proto-plugins]
+    desc: Generate protobuf code
+    deps:
+      - proto-plugins
     run: once
     cmds:
       - go generate ./proto
@@ -42,28 +43,29 @@ tasks:
       - ./proto/*.pb.go
 
   build:
-    desc: "Build desktop binaries"
+    desc: Build desktop binaries
     deps: [proto-gen]
     vars:
-      OS: '{{.OS | default OS}}'
-      ARCH: '{{.ARCH | default ARCH}}'
-      TRIPLE: '{{index .ARCH_MAP .ARCH}}-{{index .OS_MAP .OS}}'
+      OS: "{{.OS | default OS}}"
+      ARCH: "{{.ARCH | default ARCH}}"
+      TRIPLE: "{{index .ARCH_MAP .ARCH}}-{{index .OS_MAP .OS}}"
       EXT: '{{if eq .OS "windows"}}.exe{{else}}{{end}}'
-      OUT: '{{.BINARIES_DIR}}/{{.BINARY_NAME}}-{{.TRIPLE}}{{.EXT}}'
-    label: '{{.TASK}}-{{.OS}}-{{.ARCH}}'
+      OUT: "{{.BINARIES_DIR}}/{{.BINARY_NAME}}-{{.TRIPLE}}{{.EXT}}"
+    label: "{{.TASK}}-{{.OS}}-{{.ARCH}}"
     env:
       GOOS: '{{if eq .OS "macos"}}darwin{{else}}{{.OS}}{{end}}'
-      GOARCH: '{{.ARCH}}'
+      GOARCH: "{{.ARCH}}"
     cmd: go build -o '{{.OUT}}' ./
+    run: once
     sources:
       - ./go.*
       - ./**/*.go
       - ../shared/**/*.go
     generates:
-      - '{{.OUT}}'
+      - "{{.OUT}}"
 
   build-all:
-    desc: "Build desktop binary for all platforms"
+    desc: Build desktop binary for all platforms
     deps:
       - for:
           matrix:
@@ -71,15 +73,15 @@ tasks:
             ARCH: [amd64, arm64]
         task: build
         vars:
-          OS: '{{.ITEM.OS}}'
-          ARCH: '{{.ITEM.ARCH}}'
+          OS: "{{.ITEM.OS}}"
+          ARCH: "{{.ITEM.ARCH}}"
 
   clean:
-    desc: "Clean generated binaries"
-    cmds: 
+    desc: Clean generated binaries
+    cmds:
       - rm -rf {{.BINARIES_DIR}}/{{.BINARY_NAME}}-*
       - rm -rf ./proto/*.pb.go
 
   mod-tidy:
-    desc: "Clean and verify Go modules"
+    desc: Clean and verify Go modules
     cmd: go mod tidy

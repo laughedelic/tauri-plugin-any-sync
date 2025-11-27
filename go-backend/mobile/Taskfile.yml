@@ -4,13 +4,17 @@ vars:
   BINARIES_DIR: ../../binaries
 
 tasks:
+  default:
+    deps: [build]
+
   build-android:
     desc: Build the Android .aar file with gomobile
     status:
-      - '[ -n "${ANDROID_HOME:-}" ]'
+      - 'test -n "$ANDROID_HOME"'
     cmds:
       - gomobile bind -target=android -androidapi=21 -o '{{.BINARIES_DIR}}/any-sync-android.aar' .
     sources:
+      - ./go.*
       - ./**/*.go
       - ../shared/**/*.go
     generates:
@@ -18,6 +22,7 @@ tasks:
 
   build:
     desc: "Build mobile binaries"
+    aliases: [build-all]
     deps: 
       - build-android
       # - build-ios

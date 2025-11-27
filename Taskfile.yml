@@ -5,26 +5,29 @@ includes:
     taskfile: ./go-backend/Taskfile.yml
     dir: ./go-backend
     alias: backend
+  app:
+    taskfile: ./examples/tauri-app/Taskfile.yml
+    dir: ./examples/tauri-app
 
 tasks:
   ts-install:
     desc: "Install TypeScript dependencies"
-    dir: examples/tauri-app
     cmd: bun install
+    run: once
 
   ts-build:
     desc: "Build plugin TypeScript API"
-    dir: examples/tauri-app
     cmd: bun run build
     sources:
       - ./guest-js/*.ts
       - ./package.json
-      - ./rollup.config.js
+      - ./tsconfig.json
+      - ./*.js
     generates:
       - ./dist-js/*
 
   cargo-build:
-    desc: "Build Rust backend"
+    desc: "Build Rust plugin backend"
     dir: examples/tauri-app/src-tauri
     deps:
       - go:build
@@ -36,49 +39,20 @@ tasks:
     generates:
       - ./target/*
 
-  # Combined Build Tasks
   build:
     desc: "Build all components (backend + mobile)"
     deps:
-      - backend:build
-      - backend:mobile
-    cmds:
-      - echo "✓ All build tasks completed"
+      - cargo-build
+      - ts-build
 
   build-all:
     desc: "Build all components for all platforms"
     deps:
-      - backend:build-all
-      - backend:mobile
-    cmds:
-      - echo "✓ All build tasks completed"
-
-  tauri:build:
-    desc: "Build Tauri desktop app (requires backend:build and frontend:install)"
-    deps:
-      - backend:build
-      - frontend:install
-    dir: examples/tauri-app
-    cmds:
-      - tauri build
-
-  tauri:dev:
-    desc: "Run Tauri dev mode (requires backend:build)"
-    deps:
-      - backend:build
-    dir: examples/tauri-app
-    cmds:
-      - tauri dev
-
-  # Testing
-  test:
-    desc: "Run all tests"
-    cmds:
-      - task backend:test
+      - go:build-all
+      - build
 
   # Cleanup
   clean:
     desc: "Clean all build artifacts"
-    dir: go-backend
-    cmds:
-      - task clean
+    deps:
+      - go:clean

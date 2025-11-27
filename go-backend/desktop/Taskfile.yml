@@ -2,8 +2,10 @@ version: '3'
 
 vars:
   BINARIES_DIR: ../../binaries
+  BINARY_NAME: any-sync
   OS_MAP:
     map:
+      darwin: apple-darwin
       macos: apple-darwin
       linux: unknown-linux-gnu
       windows: pc-windows-msvc
@@ -13,21 +15,25 @@ vars:
       arm64: aarch64
 
 tasks:
-  protoc-plugins:
+  default:
+    deps: [build]
+
+  proto-plugins:
     desc: "Install protoc plugins for Go"
     internal: true
+    silent: true
     run: once
     status:
-      - command -v protoc-gen-go
-      - command -v protoc-gen-go-grpc
+      - '! command -q protoc-gen-go'
+      - '! command -q protoc-gen-go-grpc'  
     cmds:
       - go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
       - go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
   proto-gen:
     desc: "Generate protobuf code"
-    deps: [protoc-plugins]
-    run: when_changed
+    deps: [proto-plugins]
+    run: once
     cmds:
       - go generate ./proto
     sources:
@@ -35,37 +41,35 @@ tasks:
     generates:
       - ./proto/*.pb.go
 
-  build-target:
+  build:
     desc: "Build desktop binaries"
     deps: [proto-gen]
     vars:
+      OS: '{{.OS | default OS}}'
+      ARCH: '{{.ARCH | default ARCH}}'
       TRIPLE: '{{index .ARCH_MAP .ARCH}}-{{index .OS_MAP .OS}}'
       EXT: '{{if eq .OS "windows"}}.exe{{else}}{{end}}'
-      OUT: '{{.BINARIES_DIR}}/any-sync-{{.TRIPLE}}{{.EXT}}'
-    requires:
-      vars:
-        - name: OS
-          enum: [macos, linux, windows]
-        - name: ARCH
-          enum: [amd64, arm64]
+      OUT: '{{.BINARIES_DIR}}/{{.BINARY_NAME}}-{{.TRIPLE}}{{.EXT}}'
+    label: '{{.TASK}}-{{.OS}}-{{.ARCH}}'
     env:
       GOOS: '{{if eq .OS "macos"}}darwin{{else}}{{.OS}}{{end}}'
       GOARCH: '{{.ARCH}}'
     cmd: go build -o '{{.OUT}}' ./
     sources:
+      - ./go.*
       - ./**/*.go
       - ../shared/**/*.go
     generates:
       - '{{.OUT}}'
 
-  build:
+  build-all:
     desc: "Build desktop binary for all platforms"
     deps:
       - for:
           matrix:
             OS: [macos, linux, windows]
             ARCH: [amd64, arm64]
-        task: build-target
+        task: build
         vars:
           OS: '{{.ITEM.OS}}'
           ARCH: '{{.ITEM.ARCH}}'
@@ -73,7 +77,7 @@ tasks:
   clean:
     desc: "Clean generated binaries"
     cmds: 
-      - rm -rf {{.BINARIES_DIR}}/any-sync-*
+      - rm -rf {{.BINARIES_DIR}}/{{.BINARY_NAME}}-*
       - rm -rf ./proto/*.pb.go
 
   mod-tidy:

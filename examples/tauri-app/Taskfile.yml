@@ -1,0 +1,26 @@
+version: 3
+
+vars:
+  TAURI_CMD: 'cargo tauri'
+
+tasks:
+  build:
+    desc: 'Build Tauri app for production'
+    cmd: '{{.TAURI_CMD}} build'
+
+  dev:
+    desc: 'Run Tauri app in development mode'
+    cmd: '{{.TAURI_CMD}} dev'
+  
+  dev:android:
+    desc: 'Run Android app in development mode'
+    deps: [android-init]
+    cmd: '{{.TAURI_CMD}} android dev'
+  
+  android-init:
+    desc: 'Initialize Android environment'
+    internal: true
+    run: once
+    status:
+      - test -d ./src-tauri/gen/android
+    cmd: '{{.TAURI_CMD}} android init'

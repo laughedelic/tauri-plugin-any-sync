@@ -7,7 +7,7 @@ TBD - created by archiving change binaries-dist. Update Purpose after archive.
 The plugin SHALL publish pre-compiled Go backend binaries to GitHub Releases on version tags.
 #### Scenario: Release creation
 - **WHEN** a version tag (v*) is pushed to the repository
-- **THEN** a GitHub Actions workflow builds all platform binaries using build-go-backend.sh
+- **THEN** a GitHub Actions workflow builds all platform binaries using Taskfile
 - **AND** generates SHA256 checksums for each binary
 - **AND** creates a GitHub Release with binaries and checksums as assets
 

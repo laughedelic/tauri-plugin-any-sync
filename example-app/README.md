@@ -1,8 +1,36 @@
-# Svelte + Vite
+# Example Tauri App
 
-This template should help get you started developing with Tauri and Svelte in Vite.
+Example application demonstrating tauri-plugin-any-sync usage.
 
-## Recommended IDE Setup
+## Quick Start
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer).
+```bash
+# Run development server
+task app:dev
 
+# Build for production
+task app:build
+```
+
+## Development
+
+The app uses the plugin from the workspace:
+- Rust plugin: `path = "../../plugin-rust-core"`
+- TypeScript API: `workspace:*`
+
+## Structure
+
+```
+example-app/
+├── src/                # Svelte frontend
+│   └── App.svelte
+├── src-tauri/          # Tauri backend
+│   ├── gen/android/    # (git-ignored) Android native plugin (generated)
+│   ├── src/lib.rs      # Plugin initialization
+│   ├── Cargo.toml      # Plugin dependency
+│   └── capabilities/   # Permissions
+├── package.json
+└── Taskfile.yml
+```
+
+See [root README.md](../README.md) for full documentation.

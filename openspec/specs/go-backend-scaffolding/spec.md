@@ -56,7 +56,7 @@ Then it should produce executables for all target platforms using standard Go to
 The Go backend SHALL include component-specific AGENTS.md documentation for development workflows.
 #### Scenario:
 Given developers need to work with the Go backend code
-When they open the go-backend directory
+When they open the plugin-go-backend directory
 Then they should find clear instructions for building, testing, and gRPC development
 
 ### Requirement: Project Structure
@@ -64,7 +64,7 @@ The existing project structure SHALL accommodate the Go backend directory withou
 #### Scenario:
 Given the existing Tauri plugin structure
 When adding the Go backend
-Then the `go-backend/` directory should integrate cleanly with the existing project layout
+Then the `plugin-go-backend/` directory should integrate cleanly with the existing project layout
 
 ### Requirement: AnyStore Integration
 

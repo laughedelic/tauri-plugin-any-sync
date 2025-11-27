@@ -6,7 +6,7 @@ import typescript from '@rollup/plugin-typescript'
 const pkg = JSON.parse(readFileSync(join(cwd(), 'package.json'), 'utf8'))
 
 export default {
-  input: 'guest-js/index.ts',
+  input: 'src/index.ts',
   output: [
     {
       file: pkg.exports.import,

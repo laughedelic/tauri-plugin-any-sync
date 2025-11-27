@@ -28,11 +28,11 @@ plugin-rust-core/
 task rust:build
 
 # Run tests
-cd plugin-rust-core && cargo test
+task rust:test
 
 # Check and format
-cargo clippy
-cargo fmt
+task rust:clippy
+task rust:fmt
 ```
 
 ## Build Script

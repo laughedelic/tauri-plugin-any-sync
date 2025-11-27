@@ -45,6 +45,25 @@ tasks:
     generates:
       - ./dist/*
 
+  js:typecheck:
+    desc: Type check TypeScript code
+    dir: ./plugin-js-api
+    deps:
+      - js:install
+    cmd: bunx tsc --noEmit
+
+  rust:fmt:
+    desc: Format Rust code
+    cmd: cargo fmt --all
+
+  rust:clippy:
+    desc: Run Rust linter
+    cmd: cargo clippy --all-targets -- -D warnings
+
+  rust:test:
+    desc: Run Rust tests
+    cmd: cargo test --all-targets
+
   build:
     desc: Build all components (backend + mobile)
     deps:

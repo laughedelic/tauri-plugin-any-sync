@@ -20,8 +20,11 @@ jobs:
       
       - uses: actions/setup-go@v6
         with:
-          go-version-file: 'go-backend/go.mod'
-          cache-dependency-path: 'go-backend/go.sum'
+          go-version-file: 'plugin-go-backend/desktop/go.mod'
+          cache-dependency-path: |
+            plugin-go-backend/desktop/go.sum
+            plugin-go-backend/shared/go.sum
+            plugin-go-backend/mobile/go.sum
       
       - name: Set up protoc
         uses: arduino/setup-protoc@v3
@@ -29,12 +32,14 @@ jobs:
           version: '28.x'
           repo-token: ${{ github.token }}
 
+      - name: Install Task
+        uses: go-task/setup-task@v1
+
       - name: Compile Go backend
-        run: ./build-go-backend.sh x86_64-unknown-linux-gnu
+        run: task go:build
 
       - name: Run Go tests
-        working-directory: go-backend
-        run: go test -v ./...
+        run: task go:test
 
   test-typescript:
     runs-on: ubuntu-latest
@@ -43,14 +48,14 @@ jobs:
       
       - uses: oven-sh/setup-bun@v2
       
-      - name: Install dependencies
-        run: bun install
-      
+      - name: Install Task
+        uses: go-task/setup-task@v1
+
       - name: Type check
-        run: bunx tsc --noEmit
-      
+        run: task js:typecheck
+
       - name: Build
-        run: bun run build
+        run: task js:build
 
   test-rust:
     strategy:
@@ -71,6 +76,9 @@ jobs:
           version: '28.x'
           repo-token: ${{ github.token }}
 
+      - name: Install Task
+        uses: go-task/setup-task@v1
+
       - name: install webkit2gtk
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -78,4 +86,4 @@ jobs:
           sudo apt-get install -y webkit2gtk-4.1
 
       - name: Run tests
-        run: cargo test --all-targets
+        run: task rust:test

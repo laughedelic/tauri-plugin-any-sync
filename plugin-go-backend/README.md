@@ -102,9 +102,9 @@ use (
 ```
 
 Benefits:
-- Run `go test ./...` at project root to test all modules
+- Run `task go:test` to test all modules
 - IDE treats it as unified project with proper cross-module navigation
-- `go mod tidy` keeps all modules synchronized
+- `task go:mod-tidy` keeps all modules synchronized
 - Still maintains proper module boundaries (can't import internal packages across modules)
 
 ### Dependency Management
@@ -115,21 +115,17 @@ Always use `go get` and `go mod tidy`:
 go get github.com/anyproto/any-store@latest
 
 # Clean and sync all modules
-go mod tidy -C shared && go mod tidy -C desktop && go mod tidy -C mobile
+task go:mod-tidy
 ```
 
 ### Running Tests
 
 ```bash
 # Test all modules
-cd /path/to/go-backend && go test ./...
-
-# Test specific module
-cd desktop && go test ./...
-cd mobile && go test ./...
+task go:test
 
 # With coverage
-go test ./... -cover
+task go:test-coverage
 ```
 
 ## Environment Variables

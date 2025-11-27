@@ -50,13 +50,13 @@ The plugin uses a unified `AnySyncService` trait with platform-specific implemen
 
 ```bash
 # Run all tests
-cargo test
+task rust:test
 
-# Run specific test
-cargo test test_name
+# Run specific test (pass args after --)
+task rust:test -- test_name
 
 # With logging
-RUST_LOG=debug cargo test
+RUST_LOG=debug task rust:test
 ```
 
 ## Build Configuration

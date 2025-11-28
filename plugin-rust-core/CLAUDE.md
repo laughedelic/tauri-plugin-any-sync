@@ -1,0 +1,1 @@
+./plugin-rust-core/AGENTS.md

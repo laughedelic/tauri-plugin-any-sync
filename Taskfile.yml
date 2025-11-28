@@ -1,95 +1,39 @@
 version: 3
 
 includes:
-  go:
+  backend:
     taskfile: ./plugin-go-backend/Taskfile.yml
     dir: ./plugin-go-backend
+    aliases: [go]
+  api:
+    taskfile: ./plugin-js-api/Taskfile.yml
+    dir: ./plugin-js-api
+    aliases: [js]
+  core:
+    taskfile: ./plugin-rust-core/Taskfile.yml
+    dir: ./plugin-rust-core
+    aliases: [rust]
   app:
     taskfile: ./example-app/Taskfile.yml
     dir: ./example-app
 
 tasks:
-  rust:build:
-    desc: Build Rust plugin backend
-    dir: ./plugin-rust-core
-    deps:
-      - go:build
-    cmd: cargo build
-    sources:
-      - ./src/**/*.rs
-      - ./Cargo.toml
-      - ./build.rs
-      - "{{.ROOT_DIR}}/plugin-go-backend/desktop/proto/*.proto"
-      - "{{.ROOT_DIR}}/binaries/*"
-    generates:
-      - "{{.ROOT_DIR}}/target/*"
-
-  js:install:
-    desc: Install npm dependencies
-    dir: ./plugin-js-api
-    cmd: bun install
-    internal: true
-    run: once
-    sources:
-      - ./package.json
-
-  js:build:
-    desc: Build CJS/ESM artifacts
-    dir: ./plugin-js-api
-    deps:
-      - js:install
-    cmd: bun run build
-    sources:
-      - ./src/*.ts
-      - ./package.json
-    generates:
-      - ./dist/*
-
-  js:typecheck:
-    desc: Type check TypeScript code
-    dir: ./plugin-js-api
-    deps:
-      - js:install
-    cmd: bunx tsc --noEmit
-
-  rust:fmt:
-    desc: Format Rust code
-    cmd: cargo fmt --all
-
-  rust:clippy:
-    desc: Run Rust linter
-    cmd: cargo clippy --all-targets -- -D warnings
-
-  rust:test:
-    desc: Run Rust tests
-    cmd: cargo test --all-targets
-
   build:
-    desc: Build all components (backend + mobile)
+    desc: Build all plugin components
     deps:
-      - go:build
-      - rust:build
-      - js:build
+      - backend:build
+      - core:build
+      - api:build
 
   build-all:
-    desc: Build all components for all platforms
-    deps:
-      - go:build-all
+    desc: Build all plugin components for all platforms
+    cmds:
+      - backend:build-all
       - build
-
-  rust:clean:
-    desc: Clean all build artifacts
-    dir: ./plugin-rust-core
-    cmd: cargo clean
-
-  js:clean:
-    desc: Clean build artifacts
-    dir: ./plugin-js-api
-    cmd: rm -rf ./dist
 
   clean:
     desc: Clean all build artifacts
     deps:
-      - go:clean
-      - rust:clean
-      - js:clean
+      - backend:clean
+      - core:clean
+      - api:clean

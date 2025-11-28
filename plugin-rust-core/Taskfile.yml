@@ -1,0 +1,32 @@
+version: 3
+
+tasks:
+  build:
+    desc: Build Rust plugin backend
+    deps:
+      - :go:build
+    cmd: cargo build
+    sources:
+      - ./src/**/*.rs
+      - ./Cargo.toml
+      - ./build.rs
+      - "{{.ROOT_DIR}}/plugin-go-backend/desktop/proto/*.proto"
+      - "{{.ROOT_DIR}}/binaries/*"
+    generates:
+      - "{{.ROOT_DIR}}/target/*"
+
+  fmt:
+    desc: Format Rust code
+    cmd: cargo fmt --all
+
+  clippy:
+    desc: Run Rust linter
+    cmd: cargo clippy --all-targets -- -D warnings
+
+  test:
+    desc: Run Rust tests
+    cmd: cargo test --all-targets
+
+  clean:
+    desc: Clean all build artifacts
+    cmd: cargo clean

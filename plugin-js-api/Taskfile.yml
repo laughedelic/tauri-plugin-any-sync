@@ -1,0 +1,34 @@
+version: 3
+
+tasks:
+  install:
+    desc: Install npm dependencies
+    cmd: bun install
+    internal: true
+    run: once
+    sources:
+      - ./package.json
+    generates:
+      - "{{.ROOT_DIR}}/bun.lock"
+
+  build:
+    desc: Build CJS/ESM artifacts
+    deps:
+      - install
+    cmd: bun run build
+    run: once
+    sources:
+      - ./src/*.ts
+      - ./package.json
+    generates:
+      - ./dist/*
+
+  typecheck:
+    desc: Type check TypeScript code
+    deps:
+      - install
+    cmd: bunx tsc --noEmit
+
+  clean:
+    desc: Clean build artifacts
+    cmd: rm -rf ./dist

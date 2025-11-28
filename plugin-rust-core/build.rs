@@ -1,4 +1,3 @@
-use std::ops::Not;
 
 const COMMANDS: &[&str] = &["ping"];
 

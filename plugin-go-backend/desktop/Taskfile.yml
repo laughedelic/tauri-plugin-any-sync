@@ -74,6 +74,8 @@ tasks:
 
   test:
     desc: "Run Go tests"
+    deps:
+      - proto-gen
     cmd: go test ./...
 
   clean:

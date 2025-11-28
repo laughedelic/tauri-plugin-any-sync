@@ -15,20 +15,20 @@ tasks:
     cmd: bun install
 
   build:
-    desc: "Build Tauri app for production"
+    desc: Build Tauri app for production
     deps:
       - frontend-install
     cmd: "{{.TAURI_CMD}} build"
 
   dev:
-    desc: "Run Tauri app in development mode"
+    desc: Run Tauri app in development mode
     deps:
       - frontend-install
     cmd: "{{.TAURI_CMD}} dev"
     interactive: true
 
   dev:android:
-    desc: "Run Android app in development mode"
+    desc: Run Android app in development mode
     deps:
       - init:android
       - frontend-install
@@ -36,9 +36,16 @@ tasks:
     interactive: true
 
   init:android:
-    desc: "Initialize Android environment"
+    desc: Initialize Android environment
     internal: true
     run: once
     status:
       - test -d ./src-tauri/gen/android
     cmd: "{{.TAURI_CMD}} android init"
+
+  test:
+    desc: Run integration tests
+    deps:
+      - :backend:build
+    dir: ./src-tauri
+    cmd: "cargo test --test integration"

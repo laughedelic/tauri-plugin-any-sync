@@ -33,6 +33,17 @@ tasks:
       - backend:build-all
       - build
 
+  test:
+    desc: Run all tests
+    deps:
+      - backend:test
+      - core:test
+
+  test-integration:
+    desc: Run integration tests
+    deps:
+      - app:test
+
   clean:
     desc: Clean all build artifacts
     deps:

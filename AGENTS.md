@@ -199,22 +199,10 @@ Integration tests verify end-to-end functionality of the plugin with the Go back
 **Running integration tests**:
 
 ```bash
-# Run integration tests from the example app
-cd examples/tauri-app/src-tauri
-cargo test --test integration -- --test-threads=1
-
-# With detailed logging
-RUST_LOG=debug cargo test --test integration -- --test-threads=1 --nocapture
+task app:test
 ```
 
 **Important notes**:
 - Tests run with `--test-threads=1` to avoid database conflicts (each test uses the same sidecar instance)
-- The Go backend binary must be built before running tests
+- The Go backend binary is built before running tests
 - Tests are platform-specific (each platform needs its own binary)
-- The `create_app_builder()` function in `lib.rs` ensures tests use the same configuration as production
-
-**CI Integration**:
-- The `test-integration` job in `.github/workflows/test.yml` runs these tests on every push/PR
-- Runs on Ubuntu (Linux-only for faster CI execution)
-- Automatically builds the Go backend before running tests
-- Uses `ANY_SYNC_GO_BINARIES_DIR` to point to local binaries

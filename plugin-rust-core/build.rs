@@ -1,4 +1,3 @@
-
 const COMMANDS: &[&str] = &["ping"];
 
 fn main() {

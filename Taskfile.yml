@@ -17,6 +17,8 @@ includes:
     taskfile: ./example-app/Taskfile.yml
     dir: ./example-app
 
+output: prefixed
+
 tasks:
   build:
     desc: Build all plugin components

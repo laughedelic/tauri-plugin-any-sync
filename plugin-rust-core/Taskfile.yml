@@ -6,14 +6,12 @@ tasks:
     deps:
       - :go:build
     cmd: cargo build
-    sources:
-      - ./src/**/*.rs
-      - ./Cargo.toml
-      - ./build.rs
-      - "{{.ROOT_DIR}}/plugin-go-backend/desktop/proto/*.proto"
-      - "{{.ROOT_DIR}}/binaries/*"
-    generates:
-      - "{{.ROOT_DIR}}/target/*"
+
+  build-all:
+    desc: Build Rust plugin backend for all platforms
+    deps:
+      - :go:build-all
+    cmd: cargo build
 
   fmt:
     desc: Format Rust code
@@ -30,3 +28,4 @@ tasks:
   clean:
     desc: Clean all build artifacts
     cmd: cargo clean
+    prompt: Are you sure you want to clean Rust build artifacts? It will take time to rebuild.

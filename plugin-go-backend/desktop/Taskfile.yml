@@ -1,8 +1,8 @@
 version: 3
 
 vars:
-  BINARIES_DIR: ../../binaries
-  BINARY_NAME: any-sync
+  BINARIES_DIR: "{{relPath .TASKFILE_DIR .ROOT_DIR}}/binaries"
+  BINARY_PREFIX: any-sync
   OS_MAP:
     map:
       darwin: apple-darwin
@@ -15,17 +15,12 @@ vars:
       arm64: aarch64
 
 tasks:
-  default:
-    deps: [build]
-
-  proto-plugins:
+  init:
     desc: Install protoc plugins for Go
     internal: true
-    silent: true
     run: once
     status:
-      - "! command -q protoc-gen-go"
-      - "! command -q protoc-gen-go-grpc"
+      - "! command -q protoc-gen-go protoc-gen-go-grpc"
     cmds:
       - go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
       - go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
@@ -33,7 +28,7 @@ tasks:
   proto-gen:
     desc: Generate protobuf code
     deps:
-      - proto-plugins
+      - init
     run: once
     cmds:
       - go generate ./proto
@@ -44,25 +39,26 @@ tasks:
 
   build:
     desc: Build desktop binaries
-    deps: [proto-gen]
+    deps:
+      - proto-gen
     vars:
       OS: "{{.OS | default OS}}"
       ARCH: "{{.ARCH | default ARCH}}"
       TRIPLE: "{{index .ARCH_MAP .ARCH}}-{{index .OS_MAP .OS}}"
       EXT: '{{if eq .OS "windows"}}.exe{{else}}{{end}}'
-      OUT: "{{.BINARIES_DIR}}/{{.BINARY_NAME}}-{{.TRIPLE}}{{.EXT}}"
+      NAME: "{{.BINARY_PREFIX}}-{{.TRIPLE}}{{.EXT}}"
+      BINARY: "{{joinPath .BINARIES_DIR .NAME}}"
     label: "{{.TASK}}-{{.OS}}-{{.ARCH}}"
     env:
       GOOS: '{{if eq .OS "macos"}}darwin{{else}}{{.OS}}{{end}}'
       GOARCH: "{{.ARCH}}"
-    cmd: go build -o '{{.OUT}}' ./
-    run: once
+    cmd: go build -o '{{.BINARY}}' ./
+    run: when_changed
     sources:
-      - ./go.*
-      - ./**/*.go
-      - ../shared/**/*.go
+      - ./**/*
+      - ../shared/**/*
     generates:
-      - "{{.OUT}}"
+      - "{{.BINARY}}"
 
   build-all:
     desc: Build desktop binary for all platforms
@@ -79,7 +75,7 @@ tasks:
   clean:
     desc: Clean generated binaries
     cmds:
-      - rm -rf {{.BINARIES_DIR}}/{{.BINARY_NAME}}-*
+      - rm -rf {{.BINARIES_DIR}}/{{.BINARY_PREFIX}}-*
       - rm -rf ./proto/*.pb.go
 
   mod-tidy:

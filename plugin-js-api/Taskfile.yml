@@ -6,10 +6,6 @@ tasks:
     cmd: bun install
     internal: true
     run: once
-    sources:
-      - ./package.json
-    generates:
-      - "{{.ROOT_DIR}}/bun.lock"
 
   build:
     desc: Build CJS/ESM artifacts
@@ -17,11 +13,6 @@ tasks:
       - install
     cmd: bun run build
     run: once
-    sources:
-      - ./src/*.ts
-      - ./package.json
-    generates:
-      - ./dist/*
 
   typecheck:
     desc: Type check TypeScript code

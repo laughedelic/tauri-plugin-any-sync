@@ -72,6 +72,10 @@ tasks:
           OS: "{{.ITEM.OS}}"
           ARCH: "{{.ITEM.ARCH}}"
 
+  test:
+    desc: "Run Go tests"
+    cmd: go test ./...
+
   clean:
     desc: Clean generated binaries
     cmds:

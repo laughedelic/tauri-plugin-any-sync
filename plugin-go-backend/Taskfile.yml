@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 includes:
   desktop:
@@ -35,13 +35,12 @@ tasks:
 
   test:
     desc: "Run all Go tests"
-    cmds:
-      - go test ./...
-
-  test-coverage:
-    desc: "Run tests with coverage"
-    cmds:
-      - go test -cover ./...
+    deps:
+      - desktop:test
+      - mobile:test
+    # TODO: consider using go.work to avoid this
+    cmd: go test ./...
+    dir: ./shared
 
   lint:
     desc: "Run golangci-lint"

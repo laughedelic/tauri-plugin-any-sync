@@ -46,6 +46,10 @@ tasks:
         vars:
           PLATFORM: "{{.ITEM}}"
 
+  test:
+    desc: "Run Go tests"
+    cmd: go test ./...
+
   clean:
     desc: "Clean mobile build artifacts"
     cmds:

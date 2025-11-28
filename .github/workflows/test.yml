@@ -13,15 +13,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-go:
+  test-go-backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       
       - uses: actions/setup-go@v6
         with:
-          go-version-file: 'go-backend/go.mod'
-          cache-dependency-path: 'go-backend/go.sum'
+          go-version-file: 'plugin-go-backend/desktop/go.mod'
+          cache-dependency-path: |
+            plugin-go-backend/desktop/go.sum
+            plugin-go-backend/shared/go.sum
+            plugin-go-backend/mobile/go.sum
       
       - name: Set up protoc
         uses: arduino/setup-protoc@v3
@@ -29,30 +32,33 @@ jobs:
           version: '28.x'
           repo-token: ${{ github.token }}
 
-      - name: Compile Go backend
-        run: ./build-go-backend.sh x86_64-unknown-linux-gnu
+      - name: Install Task
+        uses: go-task/setup-task@v1
+
+      # TODO: run in a separate job with matrix for platforms
+      # - name: Compile Go backend
+      #   run: task backend:build
 
       - name: Run Go tests
-        working-directory: go-backend
-        run: go test -v ./...
+        run: task backend:test
 
-  test-typescript:
+  test-js-api:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       
       - uses: oven-sh/setup-bun@v2
       
-      - name: Install dependencies
-        run: bun install
-      
-      - name: Type check
-        run: bunx tsc --noEmit
-      
-      - name: Build
-        run: bun run build
+      - name: Install Task
+        uses: go-task/setup-task@v1
 
-  test-rust:
+      - name: Type check
+        run: task api:typecheck
+
+      - name: Build
+        run: task api:build
+
+  test-rust-core:
     strategy:
       fail-fast: false
       matrix:
@@ -71,6 +77,9 @@ jobs:
           version: '28.x'
           repo-token: ${{ github.token }}
 
+      - name: Install Task
+        uses: go-task/setup-task@v1
+
       - name: install webkit2gtk
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -78,4 +87,4 @@ jobs:
           sudo apt-get install -y webkit2gtk-4.1
 
       - name: Run tests
-        run: cargo test --all-targets
+        run: task core:test

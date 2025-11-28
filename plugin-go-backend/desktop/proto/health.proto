@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package anysync;
+
+option go_package = "anysync-backend/desktop/proto";
+
+// Health check service for basic connectivity testing
+service HealthService {
+  // Check if the server is running and responsive
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+  
+  // Simple ping-pong for round-trip testing
+  rpc Ping(PingRequest) returns (PingResponse);
+}
+
+// Empty request for health check
+message HealthCheckRequest {}
+
+// Health check response with status
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+    SERVICE_UNKNOWN = 3;
+  }
+  
+  ServingStatus status = 1;
+  string message = 2;
+}
+
+// Ping request with optional message
+message PingRequest {
+  string message = 1;
+  int64 timestamp = 2;
+}
+
+// Ping response with echoed message and server timestamp
+message PingResponse {
+  string message = 1;
+  int64 request_timestamp = 2;
+  int64 response_timestamp = 3;
+  string server_id = 4;
+}

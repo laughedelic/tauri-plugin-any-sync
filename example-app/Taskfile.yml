@@ -1,0 +1,44 @@
+version: 3
+
+vars:
+  TAURI_CMD: "cargo tauri"
+
+output: prefixed
+
+tasks:
+  frontend-install:
+    desc: Install frontend dependencies
+    internal: true
+    run: once
+    deps:
+      - :js:build
+    cmd: bun install
+
+  build:
+    desc: "Build Tauri app for production"
+    deps:
+      - frontend-install
+    cmd: "{{.TAURI_CMD}} build"
+
+  dev:
+    desc: "Run Tauri app in development mode"
+    deps:
+      - frontend-install
+    cmd: "{{.TAURI_CMD}} dev"
+    interactive: true
+
+  dev:android:
+    desc: "Run Android app in development mode"
+    deps:
+      - init:android
+      - frontend-install
+    cmd: "{{.TAURI_CMD}} android dev"
+    interactive: true
+
+  init:android:
+    desc: "Initialize Android environment"
+    internal: true
+    run: once
+    status:
+      - test -d ./src-tauri/gen/android
+    cmd: "{{.TAURI_CMD}} android init"

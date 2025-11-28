@@ -1,0 +1,1 @@
+./plugin-go-backend/AGENTS.md

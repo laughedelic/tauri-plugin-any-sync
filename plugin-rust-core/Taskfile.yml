@@ -1,0 +1,31 @@
+version: 3
+
+tasks:
+  build:
+    desc: Build Rust plugin backend
+    deps:
+      - :go:build
+    cmd: cargo build
+
+  build-all:
+    desc: Build Rust plugin backend for all platforms
+    deps:
+      - :go:build-all
+    cmd: cargo build
+
+  fmt:
+    desc: Format Rust code
+    cmd: cargo fmt --all
+
+  clippy:
+    desc: Run Rust linter
+    cmd: cargo clippy --all-targets -- -D warnings
+
+  test:
+    desc: Run Rust tests
+    cmd: cargo test --all-targets
+
+  clean:
+    desc: Clean all build artifacts
+    cmd: cargo clean
+    prompt: Are you sure you want to clean Rust build artifacts? It will take time to rebuild.

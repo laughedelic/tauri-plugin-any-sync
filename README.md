@@ -16,7 +16,7 @@ graph LR
     end
 
     subgraph PLA["Plugin API"]
-        API["guest-js<br/>(TypeScript API)"]
+        API["plugin-js-api<br/>(TypeScript API)"]
     end
 
     subgraph PLG["Tauri plugin (Rust)"]
@@ -66,13 +66,6 @@ graph LR
 
 ## Quick Start
 
-### Prerequisites
-
-- **Go**: 1.21+ (for backend)
-- **Rust**: 1.77+ (for plugin)
-- **Node.js**: 18+ (for development)
-- **protoc**: Protocol Buffer compiler
-
 ### Installation
 
 The plugin automatically downloads pre-compiled Go backend binaries from GitHub Releases. This is the easiest way to integrate the plugin.
@@ -85,25 +78,11 @@ The plugin automatically downloads pre-compiled Go backend binaries from GitHub 
 
 2. **Select platform features** in your `src-tauri/Cargo.toml`:
 
-   For macOS + Linux + Windows (all platforms):
-   
    ```toml
    [dependencies]
-   tauri-plugin-any-sync = { version = "0.1", features = ["all"] }
+   tauri-plugin-any-sync = { version = "0.1", features = [...] }
    ```
    
-   Or
-   
-   ```toml
-   tauri-plugin-any-sync = { version = "0.1", features = ["macos", "linux"] }
-   ```
-   
-   Or for specific platforms:
-
-   ```toml
-   tauri-plugin-any-sync = { version = "0.1", features = ["x86_64-apple-darwin", "aarch64-apple-darwin"] }
-   ```
-
    **Available Features:**
    - `all`
      - `desktop`
@@ -130,25 +109,29 @@ The plugin automatically downloads pre-compiled Go backend binaries from GitHub 
            let _ = fs::remove_dir_all(&dest_dir).or_else(|_| fs::remove_file(&dest_dir));
            let source = Path::new(&binaries_dir).canonicalize().unwrap();
            
-           #[cfg(unix)]
            std::os::unix::fs::symlink(&source, &dest_dir).unwrap();
-           
-           #[cfg(windows)]
-           {
-               fs::create_dir_all(&dest_dir).unwrap();
-               for entry in fs::read_dir(&source).unwrap().flatten() {
-                   if entry.path().is_file() {
-                       fs::copy(&entry.path(), dest_dir.join(entry.file_name())).unwrap();
-                   }
-               }
-           }
        }
        
        tauri_build::build()
    }
    ```
 
-4. **Create `.taurignore` file** in `src-tauri/` to prevent rebuild loops:
+   <details><summary>Windows Note</summary>
+
+    On Windows, symlinks require admin privileges, so instead of symlinking, the build script can copy the files. Replace the symlink line with the following code:
+
+    ```rust
+    fs::create_dir_all(&dest_dir).unwrap();
+    for entry in fs::read_dir(&source).unwrap().flatten() {
+        if entry.path().is_file() {
+            fs::copy(&entry.path(), dest_dir.join(entry.file_name())).unwrap();
+        }
+    }
+    ```
+  
+   </details>
+
+4. **Create `.taurignore` file** in `src-tauri/` to prevent rebuild loops (also `.gitignore`):
 
    ```
    binaries/
@@ -276,95 +259,65 @@ The plugin includes Android support with no additional configuration required:
 
 When developing the plugin or backend locally, use the `ANY_SYNC_GO_BINARIES_DIR` environment variable to point to your locally-built binaries:
 
-1. **Build Go backend locally:**
-   ```bash
-   ./build-go-backend.sh
-   ```
-
-2. **Set environment variable (one-off):**
-   ```bash
-   export ANY_SYNC_GO_BINARIES_DIR=./binaries
-   cargo build
-   ```
-
-3. **Or configure persistently** via `.cargo/config.toml`:
-   ```toml
-   [env]
-   ANY_SYNC_GO_BINARIES_DIR = { value = "/absolute/path/to/binaries", force = true }
-   ```
-
-### Go Backend Development
-
-The Go backend can be built locally in two ways:
-
-**Option 1: Manual build**
 ```bash
-cd go-backend
-
-# Run tests
-go test ./... -v
-
-# Start development server
-go run cmd/server --port 8080
-
-# Generate protobuf code
-protoc --go_out=. --go-grpc_out=. api/proto/health.proto
-```
-
-**Option 2: Using build script**
-```bash
-# Build desktop binaries for current platform
-./build-go-backend.sh
-
-# Build for all supported desktop platforms (cross-compile)
-./build-go-backend.sh --cross
-
-# Build Android .aar (requires gomobile)
-./build-go-mobile.sh
-```
-
-### Rust Plugin Development
-
-For local development with your own Go binaries:
-
-```bash
-# Build Go backend first
-./build-go-backend.sh
-
-# Set environment variable to use local binaries
 export ANY_SYNC_GO_BINARIES_DIR=./binaries
-
-# Build plugin from src-tauri directory (ensures features are applied)
-cd examples/tauri-app/src-tauri
-cargo build
-
-# Or use Tauri CLI which handles build orchestration automatically
-cd examples/tauri-app
-npm run tauri dev  # or: tauri dev
-
-# Run tests (from root or src-tauri)
-cargo test
-
-# Check code
-cargo clippy
-
-# Format code
-cargo fmt
+task build
 ```
 
-**Important**: When building the plugin directly with `cargo build`, run it from the `src-tauri/` subdirectory to ensure Cargo.toml features are properly applied. The Tauri CLI (e.g., `tauri dev`, `tauri build`) automatically handles this.
+**Or configure persistently** via `.cargo/config.toml`:
 
-**Persistent configuration** via `.cargo/config.toml`:
 ```toml
 [env]
 ANY_SYNC_GO_BINARIES_DIR = { value = "/absolute/path/to/binaries", force = true }
 ```
 
+## Project Structure
+
+```
+tauri-plugin-any-sync/
+├── plugin-rust-core/      # Rust plugin (src, build.rs, tests, platforms)
+├── plugin-go-backend/     # Go backend (desktop, mobile, shared)
+├── plugin-js-api/         # TypeScript API
+├── example-app/           # Example Tauri application
+└── binaries/              # Compiled Go binaries
+```
+
+See component-specific documentation:
+- [plugin-rust-core/](plugin-rust-core/) - Rust plugin development
+- [plugin-go-backend/](plugin-go-backend/) - Go backend development
+- [plugin-js-api/](plugin-js-api/) - TypeScript API
+- [example-app/](example-app/) - Example app usage
+
+### Go Backend Development
+
+```bash
+# Build desktop binaries for current platform
+task go:build
+
+# Build for all platforms
+task go:build-all
+```
+
+### Rust Plugin Development
+
+```bash
+# Build plugin (with local Go binaries)
+export ANY_SYNC_GO_BINARIES_DIR=./binaries
+task rust:build
+
+# Run tests
+cd plugin-rust-core && cargo test
+
+# Check and format
+cargo clippy
+cargo fmt
+```
+
 ### TypeScript API Development
 
 ```bash
-bun install
-bun run build
+# Build TypeScript API
+task js:build
 ```
 
 ### Android Mobile Development
@@ -389,8 +342,8 @@ The plugin supports Android via gomobile, which compiles the Go backend as an An
 - Supports all Android ABIs: arm64-v8a, armeabi-v7a, x86, x86_64
 
 **Development workflow**:
-1. Build .aar: `./build-go-mobile.sh`
-2. .aar is copied to `android/libs/` automatically
+1. Build .aar: `task go:mobile:build`
+2. .aar is copied to `plugin-rust-core/android/libs/` automatically
 3. Plugin downloads .aar from GitHub releases in production
 4. Local development uses `ANY_SYNC_GO_BINARIES_DIR` override
 
@@ -398,29 +351,13 @@ The plugin supports Android via gomobile, which compiles the Go backend as an An
 - `context.getFilesDir()/anysync.db`
 - Typically: `/data/data/{package-name}/files/anysync.db`
 
-See `go-backend/cmd/mobile/README.md` for detailed mobile API documentation.
-
 ### Example Application
 
-To run the example app, you need to set the environment variable for local binaries (since v0.1.0 release doesn't exist on GitHub yet):
-
 ```bash
-# Set environment variable
+# Build and run example app
 export ANY_SYNC_GO_BINARIES_DIR=./binaries
-
-# Build Go backend first (if not already built)
-./build-go-backend.sh
-
-# Run example app
-cd examples/tauri-app
-npm run tauri dev
-```
-
-Or configure persistently in `.cargo/config.toml` at the project root:
-
-```toml
-[env]
-ANY_SYNC_GO_BINARIES_DIR = { value = "/absolute/path/to/binaries", force = true }
+task go:build
+task app:dev
 ```
 
 ## Usage
@@ -715,7 +652,7 @@ curl -I https://github.com/sst/tauri-plugin-any-sync/releases
 
 # Use local binaries as workaround
 export ANY_SYNC_GO_BINARIES_DIR=./binaries
-./build-go-backend.sh
+task backend:build
 cargo build
 ```
 
@@ -733,7 +670,7 @@ cargo build
 ls -la ./binaries/
 
 # If missing, build them
-./build-go-backend.sh
+task backend:build
 ```
 
 **Feature selection guidance**:

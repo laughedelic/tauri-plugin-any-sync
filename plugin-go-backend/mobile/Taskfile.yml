@@ -1,0 +1,60 @@
+version: "3"
+
+vars:
+  BINARIES_DIR: "{{relPath .TASKFILE_DIR .ROOT_DIR}}/binaries"
+  BINARY_PREFIX: any-sync
+
+tasks:
+  default:
+    deps: [build]
+
+  gomobile-setup:
+    desc: Install gomobile toolchain
+    internal: true
+    run: once
+    status:
+      - "! which gomobile"
+    cmds:
+      - go install golang.org/x/mobile/cmd/gomobile@latest
+      - gomobile init
+
+  build:
+    desc: Build the Android .aar file with gomobile
+    preconditions:
+      - 'test -n "$ANDROID_HOME"'
+    deps:
+      - gomobile-setup
+    vars:
+      PLATFORM: android
+      EXT: .aar
+      NAME: "{{.BINARY_PREFIX}}-{{.PLATFORM}}{{.EXT}}"
+      BINARY: "{{joinPath .BINARIES_DIR .NAME}}"
+    label: "{{.TASK}}-{{.PLATFORM}}"
+    cmds:
+      - gomobile bind -target=android -androidapi=21 -o '{{.BINARY}}' .
+    sources:
+      - ./**/*
+      - ../shared/**/*
+    generates:
+      - "{{.BINARY}}"
+
+  build-all:
+    desc: "Build mobile binaries"
+    deps:
+      - for: [android]
+        task: build
+        vars:
+          PLATFORM: "{{.ITEM}}"
+
+  test:
+    desc: "Run Go tests"
+    cmd: go test ./...
+
+  clean:
+    desc: "Clean mobile build artifacts"
+    cmds:
+      - rm -rf '{{.BINARIES_DIR}}/any-sync-android*'
+
+  mod-tidy:
+    desc: "Clean and verify Go modules"
+    cmd: go mod tidy

@@ -1,0 +1,89 @@
+version: 3
+
+vars:
+  BINARIES_DIR: "{{relPath .TASKFILE_DIR .ROOT_DIR}}/binaries"
+  BINARY_PREFIX: any-sync
+  OS_MAP:
+    map:
+      darwin: apple-darwin
+      macos: apple-darwin
+      linux: unknown-linux-gnu
+      windows: pc-windows-msvc
+  ARCH_MAP:
+    map:
+      amd64: x86_64
+      arm64: aarch64
+
+tasks:
+  init:
+    desc: Install protoc plugins for Go
+    internal: true
+    run: once
+    status:
+      - "! which protoc-gen-go protoc-gen-go-grpc"
+    cmds:
+      - go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+      - go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+  proto-gen:
+    desc: Generate protobuf code
+    deps:
+      - init
+    run: once
+    cmds:
+      - go generate ./proto
+    sources:
+      - ./proto/*.proto
+    generates:
+      - ./proto/*.pb.go
+
+  build:
+    desc: Build desktop binaries
+    deps:
+      - proto-gen
+    vars:
+      OS: "{{.OS | default OS}}"
+      ARCH: "{{.ARCH | default ARCH}}"
+      TRIPLE: "{{index .ARCH_MAP .ARCH}}-{{index .OS_MAP .OS}}"
+      EXT: '{{if eq .OS "windows"}}.exe{{else}}{{end}}'
+      NAME: "{{.BINARY_PREFIX}}-{{.TRIPLE}}{{.EXT}}"
+      BINARY: "{{joinPath .BINARIES_DIR .NAME}}"
+    label: "{{.TASK}}-{{.OS}}-{{.ARCH}}"
+    env:
+      GOOS: '{{if eq .OS "macos"}}darwin{{else}}{{.OS}}{{end}}'
+      GOARCH: "{{.ARCH}}"
+    cmd: go build -o '{{.BINARY}}' ./
+    run: when_changed
+    sources:
+      - ./**/*
+      - ../shared/**/*
+    generates:
+      - "{{.BINARY}}"
+
+  build-all:
+    desc: Build desktop binary for all platforms
+    deps:
+      - for:
+          matrix:
+            OS: [macos, linux, windows]
+            ARCH: [amd64, arm64]
+        task: build
+        vars:
+          OS: "{{.ITEM.OS}}"
+          ARCH: "{{.ITEM.ARCH}}"
+
+  test:
+    desc: "Run Go tests"
+    deps:
+      - proto-gen
+    cmd: go test ./...
+
+  clean:
+    desc: Clean generated binaries
+    cmds:
+      - rm -rf {{.BINARIES_DIR}}/{{.BINARY_PREFIX}}-*
+      - rm -rf ./proto/*.pb.go
+
+  mod-tidy:
+    desc: Clean and verify Go modules
+    cmd: go mod tidy

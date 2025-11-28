@@ -1,0 +1,32 @@
+{
+  "name": "tauri-plugin-any-sync-api",
+  "version": "0.1.0",
+  "author": "Alexey Alekhin <laughedelic@gmail.com>",
+  "description": "TypeScript API for tauri-plugin-any-sync",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "exports": {
+    "types": "./dist/index.d.ts",
+    "import": "./dist/index.js",
+    "require": "./dist/index.cjs"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "prepublishOnly": "bun run build"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.0.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^12.0.0",
+    "rollup": "^4.9.6",
+    "typescript": "^5.3.3",
+    "tslib": "^2.6.2"
+  }
+}

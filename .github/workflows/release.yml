@@ -38,11 +38,8 @@ jobs:
       - name: Install Task
         uses: go-task/setup-task@v1
 
-      - name: Cross-compile desktop binaries
-        run: task go:build-all
-
-      - name: Build Android .aar
-        run: task go:build-mobile
+      - name: Cross-compile all Go binaries
+        run: task backend:build-all
 
       - name: Generate checksums
         run: |

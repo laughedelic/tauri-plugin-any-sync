@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-go:
+  test-go-backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -35,13 +35,14 @@ jobs:
       - name: Install Task
         uses: go-task/setup-task@v1
 
-      - name: Compile Go backend
-        run: task go:build
+      # TODO: run in a separate job with matrix for platforms
+      # - name: Compile Go backend
+      #   run: task backend:build
 
       - name: Run Go tests
-        run: task go:test
+        run: task backend:test
 
-  test-typescript:
+  test-js-api:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -52,12 +53,12 @@ jobs:
         uses: go-task/setup-task@v1
 
       - name: Type check
-        run: task js:typecheck
+        run: task api:typecheck
 
       - name: Build
-        run: task js:build
+        run: task api:build
 
-  test-rust:
+  test-rust-core:
     strategy:
       fail-fast: false
       matrix:
@@ -86,4 +87,4 @@ jobs:
           sudo apt-get install -y webkit2gtk-4.1
 
       - name: Run tests
-        run: task rust:test
+        run: task core:test

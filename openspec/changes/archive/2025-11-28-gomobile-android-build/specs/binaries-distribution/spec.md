@@ -24,6 +24,17 @@ All Go backend artifacts SHALL use consistent naming pattern distinguishing plat
 - **AND** future iOS binary will follow: `any-sync-ios.xcframework`
 - **AND** all artifacts stored in same `binaries/` directory
 
+### Requirement: Android .aar Accessibility
+The plugin SHALL make the Android .aar accessible to the plugin's Gradle build.
+
+#### Scenario: Plugin self-manages .aar placement
+- **WHEN** the plugin's build script completes successfully
+- **AND** `any-sync-android.aar` exists in binaries directory
+- **THEN** build.rs symlinks (Unix) or copies (Windows) the .aar to `android/libs/any-sync-android.aar`
+- **AND** the plugin's `android/build.gradle.kts` references `implementation(files("libs/any-sync-android.aar"))`
+- **AND** this works in both development (local path) and production (published crate) scenarios
+- **AND** consumer's build.rs requires no Android-specific logic
+
 ## MODIFIED Requirements
 
 ### Requirement: GitHub Release Workflow
@@ -71,17 +82,6 @@ The plugin SHALL use Cargo's links mechanism to broadcast binary paths to consum
 - **THEN** it emits cargo:**binaries_dir**=<path> to standard output
 - **AND** Cargo propagates this as DEP_TAURI_PLUGIN_ANY_SYNC_**BINARIES_DIR** environment variable to consumer build scripts
 - **AND** this single metadata value covers both desktop binaries and Android .aar (all in same directory)
-
-### Requirement: Android .aar Accessibility
-The plugin SHALL make the Android .aar accessible to the plugin's Gradle build.
-
-#### Scenario: Plugin self-manages .aar placement
-- **WHEN** the plugin's build script completes successfully
-- **AND** `any-sync-android.aar` exists in binaries directory
-- **THEN** build.rs symlinks (Unix) or copies (Windows) the .aar to `android/libs/any-sync-android.aar`
-- **AND** the plugin's `android/build.gradle.kts` references `implementation(files("libs/any-sync-android.aar"))`
-- **AND** this works in both development (local path) and production (published crate) scenarios
-- **AND** consumer's build.rs requires no Android-specific logic
 
 ## REMOVED Requirements
 

@@ -55,3 +55,5 @@ jobs:
 
       - name: Run clippy
         run: cargo clippy --all-targets -- -D warnings
+        env: 
+          ANY_SYNC_GO_BINARIES_DIR: ./binaries

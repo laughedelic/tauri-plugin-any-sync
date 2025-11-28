@@ -13,7 +13,7 @@ tasks:
     internal: true
     run: once
     status:
-      - "! command -q gomobile"
+      - "! which gomobile"
     cmds:
       - go install golang.org/x/mobile/cmd/gomobile@latest
       - gomobile init

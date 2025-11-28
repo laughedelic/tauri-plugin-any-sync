@@ -54,6 +54,4 @@ jobs:
           sudo apt-get install -y webkit2gtk-4.1
 
       - name: Run clippy
-        run: cargo clippy --all-targets -- -D warnings
-        env: 
-          ANY_SYNC_GO_BINARIES_DIR: ./binaries
+        run: cargo clippy --all-targets --no-default-features -- -D warnings

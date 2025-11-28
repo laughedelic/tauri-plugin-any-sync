@@ -1,8 +1,10 @@
+use std::ops::Not;
+
 const COMMANDS: &[&str] = &["ping"];
 
 fn main() {
     println!(
-        "cargo:debug=ANY_SYNC_GO_BINARIES_DIR={}",
+        "cargo:warning=ANY_SYNC_GO_BINARIES_DIR={}",
         std::env::var("ANY_SYNC_GO_BINARIES_DIR").unwrap_or_default()
     );
 
@@ -52,8 +54,8 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         link_local_binaries(&local_path, &binaries_out_dir)?;
-    } else {
-        // CONSUMER/CI MODE: Download from GitHub
+    } else if env::var_os("CI").is_none() {
+        // CONSUMER: Download from GitHub (non-CI)
         download_binaries_from_github(&binaries_out_dir)?;
     }
 

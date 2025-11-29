@@ -98,8 +98,11 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version-file: 'go-backend/go.mod'
-          cache-dependency-path: 'go-backend/go.sum'
+          go-version-file: 'plugin-go-backend/desktop/go.mod'
+          cache-dependency-path: |
+            plugin-go-backend/desktop/go.sum
+            plugin-go-backend/shared/go.sum
+            plugin-go-backend/mobile/go.sum
 
       - name: Set up protoc
         uses: arduino/setup-protoc@v3
@@ -112,15 +115,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y webkit2gtk-4.1 libgtk-3-dev
 
-      - name: Build Go backend
-        run: ./build-go-backend.sh x86_64-unknown-linux-gnu
-
-      - name: Set up local binaries for testing
-        run: echo "ANY_SYNC_GO_BINARIES_DIR=$(pwd)/binaries" >> $GITHUB_ENV
+      - name: Install Task
+        uses: go-task/setup-task@v1
 
       - name: Run integration tests
-        working-directory: examples/tauri-app/src-tauri
-        run: cargo test --test integration -- --test-threads=1
+        run: task test-integration
         env:
           RUST_LOG: debug
           RUST_BACKTRACE: 1

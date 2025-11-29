@@ -43,9 +43,11 @@ tasks:
       - test -d ./src-tauri/gen/android
     cmd: "{{.TAURI_CMD}} android init"
 
-  test:
+  test-integration:
     desc: Run integration tests
     deps:
-      - :backend:build
+      - :backend:desktop:build
     dir: ./src-tauri
-    cmd: "cargo test --test integration"
+    env:
+      ANY_SYNC_GO_BINARIES_DIR: ../../../binaries
+    cmd: "cargo test --test integration --features integration-test -- --test-threads=1"

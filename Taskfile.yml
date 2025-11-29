@@ -38,11 +38,7 @@ tasks:
     deps:
       - backend:test
       - core:test
-
-  test-integration:
-    desc: Run integration tests
-    deps:
-      - app:test
+      - app:test-integration
 
   clean:
     desc: Clean all build artifacts

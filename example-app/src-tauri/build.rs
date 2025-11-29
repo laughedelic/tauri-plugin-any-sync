@@ -23,17 +23,21 @@ fn main() {
         }
 
         // Symlink test binary for integration tests
-        #[cfg(all(test, unix))]
-        if let (Ok(profile), Ok(target)) = (env::var("PROFILE"), env::var("TARGET")) {
+        if std::env::var("CARGO_FEATURE_INTEGRATION_TEST").is_ok() {
+            let target = env::var("TARGET").unwrap();
             let src_bin = source.join(format!("any-sync-{}", target));
             if src_bin.exists() {
-                let dst_bin = Path::new(&manifest_dir)
-                    .join("target")
-                    .join(&profile)
-                    .join("deps")
-                    .join("any-sync");
+                let current_exe = env::current_exe().unwrap();
+                // target/debug/[build/hash/build-script-build] -> target/debug/deps/
+                let deps_dir = current_exe.ancestors().nth(3).unwrap().join("deps");
+
+                let dst_bin = deps_dir.join("any-sync");
+                println!(
+                    "cargo:warning=Linking test binary from {:?} to {:?}",
+                    src_bin, dst_bin
+                );
                 let _ = fs::remove_file(&dst_bin);
-                std::os::unix::fs::symlink(&src_bin, &dst_bin);
+                std::os::unix::fs::symlink(&src_bin, &dst_bin).unwrap();
             }
         }
     }

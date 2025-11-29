@@ -13,9 +13,11 @@ name = "tauri_app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+integration-test = []
 
 [build-dependencies]
-tauri-build = { version = "2.5.1", default-features = false , features = [] }
+tauri-build = { version = "2.5.1", default-features = false, features = [] }
 
 [dependencies]
 tauri = { version = "2.9.2", features = [] }

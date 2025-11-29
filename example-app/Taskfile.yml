@@ -44,7 +44,8 @@ tasks:
     cmd: "{{.TAURI_CMD}} android init"
 
   test-integration:
-    desc: Run integration tests
+    desc: Run desktop integration tests (default)
+    aliases: [test-integration:desktop]
     deps:
       - :backend:desktop:build
     dir: ./src-tauri
@@ -52,3 +53,13 @@ tasks:
       ANY_SYNC_GO_BINARIES_DIR: "{{.ROOT_DIR}}/binaries"
     cmds:
       - cargo test --test integration --features integration-test {{if .TARGET}}--target {{.TARGET}}{{end}} -- --test-threads=1
+
+  test-integration:mobile:
+    desc: Run Android integration tests (requires emulator)
+    deps:
+      - :backend:mobile:build
+    dir: ./src-tauri
+    env:
+      ANY_SYNC_GO_BINARIES_DIR: "{{.ROOT_DIR}}/binaries"
+    cmds:
+      - cargo test --test integration --features integration-test --target aarch64-linux-android -- --test-threads=1

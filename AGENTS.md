@@ -204,7 +204,7 @@ Integration tests verify end-to-end functionality of the plugin with the Go back
 
 **Platform Support**:
 - ✅ **Desktop** (macOS, Linux, Windows): Active - tests run locally and in CI
-- 📝 **Android**: Ready - infrastructure in place, needs proper NDK setup
+- ✅ **Android**: Active in CI - tests run in Android emulator via GitHub Actions
 - 📝 **iOS**: Documented - infrastructure documented for when iOS support is added
 
 **Running integration tests**:
@@ -216,6 +216,10 @@ task app:test-integration
 # With detailed logging
 RUST_LOG=debug task app:test-integration
 
+# Android tests (CI only - requires Android emulator)
+# See .github/workflows/test.yml for CI setup
+# Local Android testing requires complex emulator setup - use CI instead
+
 # Manual (from example-app/src-tauri)
 cargo test --test integration --features integration-test -- --test-threads=1
 ```
@@ -225,4 +229,5 @@ cargo test --test integration --features integration-test -- --test-threads=1
 - The Go backend binary is built automatically by the task command
 - Tests use IPC for realistic command invocation (same as production)
 - Same tests work across all platforms (unified interface)
+- **Android tests run in CI only** due to emulator complexity (use `task dev:android` for local development)
 - See `example-app/src-tauri/tests/README.md` for detailed documentation

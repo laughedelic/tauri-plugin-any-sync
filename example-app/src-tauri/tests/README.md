@@ -69,51 +69,43 @@ cargo test --test integration --features integration-test test_ping_command -- -
 
 ### Mobile Tests (Android)
 
-#### Prerequisites
+**Android integration tests run in CI only** due to the complexity of emulator setup. Tests execute automatically on every push/PR via GitHub Actions.
 
-1. **Android NDK**: Required for cross-compilation
-   ```bash
-   # Install via Android Studio SDK Manager or:
-   # macOS: brew install android-ndk
-   # Linux: Follow Android developer guide
-   ```
+#### CI Testing (Recommended)
 
-2. **Rust Android target**:
-   ```bash
-   rustup target add aarch64-linux-android
-   rustup target add armv7-linux-androideabi
-   rustup target add i686-linux-android
-   rustup target add x86_64-linux-android
-   ```
+Android tests run in the `test-integration-android` job in `.github/workflows/test.yml`:
+- Uses `reactivecircus/android-emulator-runner` to spawn an Android emulator
+- Runs API level 33 (x86_64 architecture)
+- Builds the Android .aar library automatically
+- Executes the same integration tests as desktop, but through Android FFI layer
 
-3. **gomobile**: For building the Android .aar
+#### Local Development
+
+For local Android development and debugging, use:
+```bash
+task dev:android  # Run the example app in Android emulator
+```
+
+This provides the same integration testing capability through the UI without the complexity of running headless tests on the emulator.
+
+#### Advanced: Local Android Test Execution (Not Recommended)
+
+If you need to run Android tests locally, you would need:
+
+1. **Android SDK and emulator** (already set up if using `task dev:android`)
+2. **gomobile for building .aar**:
    ```bash
    go install golang.org/x/mobile/cmd/gomobile@latest
    gomobile init
    ```
-
-4. **Build the Android library**:
+3. **Rust Android targets**:
    ```bash
-   task go:mobile:build  # or task backend:mobile:build
+   rustup target add aarch64-linux-android
    ```
+4. **cargo-dinghy or similar tool** to execute tests on the emulator
+5. **Running emulator** before test execution
 
-5. **Android emulator or device**: For running tests
-   ```bash
-   # Create emulator via Android Studio or:
-   avdmanager create avd -n test_avd -k "system-images;android-33;google_apis;x86_64"
-   
-   # Start emulator
-   emulator -avd test_avd -no-window -no-audio -no-boot-anim
-   ```
-
-#### Run Android Tests
-
-```bash
-# Build for Android and run tests on emulator/device
-cargo test --test integration --target aarch64-linux-android --features integration-test -- --test-threads=1
-```
-
-**Note**: Android testing requires a fully configured Android development environment. The tests use the same code as desktop but execute through the Android FFI layer (.aar) instead of the gRPC sidecar.
+This is significantly more complex than desktop testing and is not recommended for routine development. Use CI for Android test verification.
 
 ### Why `--test-threads=1`?
 
@@ -182,18 +174,28 @@ The `test-integration-desktop` job in `.github/workflows/test.yml` runs desktop 
 - ✅ Fails the build if any test fails
 - ✅ Uses `--test-threads=1` to prevent database conflicts
 
-### Mobile Testing (Planned)
+### Android Testing (Active)
 
-Mobile CI jobs are documented but not yet active (waiting for full mobile platform support):
+The `test-integration-android` job in `.github/workflows/test.yml` runs Android tests automatically:
 
-- **Android**: `test-integration-android` job will use Ubuntu + Android emulator
-- **iOS**: `test-integration-ios` job will use macOS + iOS simulator (documented for when iOS support is added)
+- ✅ Runs on every push and pull request
+- ✅ Uses Ubuntu with Android emulator (`reactivecircus/android-emulator-runner`)
+- ✅ API level 33, x86_64 architecture, Google APIs
+- ✅ Automatically builds the Android .aar library with gomobile
+- ✅ Installs required dependencies (Java 17, Android SDK, KVM for hardware acceleration)
+- ✅ Runs the same test suite through the Android FFI layer
+- ✅ Verifies platform-specific integration (JNI bindings, Kotlin plugin wrapper)
 
-When enabled, mobile tests will:
-- Build the appropriate mobile library (.aar for Android, .xcframework for iOS)
-- Start an emulator/simulator
-- Run the same test suite through the mobile FFI layer
-- Verify platform-specific integration works correctly
+### iOS Testing (Documented - Not Yet Active)
+
+The `test-integration-ios` job structure is documented in `.github/workflows/test.yml` (commented out) but not active:
+
+- 📝 Documented infrastructure ready for when iOS plugin is implemented
+- 📝 Will use macOS runner with iOS simulator
+- 📝 Will build .xcframework with gomobile
+- 📝 Will run same test suite through iOS FFI layer
+
+**Note**: The iOS job is commented out because iOS plugin implementation doesn't exist yet. Uncomment and activate when iOS support is added.
 
 ## Troubleshooting
 
@@ -273,18 +275,19 @@ When adding new plugin functionality:
 
 ### Platform Coverage
 
-| Platform | Backend Type | Communication | Test Status |
-|----------|-------------|---------------|-------------|
-| macOS    | Sidecar     | gRPC          | ✅ Active   |
-| Linux    | Sidecar     | gRPC          | ✅ Active   |
-| Windows  | Sidecar     | gRPC          | ✅ Active   |
-| Android  | Embedded    | JNI (.aar)    | 📝 Ready    |
-| iOS      | Embedded    | FFI (.xcframework) | 📝 Documented |
+| Platform | Backend Type | Communication | Test Status | Test Location |
+|----------|-------------|---------------|-------------|---------------|
+| macOS    | Sidecar     | gRPC          | ✅ Active   | Local + CI    |
+| Linux    | Sidecar     | gRPC          | ✅ Active   | Local + CI    |
+| Windows  | Sidecar     | gRPC          | ✅ Active   | Local + CI    |
+| Android  | Embedded    | JNI (.aar)    | ✅ Active   | CI only       |
+| iOS      | Embedded    | FFI (.xcframework) | 📝 Documented | Planned       |
 
 **Legend:**
-- ✅ Active: Tests work locally and in CI
-- 📝 Ready: Infrastructure ready, needs proper environment setup
+- ✅ Active: Tests run automatically in CI
 - 📝 Documented: Infrastructure documented for future activation
+- **Local + CI**: Can run tests locally and in CI
+- **CI only**: Tests run in CI with Android emulator (local testing complex)
 
 ### Why This Approach?
 

@@ -19,9 +19,6 @@ includes:
 
 output: prefixed
 
-env:
-  ANY_SYNC_GO_BINARIES_DIR: "{{.ROOT_DIR}}/binaries"
-
 tasks:
   build:
     desc: Build all plugin components

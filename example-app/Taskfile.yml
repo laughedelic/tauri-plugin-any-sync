@@ -48,6 +48,5 @@ tasks:
     deps:
       - :backend:desktop:build
     dir: ./src-tauri
-    env:
-      ANY_SYNC_GO_BINARIES_DIR: ../../../binaries
-    cmd: "cargo test --test integration --features integration-test -- --test-threads=1"
+    cmd: |
+      cargo test --test integration --features integration-test {{if .TARGET}}--target {{.TARGET}}{{end}} -- --test-threads=1

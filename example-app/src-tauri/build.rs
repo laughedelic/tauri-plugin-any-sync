@@ -26,18 +26,30 @@ fn main() {
         if std::env::var("CARGO_FEATURE_INTEGRATION_TEST").is_ok() {
             let target = env::var("TARGET").unwrap();
             let src_bin = source.join(format!("any-sync-{}", target));
+            println!("cargo:rerun-if-changed={}", src_bin.display());
+
             if src_bin.exists() {
                 let current_exe = env::current_exe().unwrap();
                 // target/debug/[build/hash/build-script-build] -> target/debug/deps/
                 let deps_dir = current_exe.ancestors().nth(3).unwrap().join("deps");
 
                 let dst_bin = deps_dir.join("any-sync");
-                println!(
-                    "cargo:warning=Linking test binary from {:?} to {:?}",
-                    src_bin, dst_bin
-                );
+                println!("cargo:rerun-if-changed={}", dst_bin.display());
+
+                // Remove any existing destination; ignore if it doesn't exist.
                 let _ = fs::remove_file(&dst_bin);
-                std::os::unix::fs::symlink(&src_bin, &dst_bin).unwrap();
+
+                #[cfg(unix)]
+                let _ = std::os::unix::fs::symlink(&src_bin, &dst_bin);
+                #[cfg(windows)]
+                let _ = fs::copy(&src_bin, &dst_bin);
+
+                // Verify the file exists, print current time for debugging
+                if dst_bin.exists() {
+                    println!("cargo:warning=Linked test binary at {:?}", dst_bin,);
+                } else {
+                    println!("cargo:warning=Failed to link test binary at {:?}", dst_bin);
+                }
             }
         }
     }

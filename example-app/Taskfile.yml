@@ -48,5 +48,5 @@ tasks:
     deps:
       - :backend:desktop:build
     dir: ./src-tauri
-    cmd: |
-      cargo test --test integration --features integration-test {{if .TARGET}}--target {{.TARGET}}{{end}} -- --test-threads=1
+    cmds:
+      - cargo test --test integration --features integration-test {{if .TARGET}}--target {{.TARGET}}{{end}} -- --test-threads=1

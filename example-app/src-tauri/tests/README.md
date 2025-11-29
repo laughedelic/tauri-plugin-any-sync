@@ -4,57 +4,116 @@ This directory contains comprehensive integration tests for the tauri-plugin-any
 
 ## Overview
 
-These integration tests verify end-to-end functionality of the plugin with the Go backend, **without requiring a GUI**. They use `tauri::test::MockRuntime` to create a headless app instance that simulates the webview and allows testing all plugin commands.
+These integration tests verify end-to-end functionality of the plugin with the Go backend, **without requiring a GUI**. They use `tauri::test::MockRuntime` to create a headless app instance that simulates the webview and allows testing all plugin commands through the actual IPC layer.
 
 ## Test Coverage
 
-The integration tests cover:
+The integration tests cover all plugin commands across 10 test cases:
 
-- **Ping Command**: Basic health check and message echoing
-- **Storage Put**: Creating and updating documents
-- **Storage Get**: Retrieving documents, handling nonexistent documents
-- **Storage Delete**: Deleting documents, handling nonexistent documents
-- **Storage List**: Listing documents in collections, empty collections
-- **Complex Scenarios**:
-  - Multiple collections
-  - Complex nested JSON documents
-  - Unicode and special characters
-  - Document updates
-  - Concurrent operations
+### Basic Commands (2 tests)
+- `test_ping_command`: Basic health check and message echoing
+- `test_ping_command_empty_message`: Handling empty/None messages
+
+### Storage Operations (8 tests)
+- `test_storage_put_and_get`: Creating documents and retrieving with JSON integrity verification
+- `test_storage_get_nonexistent`: Graceful handling of missing documents
+- `test_storage_update_existing_document`: Upsert behavior (update existing documents)
+- `test_storage_list`: Listing all documents in a collection
+- `test_storage_list_empty`: Empty collection handling
+- `test_storage_delete`: Deleting existing documents
+- `test_storage_delete_nonexistent`: Idempotent delete (deleting nonexistent documents)
+- `test_multiple_collections`: Collection isolation (same ID in different collections)
+
+### What's Tested
+- ✅ All 5 plugin commands (ping, storage_put, storage_get, storage_delete, storage_list)
+- ✅ IPC layer (commands invoked via `get_ipc_response()`)
+- ✅ Desktop sidecar process management (automatic startup)
+- ✅ gRPC communication (desktop)
+- ✅ Error handling and edge cases
+- ✅ JSON serialization/deserialization
+- ✅ Complex nested JSON documents with Unicode and special characters
+- ✅ Collection isolation
 
 ## Running the Tests
 
-### Prerequisites
+### Desktop Tests (macOS, Linux, Windows)
 
-1. **Tauri test feature**: The `Cargo.toml` includes `tauri` with the `test` feature in `dev-dependencies`:
-   ```toml
-   [dev-dependencies]
-   tauri = { version = "2.9.2", features = ["test"] }
-   ```
+#### Prerequisites
 
-2. **Build the Go backend** for your platform:
+1. **Go backend binary**: Built automatically by the task command, or build manually:
    ```bash
    # From project root
-   ./build-go-backend.sh
+   task go:build  # or task backend:desktop:build
    ```
 
-3. **Set environment variable** to use local binaries:
+2. **Environment variable** to use local binaries (optional, set automatically by build.rs):
    ```bash
    export ANY_SYNC_GO_BINARIES_DIR=$(pwd)/binaries
    ```
 
-### Run Tests
+#### Run Desktop Tests
 
 ```bash
-# From this directory (examples/tauri-app/src-tauri)
-cargo test --test integration -- --test-threads=1
+# From project root (recommended - handles all setup)
+task app:test-integration
+
+# Or manually from example-app/src-tauri
+cargo test --test integration --features integration-test -- --test-threads=1
 
 # With detailed logging
-RUST_LOG=debug cargo test --test integration -- --test-threads=1 --nocapture
+RUST_LOG=debug task app:test-integration
 
 # Run a specific test
-cargo test --test integration test_ping_command -- --test-threads=1
+cargo test --test integration --features integration-test test_ping_command -- --test-threads=1
 ```
+
+### Mobile Tests (Android)
+
+#### Prerequisites
+
+1. **Android NDK**: Required for cross-compilation
+   ```bash
+   # Install via Android Studio SDK Manager or:
+   # macOS: brew install android-ndk
+   # Linux: Follow Android developer guide
+   ```
+
+2. **Rust Android target**:
+   ```bash
+   rustup target add aarch64-linux-android
+   rustup target add armv7-linux-androideabi
+   rustup target add i686-linux-android
+   rustup target add x86_64-linux-android
+   ```
+
+3. **gomobile**: For building the Android .aar
+   ```bash
+   go install golang.org/x/mobile/cmd/gomobile@latest
+   gomobile init
+   ```
+
+4. **Build the Android library**:
+   ```bash
+   task go:mobile:build  # or task backend:mobile:build
+   ```
+
+5. **Android emulator or device**: For running tests
+   ```bash
+   # Create emulator via Android Studio or:
+   avdmanager create avd -n test_avd -k "system-images;android-33;google_apis;x86_64"
+   
+   # Start emulator
+   emulator -avd test_avd -no-window -no-audio -no-boot-anim
+   ```
+
+#### Run Android Tests
+
+```bash
+# Build for Android and run tests on emulator/device
+cargo test --test integration --target aarch64-linux-android --features integration-test -- --test-threads=1
+```
+
+**Note**: Android testing requires a fully configured Android development environment. The tests use the same code as desktop but execute through the Android FFI layer (.aar) instead of the gRPC sidecar.
 
 ### Why `--test-threads=1`?
 
@@ -66,35 +125,75 @@ Tests are run sequentially to avoid conflicts:
 
 ## How It Works
 
+### Test Infrastructure
+
 1. **App Setup**: Each test calls `create_test_app()` which:
    - Uses the same `create_app_builder()` function as the production app
    - Creates a `MockRuntime` instead of spawning a real window
-   - Initializes the plugin with all its dependencies
+   - Creates a webview window for IPC testing
+   - Returns `(app, webview, invoke_key)` for test use
 
-2. **Command Execution**: Tests call plugin methods directly via `app.any_sync()`:
+2. **Command Execution**: Tests invoke commands through the **actual IPC layer** using `tauri::test::get_ipc_response()`:
    ```rust
-   let result = app.any_sync().ping(payload).await;
+   let res = get_ipc_response(
+       &webview,
+       tauri::webview::InvokeRequest {
+           cmd: "plugin:any-sync|ping".into(),
+           callback: tauri::ipc::CallbackFn(0),
+           error: tauri::ipc::CallbackFn(1),
+           body: json!({
+               "payload": {
+                   "value": "test message"
+               }
+           }).into(),
+           headers: Default::default(),
+           url: "tauri://localhost".parse().unwrap(),
+           invoke_key: invoke_key.clone(),
+       },
+   );
    ```
 
+   This approach:
+   - ✅ Tests the actual invocation path (same as JavaScript frontend would use)
+   - ✅ Verifies IPC serialization/deserialization
+   - ✅ Uses official Tauri testing utilities
+   - ✅ No test-only code pollution in plugin source
+
 3. **Backend Communication**:
-   - First command automatically spawns the Go sidecar process
-   - Sidecar runs as a real process, communicating via gRPC
-   - All subsequent commands reuse the same sidecar instance
+   - **Desktop**: First command automatically spawns the Go sidecar process (gRPC)
+   - **Mobile**: Commands invoke the embedded Go library via JNI/FFI (Android .aar)
+   - All subsequent commands reuse the same backend instance
 
 4. **Verification**: Tests assert on:
    - Success/failure of operations
-   - Response data correctness
+   - Response data correctness (parsed from IPC response)
    - Side effects (e.g., document retrieval after put)
 
 ## CI Integration
 
-The `test-integration` job in `.github/workflows/test.yml` runs these tests automatically:
+### Desktop Testing (Active)
 
-- Runs on every push and pull request
-- Tests on Ubuntu (Linux-only for faster CI execution)
-- Automatically builds the Go backend before running tests
-- Installs all required system dependencies (webkit2gtk, protoc)
-- Fails the build if any test fails
+The `test-integration-desktop` job in `.github/workflows/test.yml` runs desktop tests automatically:
+
+- ✅ Runs on every push and pull request
+- ✅ Tests on Ubuntu (fastest CI runner)
+- ✅ Automatically builds the Go backend before running tests
+- ✅ Installs all required system dependencies (webkit2gtk, protoc, Task)
+- ✅ Fails the build if any test fails
+- ✅ Uses `--test-threads=1` to prevent database conflicts
+
+### Mobile Testing (Planned)
+
+Mobile CI jobs are documented but not yet active (waiting for full mobile platform support):
+
+- **Android**: `test-integration-android` job will use Ubuntu + Android emulator
+- **iOS**: `test-integration-ios` job will use macOS + iOS simulator (documented for when iOS support is added)
+
+When enabled, mobile tests will:
+- Build the appropriate mobile library (.aar for Android, .xcframework for iOS)
+- Start an emulator/simulator
+- Run the same test suite through the mobile FFI layer
+- Verify platform-specific integration works correctly
 
 ## Troubleshooting
 
@@ -128,31 +227,90 @@ If the Go sidecar doesn't start:
 When adding new plugin functionality:
 
 1. **Add test for the new command** in `integration.rs`
-2. **Follow the pattern**:
+2. **Follow the IPC testing pattern**:
    ```rust
    #[tokio::test]
    async fn test_your_new_command() {
-       let app = create_test_app();
+       let (_app, webview, invoke_key) = create_test_app();
 
-       let payload = YourRequest { /* ... */ };
-       let result = app.any_sync().your_command(payload).await;
+       let res = get_ipc_response(
+           &webview,
+           tauri::webview::InvokeRequest {
+               cmd: "plugin:any-sync|your_command".into(),
+               callback: tauri::ipc::CallbackFn(0),
+               error: tauri::ipc::CallbackFn(1),
+               body: json!({
+                   "payload": {
+                       "field": "value"
+                   }
+               }).into(),
+               headers: Default::default(),
+               url: "tauri://localhost".parse().unwrap(),
+               invoke_key: invoke_key.clone(),
+           },
+       );
 
-       assert!(result.is_ok(), "Command failed: {:?}", result.err());
-       // Additional assertions...
+       assert!(res.is_ok(), "Command failed: {:?}", res);
+       let response = res.unwrap().deserialize::<serde_json::Value>().unwrap();
+       // Additional assertions on response...
    }
    ```
 
 3. **Test edge cases**: Empty inputs, nonexistent data, error conditions
-4. **Run tests locally** before committing
+4. **Run tests locally** before committing: `task app:test-integration`
 5. **Update this README** if adding new test categories
+6. **Keep tests platform-agnostic** unless testing platform-specific behavior (use `#[cfg(desktop)]` / `#[cfg(mobile)]` when needed)
 
 ## Architecture Notes
 
-- **MockRuntime**: Tauri's test runtime that doesn't require a window manager
-- **Real sidecar**: Tests use the actual Go binary, not a mock
-- **Real gRPC**: Full communication stack is tested
-- **Real database**: Uses SQLite, stored in system temp directory during tests
-- **No frontend**: No JavaScript/HTML/CSS, tests call Rust directly
+### Test Infrastructure
+- **MockRuntime**: Tauri's test runtime that doesn't require a window manager or display server
+- **IPC Testing**: Uses `tauri::test::get_ipc_response()` to invoke commands through the actual IPC layer
+- **Real Backend**: Tests use the actual compiled Go binaries, not mocks
+- **Real Communication**: Full communication stack is tested (gRPC for desktop, JNI/FFI for mobile)
+- **Real Database**: Uses SQLite, stored in system temp directory during tests
+- **No Frontend**: No JavaScript/HTML/CSS needed, tests invoke commands directly via IPC
 
-This approach provides confidence that the entire plugin stack works correctly,
-from command invocation through gRPC to the Go backend and back.
+### Platform Coverage
+
+| Platform | Backend Type | Communication | Test Status |
+|----------|-------------|---------------|-------------|
+| macOS    | Sidecar     | gRPC          | ✅ Active   |
+| Linux    | Sidecar     | gRPC          | ✅ Active   |
+| Windows  | Sidecar     | gRPC          | ✅ Active   |
+| Android  | Embedded    | JNI (.aar)    | 📝 Ready    |
+| iOS      | Embedded    | FFI (.xcframework) | 📝 Documented |
+
+**Legend:**
+- ✅ Active: Tests work locally and in CI
+- 📝 Ready: Infrastructure ready, needs proper environment setup
+- 📝 Documented: Infrastructure documented for future activation
+
+### Why This Approach?
+
+This testing strategy provides confidence that the entire plugin stack works correctly:
+
+```
+Test Code
+   ↓
+IPC Layer (get_ipc_response)
+   ↓
+Tauri Command Handler
+   ↓
+Plugin Rust Core
+   ↓
+Platform Layer (Desktop Service / Mobile Service)
+   ↓
+Backend (gRPC Sidecar / gomobile Library)
+   ↓
+Storage Implementation (AnyStore)
+   ↓
+SQLite Database
+```
+
+**Benefits:**
+- Tests the actual code path that production apps use
+- Catches IPC serialization bugs
+- Verifies platform-specific integration works
+- No test-only code in plugin source
+- Same tests work across all platforms (unified interface)

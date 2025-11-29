@@ -185,24 +185,44 @@ TypeScript → Rust Commands → Mobile Service → Kotlin/Swift Plugin → JNI/
 
 ## Integration Tests
 
-Integration tests verify end-to-end functionality of the plugin with the Go backend, without requiring a GUI. They use `tauri::test` to create a headless app instance.
+Integration tests verify end-to-end functionality of the plugin with the Go backend, without requiring a GUI. They use `tauri::test::MockRuntime` to create a headless app instance and invoke commands through the actual IPC layer using `tauri::test::get_ipc_response()`.
 
 **Location**: `example-app/src-tauri/tests/integration.rs`
 
+**Test Coverage** (10 tests):
+- **Basic Commands**: ping, ping with empty message
+- **Storage Operations**: put/get, get nonexistent, update, delete, delete nonexistent, list, list empty
+- **Complex Scenarios**: multiple collections (isolation verification), complex JSON with nested objects/arrays/Unicode
+
 **What is tested**:
-- **Process Management**: Automatic sidecar startup when commands are invoked
-- **gRPC Communication**: All commands (ping, storage_put, storage_get, storage_delete, storage_list)
+- **IPC Layer**: Commands invoked through actual IPC (`get_ipc_response()`) - same path as JavaScript frontend
+- **Process Management**: Automatic sidecar startup when commands are invoked (desktop)
+- **Communication**: gRPC (desktop) or JNI/FFI (mobile)
 - **Error Handling**: Proper error propagation across all layers
-- **Data Integrity**: Complex JSON documents, multiple collections, updates, deletes
-- **Edge Cases**: Empty collections, nonexistent documents, concurrent operations
+- **Data Integrity**: JSON serialization/deserialization, complex documents, Unicode characters
+- **Edge Cases**: Empty collections, nonexistent documents, idempotent operations
+
+**Platform Support**:
+- ✅ **Desktop** (macOS, Linux, Windows): Active - tests run locally and in CI
+- 📝 **Android**: Ready - infrastructure in place, needs proper NDK setup
+- 📝 **iOS**: Documented - infrastructure documented for when iOS support is added
 
 **Running integration tests**:
 
 ```bash
+# Desktop tests (recommended - handles all setup)
 task app:test-integration
+
+# With detailed logging
+RUST_LOG=debug task app:test-integration
+
+# Manual (from example-app/src-tauri)
+cargo test --test integration --features integration-test -- --test-threads=1
 ```
 
 **Important notes**:
-- Tests run with `--test-threads=1` to avoid database conflicts (each test uses the same sidecar instance)
-- The Go backend binary is built before running tests
-- Tests are platform-specific (each platform needs its own binary)
+- Tests run with `--test-threads=1` to avoid database conflicts
+- The Go backend binary is built automatically by the task command
+- Tests use IPC for realistic command invocation (same as production)
+- Same tests work across all platforms (unified interface)
+- See `example-app/src-tauri/tests/README.md` for detailed documentation

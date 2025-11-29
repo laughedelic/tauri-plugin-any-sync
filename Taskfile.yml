@@ -17,7 +17,7 @@ includes:
     taskfile: ./example-app/Taskfile.yml
     dir: ./example-app
 
-output: prefixed
+# output: prefixed
 
 tasks:
   build:

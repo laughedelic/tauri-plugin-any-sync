@@ -3,7 +3,7 @@ version: 3
 vars:
   TAURI_CMD: "cargo tauri"
 
-output: prefixed
+# output: prefixed
 
 tasks:
   frontend-install:

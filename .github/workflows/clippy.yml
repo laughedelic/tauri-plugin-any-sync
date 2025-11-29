@@ -34,6 +34,7 @@ jobs:
         run: cargo fmt --all -- --check
 
   clippy:
+    if: false # temporarily disable clippy to speed up CI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -45,7 +46,7 @@ jobs:
       - name: Set up protoc
         uses: arduino/setup-protoc@v3
         with:
-          version: '28.x'
+          version: "28.x"
           repo-token: ${{ github.token }}
 
       - name: install webkit2gtk

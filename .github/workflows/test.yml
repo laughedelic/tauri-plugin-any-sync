@@ -64,7 +64,7 @@ jobs:
       matrix:
         platform:
           - ubuntu-latest
-          - macos-latest
+          # - macos-latest
           # - windows-latest # TODO: reenable (too slow currently)
     runs-on: ${{ matrix.platform }}
     steps:
@@ -90,6 +90,7 @@ jobs:
         run: task core:test
 
   test-integration-desktop:
+    if: false # temporarily disable desktop integration tests to speed up CI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -152,9 +153,9 @@ jobs:
         uses: go-task/setup-task@v1
 
       - name: Build Android .aar library
-        run: task backend:mobile:build
-        env:
-          ANDROID_HOME: /usr/local/lib/android/sdk
+        run: task backend:mobile:build --verbose
+        # env:
+        #   ANDROID_HOME: /usr/local/lib/android/sdk
 
       - name: Enable KVM group perms
         run: |

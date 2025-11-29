@@ -11,7 +11,8 @@ yarn.lock
 /.tauri
 /target
 node_modules/
-.cargo/
+.cargo/*
+!.cargo/config.toml
 
 .env
 

@@ -32,7 +32,7 @@ tasks:
       BINARY: "{{joinPath .BINARIES_DIR .NAME}}"
     label: "{{.TASK}}-{{.PLATFORM}}"
     cmds:
-      - ls -la '{{.BINARIES_DIR}}'
+      - mkdir -p '{{.BINARIES_DIR}}'
       - gomobile bind -target=android -androidapi=21 -o '{{.BINARY}}' .
       - ls -la '{{.BINARIES_DIR}}'
     sources:

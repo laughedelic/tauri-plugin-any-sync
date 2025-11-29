@@ -182,9 +182,8 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/x86_64-linux-android/
-          key: rust-android-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('plugin-rust-core/**', 'example-app/src-tauri/**') }}
+          key: rust-android-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            rust-android-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}-
             rust-android-${{ runner.os }}-
 
       - name: Test compile for Android (fast check before emulator)
@@ -200,6 +199,29 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # Cache AVD for faster emulator startup
+      - name: Cache AVD
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-33-x86_64-google_apis
+
+      # Generate AVD snapshot for caching (only on first run)
+      - name: Generate AVD snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: echo "Generated AVD snapshot for caching."
+
       # Skip emulator step temporarily while debugging (set to true to enable)
       - name: Run Android integration tests
         if: false # TODO: Set to true once build passes
@@ -208,6 +230,9 @@ jobs:
           api-level: 33
           arch: x86_64
           target: google_apis
+          disable-animations: true
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: task app:test-integration:mobile
         env:
           RUST_LOG: debug

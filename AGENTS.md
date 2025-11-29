@@ -199,7 +199,7 @@ Integration tests verify end-to-end functionality of the plugin with the Go back
 **Running integration tests**:
 
 ```bash
-task app:test
+task app:test-integration
 ```
 
 **Important notes**:

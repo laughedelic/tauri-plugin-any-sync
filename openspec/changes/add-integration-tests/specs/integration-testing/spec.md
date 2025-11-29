@@ -264,11 +264,11 @@ The plugin SHALL enforce best practices for test implementation to ensure reliab
 
 The plugin SHALL document integration testing approach, platform-specific setup, and CI workflows.
 
-#### Scenario: CLAUDE.md documents testing approach
+#### Scenario: AGENTS.md documents testing approach
 
-- **WHEN** developers consult CLAUDE.md
+- **WHEN** developers consult AGENTS.md
 - **THEN** integration tests section explains what is tested and on which platforms
-- **AND** section shows how to run tests (`task test-integration` for all, platform-specific commands)
+- **AND** section shows how to run tests (`task app:test-integration`)
 - **AND** section explains IPC testing approach using Tauri utilities
 - **AND** section explains `--test-threads=1` requirement
 - **AND** section covers both desktop and mobile testing

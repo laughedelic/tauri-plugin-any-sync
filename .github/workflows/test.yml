@@ -17,19 +17,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - uses: actions/setup-go@v6
         with:
-          go-version-file: 'plugin-go-backend/desktop/go.mod'
+          go-version-file: "plugin-go-backend/desktop/go.mod"
           cache-dependency-path: |
             plugin-go-backend/desktop/go.sum
             plugin-go-backend/shared/go.sum
             plugin-go-backend/mobile/go.sum
-      
+
       - name: Set up protoc
         uses: arduino/setup-protoc@v3
         with:
-          version: '28.x'
+          version: "28.x"
           repo-token: ${{ github.token }}
 
       - name: Install Task
@@ -46,9 +46,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      
+
       - uses: oven-sh/setup-bun@v2
-      
+
       - name: Install Task
         uses: go-task/setup-task@v1
 
@@ -74,7 +74,7 @@ jobs:
       - name: Set up protoc
         uses: arduino/setup-protoc@v3
         with:
-          version: '28.x'
+          version: "28.x"
           repo-token: ${{ github.token }}
 
       - name: Install Task
@@ -98,7 +98,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version-file: 'plugin-go-backend/desktop/go.mod'
+          go-version-file: "plugin-go-backend/desktop/go.mod"
           cache-dependency-path: |
             plugin-go-backend/desktop/go.sum
             plugin-go-backend/shared/go.sum
@@ -107,7 +107,7 @@ jobs:
       - name: Set up protoc
         uses: arduino/setup-protoc@v3
         with:
-          version: '28.x'
+          version: "28.x"
           repo-token: ${{ github.token }}
 
       - name: Install system dependencies
@@ -119,7 +119,7 @@ jobs:
         uses: go-task/setup-task@v1
 
       - name: Run integration tests
-        run: task test-integration
+        run: task app:test-integration
         env:
           RUST_LOG: debug
           RUST_BACKTRACE: 1

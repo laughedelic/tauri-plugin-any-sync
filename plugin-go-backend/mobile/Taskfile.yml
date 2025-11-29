@@ -1,7 +1,8 @@
 version: "3"
 
 vars:
-  BINARIES_DIR: "{{relPath .TASKFILE_DIR .ROOT_DIR}}/binaries"
+  # BINARIES_DIR: "{{relPath .TASKFILE_DIR .ROOT_DIR}}/binaries"
+  BINARIES_DIR: "{{.ROOT_DIR}}/binaries"
   BINARY_PREFIX: any-sync
 
 tasks:

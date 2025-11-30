@@ -236,10 +236,15 @@ jobs:
           disk-size: 6144M
           heap-size: 256M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics
-          script: RUST_BACKTRACE=1 task app:test-integration:mobile
+          script: task app:test-integration:mobile
         env:
           RUST_LOG: debug
           RUST_BACKTRACE: 1
+
+      - name: Debug
+        if: failure()
+        run: |
+          cat /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-2.9.3/src/test/mock_runtime.rs
 
   # iOS integration testing infrastructure (not yet active)
   # Uncomment when iOS plugin implementation is added

@@ -3,11 +3,11 @@ name: Release Binaries
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g., v0.3.0)'
+        description: "Version tag (e.g., v0.3.0)"
         required: true
         type: string
 
@@ -17,13 +17,16 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-
+    env:
+      VERSION: ${{ inputs.version || github.ref_name }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.VERSION }}
 
       - uses: actions/setup-go@v6
         with:
-          go-version-file: 'plugin-go-backend/desktop/go.mod'
+          go-version-file: "plugin-go-backend/desktop/go.mod"
           cache-dependency-path: |
             plugin-go-backend/desktop/go.sum
             plugin-go-backend/shared/go.sum
@@ -32,7 +35,7 @@ jobs:
       - name: Set up protoc
         uses: arduino/setup-protoc@v3
         with:
-          version: '28.x'
+          version: "28.x"
           repo-token: ${{ github.token }}
 
       - name: Set up Android SDK/NDK
@@ -45,17 +48,15 @@ jobs:
         run: task backend:build-all
 
       - name: Generate checksums
+        working-directory: ./binaries
         run: |
-          cd binaries
-          ll binaries/
-          rm binaries/*-sources.jar
+          rm -f *-android-sources.jar
           sha256sum * > checksums.txt
           cat checksums.txt
 
       - name: Create or update release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ inputs.version || github.ref_name }}
         run: |
           # Check if release already exists
           if gh release view $VERSION &>/dev/null; then

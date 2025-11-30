@@ -62,4 +62,4 @@ tasks:
     env:
       ANY_SYNC_GO_BINARIES_DIR: "{{.ROOT_DIR}}/binaries"
     cmds:
-      - cargo test --test integration --features integration-test --target x86_64-linux-android -- --test-threads=1
+      - cargo ndk test --test integration --features integration-test -t x86_64 -- --test-threads=1

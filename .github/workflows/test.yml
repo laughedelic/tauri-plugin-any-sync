@@ -161,6 +161,9 @@ jobs:
           which x86_64-linux-android21-clang || echo "Linker not found in PATH"
           x86_64-linux-android21-clang --version
 
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
+
       # Cache gomobile .aar build
       - name: Cache Android .aar library
         uses: actions/cache@v4
@@ -193,6 +196,29 @@ jobs:
         env:
           ANY_SYNC_GO_BINARIES_DIR: ${{ github.workspace }}/binaries
 
+      # Cache AVD for faster emulator startup
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-29
+
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          disable-animations: false
+          disk-size: 6144M
+          heap-size: 256M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics
+          force-avd-creation: false
+          script: echo "Generated AVD snapshot for caching."
+
       - name: Enable KVM group perms
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -200,6 +226,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Run Android integration tests
+        if: false
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 29

@@ -21,10 +21,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
+      - uses: actions/setup-go@v6
         with:
-          go-version: '1.23'
+          go-version-file: 'plugin-go-backend/desktop/go.mod'
+          cache-dependency-path: |
+            plugin-go-backend/desktop/go.sum
+            plugin-go-backend/shared/go.sum
+            plugin-go-backend/mobile/go.sum
 
       - name: Set up protoc
         uses: arduino/setup-protoc@v3
@@ -44,6 +47,8 @@ jobs:
       - name: Generate checksums
         run: |
           cd binaries
+          ll binaries/
+          rm binaries/*-sources.jar
           sha256sum * > checksums.txt
           cat checksums.txt
 

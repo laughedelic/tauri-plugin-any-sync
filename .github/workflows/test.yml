@@ -236,7 +236,7 @@ jobs:
           disk-size: 6144M
           heap-size: 256M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics
-          script: task app:test-integration:mobile
+          script: RUST_BACKTRACE=1 task app:test-integration:mobile
         env:
           RUST_LOG: debug
           RUST_BACKTRACE: 1

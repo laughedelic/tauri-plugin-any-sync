@@ -169,7 +169,9 @@ jobs:
         uses: actions/cache@v4
         id: cache-android-aar
         with:
-          path: binaries/any-sync-android.aar
+          path: |
+            binaries/any-sync-android.aar
+            .task/checksums/backend-mobile-build-android*
           key: android-aar-${{ hashFiles('plugin-go-backend/mobile/**', 'plugin-go-backend/shared/**') }}
 
       - name: Build Android .aar library

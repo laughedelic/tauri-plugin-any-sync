@@ -202,13 +202,12 @@ jobs:
       - name: Run Android integration tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 33
+          api-level: 29
           arch: x86_64
-          target: google_apis
           disable-animations: true
-          disk-size: 2048M
+          disk-size: 6144M
           heap-size: 256M
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -partition-size 512 -no-metrics
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics
           script: task app:test-integration:mobile
         env:
           RUST_LOG: debug

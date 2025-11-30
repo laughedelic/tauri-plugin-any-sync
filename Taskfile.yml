@@ -17,8 +17,6 @@ includes:
     taskfile: ./example-app/Taskfile.yml
     dir: ./example-app
 
-output: prefixed
-
 tasks:
   build:
     desc: Build all plugin components
@@ -32,6 +30,12 @@ tasks:
     cmds:
       - backend:build-all
       - build
+
+  test:
+    desc: Run all tests
+    deps:
+      - backend:test
+      - core:test
 
   clean:
     desc: Clean all build artifacts

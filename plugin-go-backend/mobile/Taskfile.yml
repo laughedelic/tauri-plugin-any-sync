@@ -1,7 +1,7 @@
 version: "3"
 
 vars:
-  BINARIES_DIR: "{{relPath .TASKFILE_DIR .ROOT_DIR}}/binaries"
+  BINARIES_DIR: "{{.ROOT_DIR}}/binaries"
   BINARY_PREFIX: any-sync
 
 tasks:
@@ -31,7 +31,9 @@ tasks:
       BINARY: "{{joinPath .BINARIES_DIR .NAME}}"
     label: "{{.TASK}}-{{.PLATFORM}}"
     cmds:
+      - mkdir -p '{{.BINARIES_DIR}}'
       - gomobile bind -target=android -androidapi=21 -o '{{.BINARY}}' .
+      - ls -la '{{.BINARIES_DIR}}'
     sources:
       - ./**/*
       - ../shared/**/*

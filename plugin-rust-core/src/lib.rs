@@ -16,6 +16,7 @@ mod mobile;
 mod commands;
 mod error;
 mod models;
+#[cfg(desktop)]
 mod proto;
 
 pub use error::{Error, Result};

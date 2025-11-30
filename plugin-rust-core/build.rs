@@ -6,9 +6,15 @@ fn main() {
         std::env::var("ANY_SYNC_GO_BINARIES_DIR").unwrap_or_default()
     );
 
-    // Generate protobuf code first
-    if let Err(e) = generate_protobuf() {
-        eprintln!("Warning: Failed to generate protobuf code: {}", e);
+    // Generate protobuf code for desktop targets only (mobile uses FFI, not gRPC)
+    let target = std::env::var("TARGET").unwrap_or_default();
+    let is_mobile_target = target.contains("android") || target.contains("ios");
+
+    if !is_mobile_target {
+        if let Err(e) = generate_protobuf() {
+            eprintln!("Error: Failed to generate protobuf code: {}", e);
+            std::process::exit(1);
+        }
     }
 
     // Manage binaries (download or use local)

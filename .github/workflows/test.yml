@@ -199,9 +199,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # Skip emulator step temporarily while debugging (set to true to enable)
       - name: Run Android integration tests
-        if: false # TODO: Set to true once build passes
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 33

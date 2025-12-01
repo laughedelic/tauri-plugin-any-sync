@@ -28,13 +28,25 @@ type SpaceMetadata struct {
 }
 
 // SpaceManager manages local spaces with full Any-Sync structure.
+//
+// Current Implementation (Phase 2C):
+// - Creates SpaceStorage directly using spacestorage.Create()
+// - Manages space metadata and storage lifecycle
+// - Works for basic space CRUD operations
+//
+// Phase 2D Requirements:
+// - Need commonspace.Space objects (not just SpaceStorage) to access TreeBuilder
+// - TreeBuilder is required for creating/managing ObjectTrees (documents)
+// - Will need to integrate app.App with SpaceService to get Space objects
 type SpaceManager struct {
 	mu         sync.RWMutex
 	dataDir    string
 	keys       *accountdata.AccountKeys
-	spaces     map[string]*SpaceMetadata // In-memory cache of space metadata
+	spaces     map[string]*SpaceMetadata            // In-memory cache of space metadata
 	storages   map[string]spacestorage.SpaceStorage // Opened space storages
-	storageDir string // Directory for space storage databases
+	storageDir string                               // Directory for space storage databases
+	// TODO Phase 2D: Add spaceObjects map[string]commonspace.Space
+	// TODO Phase 2D: Add app.App and commonspace.SpaceService fields
 }
 
 // NewSpaceManager creates a new SpaceManager.
@@ -88,8 +100,8 @@ func (sm *SpaceManager) CreateSpace(referenceName, name string, metadata map[str
 	createPayload := spacepayloads.SpaceCreatePayload{
 		SigningKey:     sm.keys.SignKey,
 		SpaceType:      "syncspace", // Our space type identifier
-		ReplicationKey: 10,           // Arbitrary value for local-only operation
-		SpacePayload:   nil,          // No custom payload
+		ReplicationKey: 10,          // Arbitrary value for local-only operation
+		SpacePayload:   nil,         // No custom payload
 		MasterKey:      masterKey,
 		ReadKey:        readKey,
 		MetadataKey:    metadataKey,
@@ -145,7 +157,7 @@ func (sm *SpaceManager) CreateSpace(referenceName, name string, metadata map[str
 func (sm *SpaceManager) createSpaceStorage(spaceID string, payload spacestorage.SpaceStorageCreatePayload) (spacestorage.SpaceStorage, error) {
 	// Open anystore database for this space
 	dbPath := filepath.Join(sm.storageDir, spaceID+".db")
-	
+
 	// Open the database
 	ctx := context.Background()
 	db, err := anystore.Open(ctx, dbPath, nil)
@@ -229,7 +241,7 @@ func (sm *SpaceManager) DeleteSpace(spaceID string) error {
 // loadMetadata loads space metadata from disk.
 func (sm *SpaceManager) loadMetadata() error {
 	metadataPath := filepath.Join(sm.dataDir, "spaces_metadata.json")
-	
+
 	data, err := os.ReadFile(metadataPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -254,7 +266,7 @@ func (sm *SpaceManager) loadMetadata() error {
 // saveMetadata persists space metadata to disk.
 func (sm *SpaceManager) saveMetadata() error {
 	metadataPath := filepath.Join(sm.dataDir, "spaces_metadata.json")
-	
+
 	spaces := make([]*SpaceMetadata, 0, len(sm.spaces))
 	for _, space := range sm.spaces {
 		spaces = append(spaces, space)

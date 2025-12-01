@@ -25,12 +25,6 @@ node_modules/
 /plugin-go-backend/desktop/desktop
 /plugin-go-backend/mobile/mobile
 
-# Generated protobuf code
-/plugin-rust-core/src/proto/anysync.rs
-/plugin-go-backend/desktop/proto/*.pb.go
-/plugin-go-backend/shared/proto/
-/plugin-js-api/src/generated/
-
 # OpenSpec prompts
 opencode.json*
 /.opencode/**/openspec-*.md

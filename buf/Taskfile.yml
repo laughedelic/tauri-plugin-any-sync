@@ -7,12 +7,11 @@ tasks:
       - buf generate --template ./proto/syncspace-api/buf.gen.yaml
       - buf generate --template ./proto/dispatch-transport/buf.gen.yaml
     sources:
-      - proto/**/*.proto
-      - proto/**/*.gen.yaml
-      - buf.yaml
+      - ./proto/**/*.proto
+      - ./proto/**/*.gen.yaml
+      - ./buf.yaml
     generates:
-      - ../plugin-go-backend/shared/proto/**/*.pb.go
-      - ../plugin-go-backend/desktop/proto/**/*.pb.go
+      - ../plugin-go-backend/**/proto/**/*.pb.go
       - ../plugin-js-api/src/generated/**/*.ts
 
   lint:

@@ -8,17 +8,12 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
-	"time"
 
 	"google.golang.org/grpc"
 
-	"anysync-backend/desktop/api/server"
-	"anysync-backend/desktop/config"
-	"anysync-backend/desktop/health"
-	pb "anysync-backend/desktop/proto"
-	"anysync-backend/shared/storage"
+	"anysync-backend/shared/handlers"
+	pb "anysync-backend/shared/proto/syncspace/v1"
 )
 
 var (
@@ -26,58 +21,176 @@ var (
 	host = flag.String("host", "localhost", "Host to bind to")
 )
 
+// Server implements the SyncSpaceService by calling handlers directly
+type Server struct {
+	pb.UnimplementedSyncSpaceServiceServer
+}
+
+func NewServer() *Server {
+	return &Server{}
+}
+
+// gRPC service methods - these call handlers directly (no marshaling needed)
+
+func (s *Server) Init(ctx context.Context, req *pb.InitRequest) (*pb.InitResponse, error) {
+	resp, err := handlers.Init(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.InitResponse), nil
+}
+
+func (s *Server) Shutdown(ctx context.Context, req *pb.ShutdownRequest) (*pb.ShutdownResponse, error) {
+	resp, err := handlers.Shutdown(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.ShutdownResponse), nil
+}
+
+func (s *Server) CreateSpace(ctx context.Context, req *pb.CreateSpaceRequest) (*pb.CreateSpaceResponse, error) {
+	resp, err := handlers.CreateSpace(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.CreateSpaceResponse), nil
+}
+
+func (s *Server) JoinSpace(ctx context.Context, req *pb.JoinSpaceRequest) (*pb.JoinSpaceResponse, error) {
+	resp, err := handlers.JoinSpace(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.JoinSpaceResponse), nil
+}
+
+func (s *Server) LeaveSpace(ctx context.Context, req *pb.LeaveSpaceRequest) (*pb.LeaveSpaceResponse, error) {
+	resp, err := handlers.LeaveSpace(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.LeaveSpaceResponse), nil
+}
+
+func (s *Server) ListSpaces(ctx context.Context, req *pb.ListSpacesRequest) (*pb.ListSpacesResponse, error) {
+	resp, err := handlers.ListSpaces(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.ListSpacesResponse), nil
+}
+
+func (s *Server) DeleteSpace(ctx context.Context, req *pb.DeleteSpaceRequest) (*pb.DeleteSpaceResponse, error) {
+	resp, err := handlers.DeleteSpace(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.DeleteSpaceResponse), nil
+}
+
+func (s *Server) CreateDocument(ctx context.Context, req *pb.CreateDocumentRequest) (*pb.CreateDocumentResponse, error) {
+	resp, err := handlers.CreateDocument(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.CreateDocumentResponse), nil
+}
+
+func (s *Server) GetDocument(ctx context.Context, req *pb.GetDocumentRequest) (*pb.GetDocumentResponse, error) {
+	resp, err := handlers.GetDocument(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.GetDocumentResponse), nil
+}
+
+func (s *Server) UpdateDocument(ctx context.Context, req *pb.UpdateDocumentRequest) (*pb.UpdateDocumentResponse, error) {
+	resp, err := handlers.UpdateDocument(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.UpdateDocumentResponse), nil
+}
+
+func (s *Server) DeleteDocument(ctx context.Context, req *pb.DeleteDocumentRequest) (*pb.DeleteDocumentResponse, error) {
+	resp, err := handlers.DeleteDocument(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.DeleteDocumentResponse), nil
+}
+
+func (s *Server) ListDocuments(ctx context.Context, req *pb.ListDocumentsRequest) (*pb.ListDocumentsResponse, error) {
+	resp, err := handlers.ListDocuments(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.ListDocumentsResponse), nil
+}
+
+func (s *Server) QueryDocuments(ctx context.Context, req *pb.QueryDocumentsRequest) (*pb.QueryDocumentsResponse, error) {
+	resp, err := handlers.QueryDocuments(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.QueryDocumentsResponse), nil
+}
+
+func (s *Server) StartSync(ctx context.Context, req *pb.StartSyncRequest) (*pb.StartSyncResponse, error) {
+	resp, err := handlers.StartSync(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.StartSyncResponse), nil
+}
+
+func (s *Server) PauseSync(ctx context.Context, req *pb.PauseSyncRequest) (*pb.PauseSyncResponse, error) {
+	resp, err := handlers.PauseSync(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.PauseSyncResponse), nil
+}
+
+func (s *Server) GetSyncStatus(ctx context.Context, req *pb.GetSyncStatusRequest) (*pb.GetSyncStatusResponse, error) {
+	resp, err := handlers.GetSyncStatus(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.GetSyncStatusResponse), nil
+}
+
+func (s *Server) Subscribe(req *pb.SubscribeRequest, stream pb.SyncSpaceService_SubscribeServer) error {
+	// TODO: Implement event streaming
+	return fmt.Errorf("event streaming not implemented yet")
+}
+
 func main() {
 	flag.Parse()
-
-	// Load configuration
-	cfg := config.NewConfig()
-
-	// Override with command line flags
-	if *port != 0 {
-		cfg.Port = *port
-	}
-	if *host != "localhost" {
-		cfg.Host = *host
-	}
-
-	// Create health service
-	healthSvc := health.NewService()
-
-	// Initialize storage
-	// Use a database path from environment or default to current directory
-	dbPath := os.Getenv("ANY_SYNC_DB_PATH")
-	if dbPath == "" {
-		dbPath = filepath.Join(".", "anystore.db")
-	}
-	log.Printf("Initializing storage at: %s", dbPath)
-
-	store, err := storage.New(dbPath)
-	if err != nil {
-		log.Fatalf("Failed to initialize storage: %v", err)
-	}
-	defer store.Close()
 
 	// Create gRPC server
 	grpcServer := grpc.NewServer()
 
-	// Register health service
-	healthServer := server.NewHealthServer()
-	pb.RegisterHealthServiceServer(grpcServer, healthServer)
+	// Register SyncSpace service
+	syncSpaceServer := NewServer()
+	pb.RegisterSyncSpaceServiceServer(grpcServer, syncSpaceServer)
 
-	// Register storage service
-	storageServer := server.NewStorageServer(store)
-	pb.RegisterStorageServiceServer(grpcServer, storageServer)
+	// Determine listen address
+	listenAddr := fmt.Sprintf("%s:%d", *host, *port)
+	if *port == 0 {
+		listenAddr = fmt.Sprintf("%s:0", *host)
+	}
 
 	// Create listener
-	lis, err := net.Listen("tcp", cfg.GetAddress())
+	lis, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 	defer lis.Close()
 
-	// Get actual port (especially important when using random port)
+	// Get actual port
 	actualPort := lis.Addr().(*net.TCPAddr).Port
-	fmt.Printf("Server listening on %s:%d\n", cfg.Host, actualPort)
+	fmt.Printf("SyncSpace gRPC server listening on %s:%d\n", *host, actualPort)
 
 	// Write port to file for communication with parent process
 	if portFile := os.Getenv("ANY_SYNC_PORT_FILE"); portFile != "" {
@@ -86,11 +199,7 @@ func main() {
 		}
 	}
 
-	// Set up graceful shutdown
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Handle signals
+	// Handle signals for graceful shutdown
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
@@ -101,35 +210,12 @@ func main() {
 		}
 	}()
 
-	// Start health check routine
-	go func() {
-		ticker := time.NewTicker(time.Duration(cfg.HealthCheckInterval) * time.Second)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				healthy, msg := healthSvc.Check(ctx)
-				if !healthy {
-					log.Printf("Health check failed: %s", msg)
-				} else {
-					log.Printf("Health check: %s", msg)
-				}
-			}
-		}
-	}()
-
 	// Wait for shutdown signal
 	<-sigCh
-	fmt.Println("Shutting down server...")
-	cancel()
+	fmt.Println("\nShutting down server...")
 
-	// Graceful stop gRPC server
+	// Graceful stop
 	grpcServer.GracefulStop()
 
-	// Give some time for graceful shutdown
-	time.Sleep(2 * time.Second)
 	fmt.Println("Server stopped")
 }

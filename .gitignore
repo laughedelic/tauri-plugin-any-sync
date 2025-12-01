@@ -21,6 +21,10 @@ node_modules/
 # Go backend binaries (source)
 /binaries/
 
+# Go compiled binaries
+/plugin-go-backend/desktop/desktop
+/plugin-go-backend/mobile/mobile
+
 # Generated protobuf code
 /plugin-rust-core/src/proto/anysync.rs
 /plugin-go-backend/desktop/proto/*.pb.go

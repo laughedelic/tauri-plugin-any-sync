@@ -7,7 +7,13 @@ plugins:
     out: plugin-go-backend/shared/proto
     opt:
       - paths=source_relative
-  
+
+  # Go gRPC code generation
+  - remote: buf.build/grpc/go
+    out: plugin-go-backend/shared/proto
+    opt:
+      - paths=source_relative
+
   # TypeScript code generation (protobuf-es)
   - remote: buf.build/bufbuild/es
     out: plugin-js-api/src/generated

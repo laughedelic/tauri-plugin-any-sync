@@ -49,7 +49,7 @@ func TestGetSyncStatus_NotInitialized(t *testing.T) {
 func TestGetSyncStatus_Empty(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
-		DataDir:   "/tmp/test",
+		DataDir:   t.TempDir(),
 		NetworkId: "test-network",
 		DeviceId:  "test-device",
 	}

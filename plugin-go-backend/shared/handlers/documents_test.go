@@ -40,7 +40,7 @@ func TestGetDocument_NotInitialized(t *testing.T) {
 func TestGetDocument_NotFound(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
-		DataDir:   "/tmp/test",
+		DataDir:   t.TempDir(),
 		NetworkId: "test-network",
 		DeviceId:  "test-device",
 	}
@@ -94,7 +94,7 @@ func TestDeleteDocument_NotInitialized(t *testing.T) {
 func TestDeleteDocument_NotFound(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
-		DataDir:   "/tmp/test",
+		DataDir:   t.TempDir(),
 		NetworkId: "test-network",
 		DeviceId:  "test-device",
 	}
@@ -132,7 +132,7 @@ func TestListDocuments_NotInitialized(t *testing.T) {
 func TestListDocuments_Empty(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
-		DataDir:   "/tmp/test",
+		DataDir:   t.TempDir(),
 		NetworkId: "test-network",
 		DeviceId:  "test-device",
 	}
@@ -170,7 +170,7 @@ func TestQueryDocuments_NotInitialized(t *testing.T) {
 func TestQueryDocuments_Empty(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
-		DataDir:   "/tmp/test",
+		DataDir:   t.TempDir(),
 		NetworkId: "test-network",
 		DeviceId:  "test-device",
 	}

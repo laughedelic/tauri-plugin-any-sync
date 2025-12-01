@@ -25,7 +25,7 @@ func TestCreateSpace_Success(t *testing.T) {
 	// Initialize first
 	resetGlobalState()
 	initReq := &pb.InitRequest{
-		DataDir:   "/tmp/test",
+		DataDir:   t.TempDir(),
 		NetworkId: "test-network",
 		DeviceId:  "test-device",
 	}
@@ -86,7 +86,7 @@ func TestListSpaces_NotInitialized(t *testing.T) {
 func TestListSpaces_Empty(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
-		DataDir:   "/tmp/test",
+		DataDir:   t.TempDir(),
 		NetworkId: "test-network",
 		DeviceId:  "test-device",
 	}

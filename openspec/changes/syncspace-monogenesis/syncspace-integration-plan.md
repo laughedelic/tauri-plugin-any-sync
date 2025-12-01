@@ -194,13 +194,13 @@ Network layer (can be disabled):
 
 ## Dependency Summary
 
-| Phase | Requires Previous | Any-Sync Depth | Network Required |
-|-------|-------------------|----------------|------------------|
-| 1. Account | - | Shallow (keys only) | No |
-| 2. Spaces | Phase 1 | Medium (spacestorage, ACL) | No |
-| 3. Documents | Phase 2 | Deep (ObjectTree, TreeBuilder) | No |
-| 4. Events | Phase 3 | Same as Phase 3 | No |
-| 5. Sync | Phase 1-4 | Full stack | Yes |
+| Phase        | Requires Previous | Any-Sync Depth                 | Network Required |
+| ------------ | ----------------- | ------------------------------ | ---------------- |
+| 1. Account   | -                 | Shallow (keys only)            | No               |
+| 2. Spaces    | Phase 1           | Medium (spacestorage, ACL)     | No               |
+| 3. Documents | Phase 2           | Deep (ObjectTree, TreeBuilder) | No               |
+| 4. Events    | Phase 3           | Same as Phase 3                | No               |
+| 5. Sync      | Phase 1-4         | Full stack                     | Yes              |
 
 ---
 
@@ -219,37 +219,15 @@ Network layer (can be disabled):
 
 ---
 
-## Alternative: anystore-Only Prototype
-
-If you want to validate the API design before committing to full Any-Sync integration, you COULD build a throwaway prototype:
-
-1. Use raw anystore for document storage
-2. Implement simple collections for spaces/documents
-3. No ACL, no ObjectTree, no sync capability
-4. **Explicit limitation**: Data created here CANNOT be migrated to Any-Sync later
-
-**When this makes sense**:
-- Testing TypeScript API design
-- Validating dispatch pattern
-- Building UI before backend is ready
-
-**When to avoid**:
-- If you want sync eventually (data won't migrate)
-- If you're close to Phase 1-2 anyway (just do it right)
-
-This is a **prototype path**, not a production path.
-
----
-
 ## Testing Implications
 
-| Phase | Key Tests |
-|-------|-----------|
-| 1 | Key generation, persistence, loading across restarts |
-| 2 | Space creation with valid payload, space enumeration, deletion |
-| 3 | Document CRUD, ObjectTree change history, metadata queries |
-| 4 | Event emission, subscriber filtering, event ordering |
-| 5 | Sync between two instances, conflict detection, offline/online transitions |
+| Phase | Key Tests                                                                  |
+| ----- | -------------------------------------------------------------------------- |
+| 1     | Key generation, persistence, loading across restarts                       |
+| 2     | Space creation with valid payload, space enumeration, deletion             |
+| 3     | Document CRUD, ObjectTree change history, metadata queries                 |
+| 4     | Event emission, subscriber filtering, event ordering                       |
+| 5     | Sync between two instances, conflict detection, offline/online transitions |
 
 Phase 5 tests are the most complex (require multiple instances). Defer until Phases 1-4 are solid.
 

@@ -17,10 +17,34 @@ func CreateSpace(ctx context.Context, req proto.Message) (proto.Message, error) 
 
 	spaceReq := req.(*pb.CreateSpaceRequest)
 
-	// TODO: Implement with Any-Sync SpaceService
-	_ = spaceReq
+	// Create space using SpaceManager
+	globalState.mu.RLock()
+	sm := globalState.spaceManager
+	globalState.mu.RUnlock()
 
-	return nil, fmt.Errorf("not implemented yet")
+	if sm == nil {
+		return nil, fmt.Errorf("space manager not initialized")
+	}
+
+	// Note: spaceReq.SpaceId is used as a reference name, actual ID is generated
+	err := sm.CreateSpace(spaceReq.SpaceId, spaceReq.Name, spaceReq.Metadata)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create space: %w", err)
+	}
+
+	// Get the actual generated space ID
+	spaces := sm.ListSpaces()
+	var actualSpaceID string
+	for _, space := range spaces {
+		if space.Name == spaceReq.Name {
+			actualSpaceID = space.SpaceID
+			break
+		}
+	}
+
+	return &pb.CreateSpaceResponse{
+		SpaceId: actualSpaceID,
+	}, nil
 }
 
 // JoinSpace handles joining a space.
@@ -57,10 +81,33 @@ func ListSpaces(ctx context.Context, req proto.Message) (proto.Message, error) {
 		return nil, err
 	}
 
-	// TODO: Implement with Any-Sync SpaceService
+	globalState.mu.RLock()
+	sm := globalState.spaceManager
+	globalState.mu.RUnlock()
+
+	if sm == nil {
+		return nil, fmt.Errorf("space manager not initialized")
+	}
+
+	// Get spaces from SpaceManager
+	spaces := sm.ListSpaces()
+
+	// Convert to protobuf format
+	pbSpaces := make([]*pb.SpaceInfo, len(spaces))
+	for i, space := range spaces {
+		pbSpaces[i] = &pb.SpaceInfo{
+			SpaceId:   space.SpaceID,
+			Name:      space.Name,
+			Metadata:  space.Metadata,
+			CreatedAt: space.CreatedAt,
+			UpdatedAt: space.UpdatedAt,
+			// SyncStatus: IDLE for local-only mode (network sync not yet implemented)
+			SyncStatus: pb.SyncStatus_SYNC_STATUS_IDLE,
+		}
+	}
 
 	return &pb.ListSpacesResponse{
-		Spaces: []*pb.SpaceInfo{},
+		Spaces: pbSpaces,
 	}, nil
 }
 
@@ -72,8 +119,19 @@ func DeleteSpace(ctx context.Context, req proto.Message) (proto.Message, error) 
 
 	deleteReq := req.(*pb.DeleteSpaceRequest)
 
-	// TODO: Implement with Any-Sync SpaceService
-	_ = deleteReq
+	globalState.mu.RLock()
+	sm := globalState.spaceManager
+	globalState.mu.RUnlock()
 
-	return &pb.DeleteSpaceResponse{Success: false}, fmt.Errorf("not implemented yet")
+	if sm == nil {
+		return nil, fmt.Errorf("space manager not initialized")
+	}
+
+	// Delete space using SpaceManager
+	err := sm.DeleteSpace(deleteReq.SpaceId)
+	if err != nil {
+		return &pb.DeleteSpaceResponse{Success: false}, fmt.Errorf("failed to delete space: %w", err)
+	}
+
+	return &pb.DeleteSpaceResponse{Success: true}, nil
 }

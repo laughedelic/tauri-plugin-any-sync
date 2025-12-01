@@ -20,6 +20,7 @@ type State struct {
 	deviceID       string
 	config         map[string]string
 	accountManager *anysync.AccountManager
+	spaceManager   *anysync.SpaceManager
 	initialized    bool
 }
 
@@ -68,9 +69,14 @@ func Init(ctx context.Context, req proto.Message) (proto.Message, error) {
 		return nil, fmt.Errorf("keys not loaded after initialization")
 	}
 
-	globalState.initialized = true
+	// Initialize SpaceManager with loaded keys
+	spaceManager, err := anysync.NewSpaceManager(initReq.DataDir, globalState.accountManager.GetKeys())
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize space manager: %w", err)
+	}
+	globalState.spaceManager = spaceManager
 
-	// TODO: Initialize Any-Sync components (SpaceService, ObjectTree) using accountManager.GetKeys()
+	globalState.initialized = true
 
 	return &pb.InitResponse{Success: true}, nil
 }
@@ -84,7 +90,14 @@ func Shutdown(ctx context.Context, req proto.Message) (proto.Message, error) {
 		return nil, fmt.Errorf("not initialized")
 	}
 
-	// TODO: Cleanup Any-Sync components
+	// Close SpaceManager (closes all space storages)
+	if globalState.spaceManager != nil {
+		if err := globalState.spaceManager.Close(); err != nil {
+			// Log error but continue shutdown
+			fmt.Printf("Warning: failed to close space manager: %v\n", err)
+		}
+		globalState.spaceManager = nil
+	}
 
 	// Clear keys from memory
 	if globalState.accountManager != nil {

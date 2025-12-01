@@ -14,27 +14,46 @@
 
 **Notes:** Created `plugin-go-backend/proto/syncspace/v1/syncspace.proto` with complete SyncSpace API. Set up `buf` tooling with `buf.yaml` and `buf.gen.yaml`. Generated Go code in `proto/syncspace/v1/syncspace.pb.go` and TypeScript code in `plugin-js-api/src/generated/syncspace/v1/syncspace_pb.ts`.
 
-## Phase 2: Rebuild Go Backend
+## Phase 2: Rebuild Go Backend ⚠️ PARTIALLY COMPLETE
 
-- [ ] 2.1 Delete existing `plugin-go-backend/desktop/proto/*.proto` files
-- [ ] 2.2 Delete existing gRPC service implementations in `plugin-go-backend/desktop/api/server/`
-- [ ] 2.3 Delete all per-operation mobile exports in `plugin-go-backend/mobile/storage.go`
-- [ ] 2.4 Delete direct Any-Store integration in `plugin-go-backend/shared/storage/`
-- [ ] 2.5 Create `plugin-go-backend/shared/dispatcher/dispatcher.go` with command registry and routing
-- [ ] 2.6 Write unit tests for dispatcher (routing, unknown commands, malformed input)
-- [ ] 2.7 Create `plugin-go-backend/shared/handlers/` directory structure
-- [ ] 2.8 Implement lifecycle handlers (Init, Shutdown) with unit tests
-- [ ] 2.9 Implement space handlers (Create, Join, Leave, List, Delete) with unit tests
-- [ ] 2.10 Implement document handlers (Create, Get, Update, Delete, List, Query) with unit tests
-- [ ] 2.11 Implement sync control handlers (Start, Pause, Status) with unit tests
-- [ ] 2.12 Create `plugin-go-backend/shared/anysync/` integration layer
-- [ ] 2.13 Integrate Any-Sync SpaceService for space management
-- [ ] 2.14 Integrate Any-Sync ObjectTree for document storage
-- [ ] 2.15 Integrate Any-Sync sync mechanisms (HeadSync, ObjectSync)
-- [ ] 2.16 Write integration tests with real Any-Sync (space + document + persistence)
-- [ ] 2.17 Rewrite `plugin-go-backend/mobile/main.go` with 4-function API: Init, Command, SetEventHandler, Shutdown
-- [ ] 2.18 Update desktop entry point to use dispatcher (keep or simplify gRPC)
-- [ ] 2.19 Validate Go backend builds for all platforms
+- [ ] 2.1 Delete existing `plugin-go-backend/desktop/proto/*.proto` files (storage.proto, health.proto)
+- [ ] 2.2 Delete existing gRPC service implementations in `plugin-go-backend/desktop/api/server/` (storage.go, health.go)
+- [x] 2.3 Delete all per-operation mobile exports in `plugin-go-backend/mobile/storage.go`
+- [ ] 2.4 Delete direct Any-Store integration in `plugin-go-backend/shared/storage/` (or mark deprecated)
+- [x] 2.5 Create `plugin-go-backend/shared/dispatcher/dispatcher.go` with command registry and routing
+- [x] 2.6 Write unit tests for dispatcher (routing, unknown commands, malformed input)
+- [x] 2.7 Create `plugin-go-backend/shared/handlers/` directory structure
+- [x] 2.8 Implement lifecycle handlers (Init, Shutdown) with unit tests ✅
+- [x] 2.9 Implement space handlers (Create, Join, Leave, List, Delete) - **Stubs only, need unit tests** ⚠️
+- [x] 2.10 Implement document handlers (Create, Get, Update, Delete, List, Query) - **Stubs only, need unit tests** ⚠️
+- [x] 2.11 Implement sync control handlers (Start, Pause, Status) - **Stubs only, need unit tests** ⚠️
+- [ ] 2.12 Create `plugin-go-backend/shared/anysync/` integration layer - **NOT STARTED**
+- [ ] 2.13 Integrate Any-Sync SpaceService for space management - **NOT STARTED**
+- [ ] 2.14 Integrate Any-Sync ObjectTree for document storage - **NOT STARTED**
+- [ ] 2.15 Integrate Any-Sync sync mechanisms (HeadSync, ObjectSync) - **NOT STARTED**
+- [ ] 2.16 Write integration tests with real Any-Sync (space + document + persistence) - **NOT STARTED**
+- [x] 2.17 Rewrite `plugin-go-backend/mobile/main.go` with 4-function API: Init, Command, SetEventHandler, Shutdown
+- [ ] 2.18 Update desktop entry point to use dispatcher (keep or simplify gRPC) - **NOT STARTED**
+- [x] 2.19 Validate Go backend builds for all platforms (mobile only, desktop needs 2.18)
+
+**Critical Issues:**
+1. **NO HANDLER UNIT TESTS**: Handlers are stub implementations without any unit tests
+2. **OLD CODE NOT REMOVED**: Desktop gRPC server, old proto files, old storage layer still present
+3. **NO ANY-SYNC INTEGRATION**: Handlers return "not implemented yet" errors
+4. **DESKTOP NOT UPDATED**: Desktop entry point still uses old gRPC server
+5. **NO INTEGRATION TESTS**: No tests verifying the full command flow
+
+**What Actually Works:**
+- Dispatcher: ✅ Has unit tests, routing works
+- Mobile API: ✅ Compiles with 4-function interface
+- Protobuf: ✅ Schema defined and generates code
+- Handler stubs: ✅ Compile but return errors
+
+**What's Needed Before Phase 3:**
+1. Add unit tests for ALL handlers (lifecycle, spaces, documents, sync)
+2. Test error handling and validation in handlers
+3. Clean up old code to avoid confusion
+4. Either implement basic Any-Sync integration OR use in-memory mocks for testing
 
 ## Phase 3: Rebuild Rust Plugin
 

@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 
-	transportpb "anysync-backend/desktop/proto/v1"
+	transportpb "anysync-backend/desktop/proto/transport/v1"
 	"anysync-backend/shared/dispatcher"
 	"anysync-backend/shared/handlers"
 	syncspacepb "anysync-backend/shared/proto/syncspace/v1"

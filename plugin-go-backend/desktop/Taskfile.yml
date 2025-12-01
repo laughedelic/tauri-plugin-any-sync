@@ -15,32 +15,10 @@ vars:
       arm64: aarch64
 
 tasks:
-  init:
-    desc: Install protoc plugins for Go
-    internal: true
-    run: once
-    status:
-      - "! which protoc-gen-go protoc-gen-go-grpc"
-    cmds:
-      - go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-      - go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-
-  proto-gen:
-    desc: Generate protobuf code
-    deps:
-      - init
-    run: once
-    cmds:
-      - go generate ./proto
-    sources:
-      - ./proto/*.proto
-    generates:
-      - ./proto/*.pb.go
-
   build:
     desc: Build desktop binaries
     deps:
-      - proto-gen
+      - ::proto:generate
     vars:
       OS: "{{.OS | default OS}}"
       ARCH: "{{.ARCH | default ARCH}}"
@@ -75,14 +53,14 @@ tasks:
   test:
     desc: "Run Go tests"
     deps:
-      - proto-gen
+      - ::proto:generate
     cmd: go test ./...
 
   clean:
     desc: Clean generated binaries
     cmds:
       - rm -rf {{.BINARIES_DIR}}/{{.BINARY_PREFIX}}-*
-      - rm -rf ./proto/*.pb.go
+      - go clean
 
   mod-tidy:
     desc: Clean and verify Go modules

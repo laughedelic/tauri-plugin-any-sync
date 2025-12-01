@@ -40,5 +40,6 @@ opencode.json*
 # Git worktrees
 /worktrees/
 
-# Taskfile cache
+# Taskfile cache & config
 .task/
+.taskrc.yml

@@ -18,7 +18,19 @@ tasks:
     desc: Type check TypeScript code
     deps:
       - install
-    cmd: bunx tsc --noEmit
+    cmd: bun run tsc --noEmit --allowJs --checkJs --strict --target esnext --moduleResolution bundler ./src/*.ts
+
+  check:
+    desc: Run linting and formatting checks
+    deps:
+      - install
+    cmd: "bun run biome {{if .CI}}ci{{else}}check{{end}} {{.CLI_ARGS}}"
+
+  fix:
+    desc: Fix linting and formatting issues
+    deps:
+      - install
+    cmd: bun run biome check --write
 
   clean:
     desc: Clean build artifacts

@@ -44,13 +44,23 @@
 - Sync handlers: ✅ 4 unit tests passing
 - **Total: 29 tests passing** ✅
 
+**Architecture Notes:**
+- **Two Proto Files:**
+  1. `syncspace.proto` - SyncSpace API definitions (messages + service for docs)
+  2. `transport.proto` - 4-method transport layer (Init, Command, Subscribe, Shutdown)
+- **Shared Go Code:** Dispatcher + handlers in `shared/`
+- **Platform Entry Points:**
+  - Mobile: Direct Go exports (Init, Command, SetEventHandler, Shutdown) via gomobile
+  - Desktop: gRPC server implementing TransportService (same 4 methods) called by Rust gRPC client
+- **Command Flow:** Both platforms → dispatcher.Dispatch(cmd, bytes) → handlers
+
 **Still TODO in Phase 2:**
-1. ~~Delete old code (desktop proto files, old gRPC server, old storage layer)~~ ✅ **COMPLETED**
-2. ~~Update desktop entry point to use dispatcher~~ ✅ **COMPLETED** (desktop calls handlers directly via gRPC)
+1. ~~Delete old code~~ ✅ **COMPLETED**
+2. ~~Update desktop entry point~~ ✅ **COMPLETED** (TransportService with 4-method API)
 3. Implement Any-Sync integration (deferred to Phase 2a before Phase 3)
 4. Integration tests (deferred to Phase 6)
 
-**Phase 2 Status:** Core infrastructure complete! Old code removed, dispatcher working, desktop refactored. Ready to implement Any-Sync integration before proceeding to Phase 3.
+**Phase 2 Status:** Core infrastructure complete! Transport layer properly architected with shared dispatcher/handlers. Ready for Any-Sync integration before Phase 3.
 
 ## Phase 3: Rebuild Rust Plugin
 

@@ -1,6 +1,7 @@
 version: v2
 modules:
-  - path: proto
+  - path: proto/syncspace
+  - path: proto/transport
 lint:
   use:
     - STANDARD

@@ -11,9 +11,12 @@ import (
 	"syscall"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 
+	transportpb "anysync-backend/desktop/proto/v1"
+	"anysync-backend/shared/dispatcher"
 	"anysync-backend/shared/handlers"
-	pb "anysync-backend/shared/proto/syncspace/v1"
+	syncspacepb "anysync-backend/shared/proto/syncspace/v1"
 )
 
 var (
@@ -21,148 +24,104 @@ var (
 	host = flag.String("host", "localhost", "Host to bind to")
 )
 
-// Server implements the SyncSpaceService by calling handlers directly
+// Server implements the TransportService by calling the dispatcher
 type Server struct {
-	pb.UnimplementedSyncSpaceServiceServer
+	transportpb.UnimplementedTransportServiceServer
+	dispatcher *dispatcher.Dispatcher
 }
 
 func NewServer() *Server {
-	return &Server{}
+	return &Server{
+		dispatcher: handlers.GetDispatcher(),
+	}
 }
 
-// gRPC service methods - these call handlers directly (no marshaling needed)
+// Init initializes the backend
+func (s *Server) Init(ctx context.Context, req *transportpb.InitRequest) (*transportpb.InitResponse, error) {
+	// Convert transport.InitRequest to syncspace.InitRequest
+	syncspaceReq := &syncspacepb.InitRequest{
+		DataDir:   req.StoragePath,
+		NetworkId: req.NetworkId,
+	}
 
-func (s *Server) Init(ctx context.Context, req *pb.InitRequest) (*pb.InitResponse, error) {
-	resp, err := handlers.Init(ctx, req)
+	// Marshal to bytes
+	reqBytes, err := proto.Marshal(syncspaceReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal init request: %w", err)
+	}
+
+	// Call dispatcher
+	respBytes, err := s.dispatcher.Dispatch(ctx, "init", reqBytes)
 	if err != nil {
 		return nil, err
 	}
-	return resp.(*pb.InitResponse), nil
+
+	// Unmarshal response
+	var syncspaceResp syncspacepb.InitResponse
+	if err := proto.Unmarshal(respBytes, &syncspaceResp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal init response: %w", err)
+	}
+
+	msg := "initialized successfully"
+	if !syncspaceResp.Success {
+		msg = "initialization failed"
+	}
+
+	return &transportpb.InitResponse{
+		Message: msg,
+	}, nil
 }
 
-func (s *Server) Shutdown(ctx context.Context, req *pb.ShutdownRequest) (*pb.ShutdownResponse, error) {
-	resp, err := handlers.Shutdown(ctx, req)
+// Command executes a command through the dispatcher
+func (s *Server) Command(ctx context.Context, req *transportpb.CommandRequest) (*transportpb.CommandResponse, error) {
+	// Dispatch directly - request data is already serialized
+	respBytes, err := s.dispatcher.Dispatch(ctx, req.Cmd, req.Data)
 	if err != nil {
 		return nil, err
 	}
-	return resp.(*pb.ShutdownResponse), nil
+
+	return &transportpb.CommandResponse{
+		Data: respBytes,
+	}, nil
 }
 
-func (s *Server) CreateSpace(ctx context.Context, req *pb.CreateSpaceRequest) (*pb.CreateSpaceResponse, error) {
-	resp, err := handlers.CreateSpace(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.CreateSpaceResponse), nil
-}
-
-func (s *Server) JoinSpace(ctx context.Context, req *pb.JoinSpaceRequest) (*pb.JoinSpaceResponse, error) {
-	resp, err := handlers.JoinSpace(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.JoinSpaceResponse), nil
-}
-
-func (s *Server) LeaveSpace(ctx context.Context, req *pb.LeaveSpaceRequest) (*pb.LeaveSpaceResponse, error) {
-	resp, err := handlers.LeaveSpace(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.LeaveSpaceResponse), nil
-}
-
-func (s *Server) ListSpaces(ctx context.Context, req *pb.ListSpacesRequest) (*pb.ListSpacesResponse, error) {
-	resp, err := handlers.ListSpaces(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.ListSpacesResponse), nil
-}
-
-func (s *Server) DeleteSpace(ctx context.Context, req *pb.DeleteSpaceRequest) (*pb.DeleteSpaceResponse, error) {
-	resp, err := handlers.DeleteSpace(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.DeleteSpaceResponse), nil
-}
-
-func (s *Server) CreateDocument(ctx context.Context, req *pb.CreateDocumentRequest) (*pb.CreateDocumentResponse, error) {
-	resp, err := handlers.CreateDocument(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.CreateDocumentResponse), nil
-}
-
-func (s *Server) GetDocument(ctx context.Context, req *pb.GetDocumentRequest) (*pb.GetDocumentResponse, error) {
-	resp, err := handlers.GetDocument(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.GetDocumentResponse), nil
-}
-
-func (s *Server) UpdateDocument(ctx context.Context, req *pb.UpdateDocumentRequest) (*pb.UpdateDocumentResponse, error) {
-	resp, err := handlers.UpdateDocument(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.UpdateDocumentResponse), nil
-}
-
-func (s *Server) DeleteDocument(ctx context.Context, req *pb.DeleteDocumentRequest) (*pb.DeleteDocumentResponse, error) {
-	resp, err := handlers.DeleteDocument(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.DeleteDocumentResponse), nil
-}
-
-func (s *Server) ListDocuments(ctx context.Context, req *pb.ListDocumentsRequest) (*pb.ListDocumentsResponse, error) {
-	resp, err := handlers.ListDocuments(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.ListDocumentsResponse), nil
-}
-
-func (s *Server) QueryDocuments(ctx context.Context, req *pb.QueryDocumentsRequest) (*pb.QueryDocumentsResponse, error) {
-	resp, err := handlers.QueryDocuments(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.QueryDocumentsResponse), nil
-}
-
-func (s *Server) StartSync(ctx context.Context, req *pb.StartSyncRequest) (*pb.StartSyncResponse, error) {
-	resp, err := handlers.StartSync(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.StartSyncResponse), nil
-}
-
-func (s *Server) PauseSync(ctx context.Context, req *pb.PauseSyncRequest) (*pb.PauseSyncResponse, error) {
-	resp, err := handlers.PauseSync(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.PauseSyncResponse), nil
-}
-
-func (s *Server) GetSyncStatus(ctx context.Context, req *pb.GetSyncStatusRequest) (*pb.GetSyncStatusResponse, error) {
-	resp, err := handlers.GetSyncStatus(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp.(*pb.GetSyncStatusResponse), nil
-}
-
-func (s *Server) Subscribe(req *pb.SubscribeRequest, stream pb.SyncSpaceService_SubscribeServer) error {
+// Subscribe streams events (not implemented yet)
+func (s *Server) Subscribe(req *transportpb.SubscribeRequest, stream transportpb.TransportService_SubscribeServer) error {
 	// TODO: Implement event streaming
 	return fmt.Errorf("event streaming not implemented yet")
+}
+
+// Shutdown shuts down the backend
+func (s *Server) Shutdown(ctx context.Context, req *transportpb.ShutdownRequest) (*transportpb.ShutdownResponse, error) {
+	// Convert transport.ShutdownRequest to syncspace.ShutdownRequest
+	syncspaceReq := &syncspacepb.ShutdownRequest{}
+
+	// Marshal to bytes
+	reqBytes, err := proto.Marshal(syncspaceReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal shutdown request: %w", err)
+	}
+
+	// Call dispatcher
+	respBytes, err := s.dispatcher.Dispatch(ctx, "shutdown", reqBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal response
+	var syncspaceResp syncspacepb.ShutdownResponse
+	if err := proto.Unmarshal(respBytes, &syncspaceResp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal shutdown response: %w", err)
+	}
+
+	msg := "shutdown successfully"
+	if !syncspaceResp.Success {
+		msg = "shutdown failed"
+	}
+
+	return &transportpb.ShutdownResponse{
+		Message: msg,
+	}, nil
 }
 
 func main() {
@@ -171,9 +130,9 @@ func main() {
 	// Create gRPC server
 	grpcServer := grpc.NewServer()
 
-	// Register SyncSpace service
-	syncSpaceServer := NewServer()
-	pb.RegisterSyncSpaceServiceServer(grpcServer, syncSpaceServer)
+	// Register Transport service
+	transportServer := NewServer()
+	transportpb.RegisterTransportServiceServer(grpcServer, transportServer)
 
 	// Determine listen address
 	listenAddr := fmt.Sprintf("%s:%d", *host, *port)

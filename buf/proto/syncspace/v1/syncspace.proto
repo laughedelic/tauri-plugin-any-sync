@@ -5,18 +5,20 @@ package syncspace.v1;
 option go_package = "anysync-backend/shared/proto/syncspace/v1;syncspace";
 
 // SyncSpaceService provides the complete SyncSpace API for spaces, documents, and synchronization
+// Note: This service definition is for documentation and TypeScript client generation.
+// The actual Go implementation uses the dispatcher pattern with TransportService (see transport.proto).
 service SyncSpaceService {
   // Lifecycle operations
   rpc Init(InitRequest) returns (InitResponse);
   rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
-  
+
   // Space operations
   rpc CreateSpace(CreateSpaceRequest) returns (CreateSpaceResponse);
   rpc JoinSpace(JoinSpaceRequest) returns (JoinSpaceResponse);
   rpc LeaveSpace(LeaveSpaceRequest) returns (LeaveSpaceResponse);
   rpc ListSpaces(ListSpacesRequest) returns (ListSpacesResponse);
   rpc DeleteSpace(DeleteSpaceRequest) returns (DeleteSpaceResponse);
-  
+
   // Document operations
   rpc CreateDocument(CreateDocumentRequest) returns (CreateDocumentResponse);
   rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse);
@@ -24,34 +26,34 @@ service SyncSpaceService {
   rpc DeleteDocument(DeleteDocumentRequest) returns (DeleteDocumentResponse);
   rpc ListDocuments(ListDocumentsRequest) returns (ListDocumentsResponse);
   rpc QueryDocuments(QueryDocumentsRequest) returns (QueryDocumentsResponse);
-  
+
   // Sync control operations
   rpc StartSync(StartSyncRequest) returns (StartSyncResponse);
   rpc PauseSync(PauseSyncRequest) returns (PauseSyncResponse);
   rpc GetSyncStatus(GetSyncStatusRequest) returns (GetSyncStatusResponse);
-  
+
   // Event streaming
   rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse);
 }
 
 // Command represents a unified command for single-dispatch pattern
 message Command {
-  string name = 1;      // Command name (e.g., "createSpace", "getDocument")
-  bytes payload = 2;    // Serialized request message
+  string name = 1; // Command name (e.g., "createSpace", "getDocument")
+  bytes payload = 2; // Serialized request message
 }
 
 // CommandResponse represents the unified response
 message CommandResponse {
-  bytes payload = 1;    // Serialized response message
-  string error = 2;     // Error message if operation failed (empty if success)
+  bytes payload = 1; // Serialized response message
+  string error = 2; // Error message if operation failed (empty if success)
 }
 
 // ===== Lifecycle Operations =====
 
 message InitRequest {
-  string data_dir = 1;          // Directory for local storage
-  string network_id = 2;        // Any-Sync network ID
-  string device_id = 3;         // Unique device identifier
+  string data_dir = 1; // Directory for local storage
+  string network_id = 2; // Any-Sync network ID
+  string device_id = 3; // Unique device identifier
   map<string, string> config = 4; // Additional configuration
 }
 
@@ -68,8 +70,8 @@ message ShutdownResponse {
 // ===== Space Operations =====
 
 message CreateSpaceRequest {
-  string space_id = 1;          // Unique space identifier
-  string name = 2;              // Human-readable space name
+  string space_id = 1; // Unique space identifier
+  string name = 2; // Human-readable space name
   map<string, string> metadata = 3; // Space metadata
 }
 
@@ -78,8 +80,8 @@ message CreateSpaceResponse {
 }
 
 message JoinSpaceRequest {
-  string space_id = 1;          // Space identifier to join
-  string invite_token = 2;      // Invitation token (if required)
+  string space_id = 1; // Space identifier to join
+  string invite_token = 2; // Invitation token (if required)
 }
 
 message JoinSpaceResponse {
@@ -87,7 +89,7 @@ message JoinSpaceResponse {
 }
 
 message LeaveSpaceRequest {
-  string space_id = 1;          // Space identifier to leave
+  string space_id = 1; // Space identifier to leave
 }
 
 message LeaveSpaceResponse {
@@ -104,8 +106,8 @@ message SpaceInfo {
   string space_id = 1;
   string name = 2;
   map<string, string> metadata = 3;
-  int64 created_at = 4;         // Unix timestamp
-  int64 updated_at = 5;         // Unix timestamp
+  int64 created_at = 4; // Unix timestamp
+  int64 updated_at = 5; // Unix timestamp
   SyncStatus sync_status = 6;
 }
 
@@ -121,15 +123,15 @@ message DeleteSpaceResponse {
 
 message CreateDocumentRequest {
   string space_id = 1;
-  string document_id = 2;       // Unique document identifier within space
-  string collection = 3;        // Logical collection name (e.g., "notes", "tasks")
-  bytes data = 4;               // Opaque document payload (application-defined format)
+  string document_id = 2; // Unique document identifier within space
+  string collection = 3; // Logical collection name (e.g., "notes", "tasks")
+  bytes data = 4; // Opaque document payload (application-defined format)
   map<string, string> metadata = 5; // Indexable metadata fields
 }
 
 message CreateDocumentResponse {
   string document_id = 1;
-  int64 version = 2;            // Document version for optimistic locking
+  int64 version = 2; // Document version for optimistic locking
 }
 
 message GetDocumentRequest {
@@ -146,7 +148,7 @@ message Document {
   string document_id = 1;
   string space_id = 2;
   string collection = 3;
-  bytes data = 4;               // Opaque payload
+  bytes data = 4; // Opaque payload
   map<string, string> metadata = 5;
   int64 version = 6;
   int64 created_at = 7;
@@ -158,11 +160,11 @@ message UpdateDocumentRequest {
   string document_id = 2;
   bytes data = 3;
   map<string, string> metadata = 4;
-  int64 expected_version = 5;   // For optimistic locking (0 = skip check)
+  int64 expected_version = 5; // For optimistic locking (0 = skip check)
 }
 
 message UpdateDocumentResponse {
-  int64 version = 1;            // New version after update
+  int64 version = 1; // New version after update
 }
 
 message DeleteDocumentRequest {
@@ -176,14 +178,14 @@ message DeleteDocumentResponse {
 
 message ListDocumentsRequest {
   string space_id = 1;
-  string collection = 2;        // Filter by collection (empty = all)
-  int32 limit = 3;              // Max results (0 = no limit)
-  string cursor = 4;            // Pagination cursor (empty = first page)
+  string collection = 2; // Filter by collection (empty = all)
+  int32 limit = 3; // Max results (0 = no limit)
+  string cursor = 4; // Pagination cursor (empty = first page)
 }
 
 message ListDocumentsResponse {
   repeated DocumentInfo documents = 1;
-  string next_cursor = 2;       // Cursor for next page (empty = no more pages)
+  string next_cursor = 2; // Cursor for next page (empty = no more pages)
 }
 
 message DocumentInfo {
@@ -204,9 +206,9 @@ message QueryDocumentsRequest {
 }
 
 message QueryFilter {
-  string field = 1;             // Metadata field name
-  string operator = 2;          // "eq", "ne", "gt", "gte", "lt", "lte", "contains"
-  string value = 3;             // Filter value
+  string field = 1; // Metadata field name
+  string operator = 2; // "eq", "ne", "gt", "gte", "lt", "lte", "contains"
+  string value = 3; // Filter value
 }
 
 message QueryDocumentsResponse {
@@ -217,7 +219,7 @@ message QueryDocumentsResponse {
 // ===== Sync Control Operations =====
 
 message StartSyncRequest {
-  string space_id = 1;          // Space to sync (empty = all spaces)
+  string space_id = 1; // Space to sync (empty = all spaces)
 }
 
 message StartSyncResponse {
@@ -225,7 +227,7 @@ message StartSyncResponse {
 }
 
 message PauseSyncRequest {
-  string space_id = 1;          // Space to pause (empty = all spaces)
+  string space_id = 1; // Space to pause (empty = all spaces)
 }
 
 message PauseSyncResponse {
@@ -233,7 +235,7 @@ message PauseSyncResponse {
 }
 
 message GetSyncStatusRequest {
-  string space_id = 1;          // Space to query (empty = all spaces)
+  string space_id = 1; // Space to query (empty = all spaces)
 }
 
 message GetSyncStatusResponse {
@@ -243,9 +245,9 @@ message GetSyncStatusResponse {
 message SpaceSyncStatus {
   string space_id = 1;
   SyncStatus status = 2;
-  int64 last_sync_at = 3;       // Unix timestamp
-  int32 pending_changes = 4;    // Number of local changes not yet synced
-  string error = 5;             // Last sync error (empty if no error)
+  int64 last_sync_at = 3; // Unix timestamp
+  int32 pending_changes = 4; // Number of local changes not yet synced
+  string error = 5; // Last sync error (empty if no error)
 }
 
 enum SyncStatus {
@@ -260,15 +262,15 @@ enum SyncStatus {
 
 message SubscribeRequest {
   repeated string event_types = 1; // Event types to subscribe to (empty = all)
-  repeated string space_ids = 2;   // Space IDs to filter by (empty = all)
+  repeated string space_ids = 2; // Space IDs to filter by (empty = all)
 }
 
 message SubscribeResponse {
   string event_id = 1;
-  string event_type = 2;        // "document.created", "document.updated", "sync.status_changed", etc.
+  string event_type = 2; // "document.created", "document.updated", "sync.status_changed", etc.
   string space_id = 3;
-  int64 timestamp = 4;          // Unix timestamp
-  bytes payload = 5;            // Event-specific data
+  int64 timestamp = 4; // Unix timestamp
+  bytes payload = 5; // Event-specific data
 }
 
 // Event payload types

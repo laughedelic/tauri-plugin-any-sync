@@ -292,7 +292,7 @@ type noOpTreeSyncer struct{}
 
 func newNoOpTreeSyncer() *noOpTreeSyncer { return &noOpTreeSyncer{} }
 
-func (t *noOpTreeSyncer) Name() string                    { return "treesyncer" }
+func (t *noOpTreeSyncer) Name() string                    { return "common.object.treesyncer" }
 func (t *noOpTreeSyncer) Init(a *app.App) error           { return nil }
 func (t *noOpTreeSyncer) Run(ctx context.Context) error   { return nil }
 func (t *noOpTreeSyncer) Close(ctx context.Context) error { return nil }

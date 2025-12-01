@@ -13,12 +13,15 @@ import (
 	"github.com/anyproto/any-sync/accountservice"
 	"github.com/anyproto/any-sync/app"
 	"github.com/anyproto/any-sync/commonspace"
+	"github.com/anyproto/any-sync/commonspace/credentialprovider"
 	"github.com/anyproto/any-sync/commonspace/object/accountdata"
 	"github.com/anyproto/any-sync/commonspace/object/keyvalue/keyvaluestorage"
 	"github.com/anyproto/any-sync/commonspace/spacepayloads"
 	"github.com/anyproto/any-sync/commonspace/spacestorage"
 	"github.com/anyproto/any-sync/commonspace/syncstatus"
+	"github.com/anyproto/any-sync/node/nodeclient"
 	"github.com/anyproto/any-sync/util/crypto"
+	"github.com/anyproto/any-sync/util/syncqueues"
 )
 
 // SpaceMetadata holds application-level space metadata.
@@ -103,6 +106,10 @@ func (sm *SpaceManager) initializeAnySync() error {
 	sm.app.Register(newNoOpPeerManagerProvider())
 	sm.app.Register(newNoOpPool())
 	sm.app.Register(newNoOpConfig())
+	sm.app.Register(newNoOpTreeSyncer())          // Required by headsync
+	sm.app.Register(syncqueues.New())             // Required by sync service
+	sm.app.Register(nodeclient.New())             // Required by ACL client
+	sm.app.Register(credentialprovider.NewNoOp()) // Required by headsync
 
 	// Create and register SpaceService
 	sm.spaceService = commonspace.New()
@@ -172,8 +179,13 @@ func (sm *SpaceManager) CreateSpace(referenceName, name string, metadata map[str
 		return fmt.Errorf("failed to create space object: %w", err)
 	}
 
-	// Note: We don't call space.Init() here. NewSpace() handles initialization internally.
-	// Calling Init() would start sync services which need network components we don't have.
+	// Initialize the space to set up TreeBuilder
+	// This may trigger some sync services, but our mock components should handle it
+	if err := space.Init(ctx); err != nil {
+		space.Close()
+		storage.Close(ctx)
+		return fmt.Errorf("failed to initialize space: %w", err)
+	}
 
 	// Store application metadata
 	now := time.Now().Unix()

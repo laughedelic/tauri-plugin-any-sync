@@ -4,8 +4,8 @@ tasks:
   generate:
     desc: Generate code from protobuf definitions
     cmds:
-      - buf generate --template ./proto/syncspace/buf.gen.yaml
-      - buf generate --template ./proto/transport/buf.gen.yaml
+      - buf generate --template ./proto/syncspace-api/buf.gen.yaml
+      - buf generate --template ./proto/dispatch-transport/buf.gen.yaml
     sources:
       - proto/**/*.proto
       - proto/**/*.gen.yaml

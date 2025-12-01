@@ -2,7 +2,7 @@ version: v2
 managed:
   enabled: true
 inputs:
-  - directory: proto/syncspace
+  - directory: proto/syncspace-api
 clean: true
 plugins:
   # Go protobuf structs - syncspace messages (shared by mobile + desktop)

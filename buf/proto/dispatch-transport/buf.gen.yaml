@@ -2,7 +2,7 @@ version: v2
 managed:
   enabled: true
 inputs:
-  - directory: proto/transport
+  - directory: proto/dispatch-transport
 clean: true
 plugins:
   # Go protobuf structs - transport messages (desktop only)

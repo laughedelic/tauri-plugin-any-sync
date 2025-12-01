@@ -1,0 +1,15 @@
+version: v2
+managed:
+  enabled: true
+plugins:
+  # Go code generation - output to Go backend
+  - remote: buf.build/protocolbuffers/go
+    out: plugin-go-backend/shared/proto
+    opt:
+      - paths=source_relative
+  
+  # TypeScript code generation (protobuf-es)
+  - remote: buf.build/bufbuild/es
+    out: plugin-js-api/src/generated
+    opt:
+      - target=ts

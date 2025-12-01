@@ -1,16 +1,18 @@
 # Implementation Tasks
 
-## Phase 1: Define the New API
+## Phase 1: Define the New API ✅ COMPLETED
 
-- [ ] 1.1 Create unified `plugin-go-backend/proto/syncspace.proto` schema defining complete SyncSpace API
-- [ ] 1.2 Define lifecycle operations (Init, Shutdown) in protobuf
-- [ ] 1.3 Define space operations (Create, Join, Leave, List, Delete) in protobuf
-- [ ] 1.4 Define document operations (Create, Get, Update, Delete, List, Query) with opaque `bytes data` in protobuf
-- [ ] 1.5 Define sync control operations (Start, Pause, Status) in protobuf
-- [ ] 1.6 Define event streaming (Subscribe with server streaming) in protobuf
-- [ ] 1.7 Set up `buf` for protobuf tooling (or configure `protoc` with generation scripts)
-- [ ] 1.8 Configure code generation for Go, TypeScript, and optionally Rust
-- [ ] 1.9 Validate protobuf schema compiles and generates artifacts
+- [x] 1.1 Create unified `plugin-go-backend/proto/syncspace.proto` schema defining complete SyncSpace API
+- [x] 1.2 Define lifecycle operations (Init, Shutdown) in protobuf
+- [x] 1.3 Define space operations (Create, Join, Leave, List, Delete) in protobuf
+- [x] 1.4 Define document operations (Create, Get, Update, Delete, List, Query) with opaque `bytes data` in protobuf
+- [x] 1.5 Define sync control operations (Start, Pause, Status) in protobuf
+- [x] 1.6 Define event streaming (Subscribe with server streaming) in protobuf
+- [x] 1.7 Set up `buf` for protobuf tooling (or configure `protoc` with generation scripts)
+- [x] 1.8 Configure code generation for Go, TypeScript, and optionally Rust
+- [x] 1.9 Validate protobuf schema compiles and generates artifacts
+
+**Notes:** Created `plugin-go-backend/proto/syncspace/v1/syncspace.proto` with complete SyncSpace API. Set up `buf` tooling with `buf.yaml` and `buf.gen.yaml`. Generated Go code in `proto/syncspace/v1/syncspace.pb.go` and TypeScript code in `plugin-js-api/src/generated/syncspace/v1/syncspace_pb.ts`.
 
 ## Phase 2: Rebuild Go Backend
 

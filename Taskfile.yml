@@ -18,6 +18,28 @@ includes:
     dir: ./example-app
 
 tasks:
+  proto:generate:
+    desc: Generate code from protobuf definitions
+    cmds:
+      - buf generate
+    sources:
+      - plugin-go-backend/proto/*.proto
+      - buf.yaml
+      - buf.gen.yaml
+    generates:
+      - plugin-go-backend/proto/*.pb.go
+      - plugin-js-api/src/generated/**/*.ts
+
+  proto:lint:
+    desc: Lint protobuf definitions
+    cmds:
+      - buf lint
+
+  proto:breaking:
+    desc: Check for breaking changes in protobuf definitions
+    cmds:
+      - buf breaking --against '.git#branch=main'
+
   build:
     desc: Build all plugin components
     deps:

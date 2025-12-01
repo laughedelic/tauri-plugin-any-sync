@@ -24,6 +24,8 @@ node_modules/
 # Generated protobuf code
 /plugin-rust-core/src/proto/anysync.rs
 /plugin-go-backend/desktop/proto/*.pb.go
+/plugin-go-backend/shared/proto/
+/plugin-js-api/src/generated/
 
 # OpenSpec prompts
 opencode.json*

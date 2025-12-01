@@ -59,31 +59,37 @@
 
 **Status**: Foundation complete with 29 passing stub tests (5 dispatcher + 4 lifecycle + 20 handler stubs)
 
-### Phase 2B: Account & Identity Foundation 🔄 NEXT
+### Phase 2B: Account & Identity Foundation ✅ COMPLETED
 
 **Goal**: Establish cryptographic identity required by all Any-Sync operations.
 
-- [ ] 2.15 Create `plugin-go-backend/shared/anysync/account.go`
+- [x] 2.15 Create `plugin-go-backend/shared/anysync/account.go`
   - `AccountManager` struct with `accountdata.AccountKeys`
   - `GenerateKeys()` - creates new account keys
   - `StoreKeys(path)` - securely persists keys
   - `LoadKeys(path)` - loads existing keys
   - `GetKeys()` - returns current keys
-- [ ] 2.16 Update lifecycle handlers to use AccountManager
+- [x] 2.16 Update lifecycle handlers to use AccountManager
   - Init: Load or generate keys, store in global state
   - Shutdown: Clear keys from memory
-- [ ] 2.17 Write unit tests for AccountManager (6 tests)
+- [x] 2.17 Write unit tests for AccountManager (9 tests)
   - Generate new keys
   - Store and load keys
   - Load keys persistence across restarts
   - Error handling for missing/corrupted keys
-- [ ] 2.18 Update lifecycle handler tests to verify key management
+  - KeysExist, ClearKeys, StoreWithoutGeneration
+- [x] 2.18 Update lifecycle handler tests to verify key management
+  - Init verifies keys are loaded/generated
+  - Shutdown verifies keys are cleared
+  - Key persistence across Init/Shutdown cycles
 
-**Dependencies**: `github.com/anyproto/any-sync/accountdata`, `github.com/anyproto/any-sync/util/crypto`
+**Dependencies**: `github.com/anyproto/any-sync@v0.11.5` (commonspace/object/accountdata, util/crypto)
 
 **Enabled operations**: Init (with key generation/loading), Shutdown (with key cleanup)
 
-### Phase 2C: Local Space Creation
+**Test Results**: 40 tests passing total (9 AccountManager + 5 dispatcher + 26 handler tests)
+
+### Phase 2C: Local Space Creation 🔄 NEXT
 
 **Goal**: Create spaces with full Any-Sync structure, no network.
 

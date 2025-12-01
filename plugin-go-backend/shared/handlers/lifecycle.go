@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 
+	"anysync-backend/shared/anysync"
 	pb "anysync-backend/shared/proto/syncspace/v1"
 
 	"google.golang.org/protobuf/proto"
@@ -13,12 +14,13 @@ import (
 
 // State holds the global state for the SyncSpace backend.
 type State struct {
-	mu          sync.RWMutex
-	dataDir     string
-	networkID   string
-	deviceID    string
-	config      map[string]string
-	initialized bool
+	mu             sync.RWMutex
+	dataDir        string
+	networkID      string
+	deviceID       string
+	config         map[string]string
+	accountManager *anysync.AccountManager
+	initialized    bool
 }
 
 var globalState = &State{}
@@ -39,9 +41,36 @@ func Init(ctx context.Context, req proto.Message) (proto.Message, error) {
 	globalState.networkID = initReq.NetworkId
 	globalState.deviceID = initReq.DeviceId
 	globalState.config = initReq.Config
+
+	// Initialize AccountManager
+	globalState.accountManager = anysync.NewAccountManager(initReq.DataDir)
+
+	// Check if keys already exist on disk
+	if globalState.accountManager.KeysExist() {
+		// Load existing keys
+		if err := globalState.accountManager.LoadKeys(); err != nil {
+			return nil, fmt.Errorf("failed to load existing keys: %w", err)
+		}
+	} else {
+		// Generate new keys
+		if err := globalState.accountManager.GenerateKeys(); err != nil {
+			return nil, fmt.Errorf("failed to generate keys: %w", err)
+		}
+
+		// Store keys to disk
+		if err := globalState.accountManager.StoreKeys(); err != nil {
+			return nil, fmt.Errorf("failed to store keys: %w", err)
+		}
+	}
+
+	// Verify keys are loaded
+	if !globalState.accountManager.HasKeys() {
+		return nil, fmt.Errorf("keys not loaded after initialization")
+	}
+
 	globalState.initialized = true
 
-	// TODO: Initialize Any-Sync components (SpaceService, ObjectTree)
+	// TODO: Initialize Any-Sync components (SpaceService, ObjectTree) using accountManager.GetKeys()
 
 	return &pb.InitResponse{Success: true}, nil
 }
@@ -56,6 +85,12 @@ func Shutdown(ctx context.Context, req proto.Message) (proto.Message, error) {
 	}
 
 	// TODO: Cleanup Any-Sync components
+
+	// Clear keys from memory
+	if globalState.accountManager != nil {
+		globalState.accountManager.ClearKeys()
+		globalState.accountManager = nil
+	}
 
 	globalState.initialized = false
 	globalState.dataDir = ""

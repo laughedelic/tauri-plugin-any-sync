@@ -10,8 +10,9 @@ import (
 func TestInit_Success(t *testing.T) {
 	resetGlobalState()
 
+	tmpDir := t.TempDir()
 	req := &pb.InitRequest{
-		DataDir:   "/tmp/test-data",
+		DataDir:   tmpDir,
 		NetworkId: "test-network",
 		DeviceId:  "test-device",
 		Config: map[string]string{
@@ -45,6 +46,17 @@ func TestInit_Success(t *testing.T) {
 	if globalState.deviceID != req.DeviceId {
 		t.Errorf("Expected deviceID=%s, got %s", req.DeviceId, globalState.deviceID)
 	}
+
+	// Verify account manager is initialized
+	if globalState.accountManager == nil {
+		t.Fatal("Expected accountManager to be initialized")
+	}
+	if !globalState.accountManager.HasKeys() {
+		t.Fatal("Expected keys to be loaded/generated")
+	}
+	if globalState.accountManager.GetKeys() == nil {
+		t.Fatal("Expected GetKeys() to return non-nil")
+	}
 }
 
 func TestInit_AlreadyInitialized(t *testing.T) {
@@ -67,14 +79,29 @@ func TestInit_AlreadyInitialized(t *testing.T) {
 
 func TestShutdown_Success(t *testing.T) {
 	resetGlobalState()
-	globalState.mu.Lock()
-	globalState.initialized = true
-	globalState.dataDir = "/tmp/test"
-	globalState.networkID = "test-network"
-	globalState.deviceID = "test-device"
-	globalState.config = map[string]string{"key": "value"}
-	globalState.mu.Unlock()
 
+	tmpDir := t.TempDir()
+
+	// First initialize
+	initReq := &pb.InitRequest{
+		DataDir:   tmpDir,
+		NetworkId: "test-network",
+		DeviceId:  "test-device",
+	}
+	_, err := Init(context.Background(), initReq)
+	if err != nil {
+		t.Fatalf("Init failed: %v", err)
+	}
+
+	// Verify keys are loaded
+	globalState.mu.RLock()
+	if globalState.accountManager == nil || !globalState.accountManager.HasKeys() {
+		globalState.mu.RUnlock()
+		t.Fatal("Keys should be loaded after Init")
+	}
+	globalState.mu.RUnlock()
+
+	// Now shutdown
 	req := &pb.ShutdownRequest{}
 
 	resp, err := Shutdown(context.Background(), req)
@@ -96,6 +123,11 @@ func TestShutdown_Success(t *testing.T) {
 	if globalState.dataDir != "" {
 		t.Errorf("Expected empty dataDir, got %s", globalState.dataDir)
 	}
+
+	// Verify keys are cleared
+	if globalState.accountManager != nil {
+		t.Error("Expected accountManager to be nil after Shutdown")
+	}
 }
 
 func TestShutdown_NotInitialized(t *testing.T) {
@@ -109,13 +141,68 @@ func TestShutdown_NotInitialized(t *testing.T) {
 	}
 }
 
+func TestInit_KeyPersistenceAcrossRestarts(t *testing.T) {
+	resetGlobalState()
+
+	tmpDir := t.TempDir()
+	req := &pb.InitRequest{
+		DataDir:   tmpDir,
+		NetworkId: "test-network",
+		DeviceId:  "test-device",
+	}
+
+	// First Init: generates and stores keys
+	resp1, err := Init(context.Background(), req)
+	if err != nil {
+		t.Fatalf("First Init failed: %v", err)
+	}
+	if !resp1.(*pb.InitResponse).Success {
+		t.Fatal("First Init should succeed")
+	}
+
+	// Get the peer ID from first initialization
+	globalState.mu.RLock()
+	firstPeerId := globalState.accountManager.GetKeys().PeerId
+	globalState.mu.RUnlock()
+
+	// Shutdown
+	_, err = Shutdown(context.Background(), &pb.ShutdownRequest{})
+	if err != nil {
+		t.Fatalf("Shutdown failed: %v", err)
+	}
+
+	// Second Init: should load existing keys
+	resp2, err := Init(context.Background(), req)
+	if err != nil {
+		t.Fatalf("Second Init failed: %v", err)
+	}
+	if !resp2.(*pb.InitResponse).Success {
+		t.Fatal("Second Init should succeed")
+	}
+
+	// Verify the peer ID is the same
+	globalState.mu.RLock()
+	secondPeerId := globalState.accountManager.GetKeys().PeerId
+	globalState.mu.RUnlock()
+
+	if firstPeerId != secondPeerId {
+		t.Fatalf("PeerId should persist across restarts: first=%s, second=%s", firstPeerId, secondPeerId)
+	}
+}
+
 func resetGlobalState() {
 	globalState.mu.Lock()
 	defer globalState.mu.Unlock()
+
+	// Clear keys from memory if accountManager exists
+	if globalState.accountManager != nil {
+		globalState.accountManager.ClearKeys()
+	}
 
 	globalState.initialized = false
 	globalState.dataDir = ""
 	globalState.networkID = ""
 	globalState.deviceID = ""
 	globalState.config = nil
+	globalState.accountManager = nil
 }

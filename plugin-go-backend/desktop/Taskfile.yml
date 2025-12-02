@@ -17,8 +17,6 @@ vars:
 tasks:
   build:
     desc: Build desktop binaries
-    deps:
-      - ::proto:generate
     vars:
       OS: "{{.OS | default OS}}"
       ARCH: "{{.ARCH | default ARCH}}"
@@ -51,9 +49,7 @@ tasks:
           ARCH: "{{.ITEM.ARCH}}"
 
   test:
-    desc: "Run Go tests"
-    deps:
-      - ::proto:generate
+    desc: Run Go tests
     cmd: go test ./...
 
   clean:

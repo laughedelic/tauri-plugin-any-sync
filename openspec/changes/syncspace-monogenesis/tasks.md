@@ -294,7 +294,7 @@
     - New integration_refactored_test.go demonstrating pattern
     - Single Init/Shutdown cycle for multiple sub-tests
   - **Result**: All 97 tests pass together, with multiple iterations (-count=3)
-- [ ] 2.42 Validate builds for all platforms
+- [x] 2.42 Validate builds for all platforms
   - Validate cross-platform binaries builds
   - Desktop: macOS, Linux, Windows
   - Mobile: Android AAR (iOS xcframework can be deferred)

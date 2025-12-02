@@ -7,7 +7,7 @@ import (
 	pb "anysync-backend/shared/proto/syncspace/v1"
 )
 
-func TestCreateSpace_NotInitialized(t *testing.T) {
+func TestUnit_Spaces_CreateSpaceNotInitialized(t *testing.T) {
 	resetGlobalState()
 
 	req := &pb.CreateSpaceRequest{
@@ -21,7 +21,7 @@ func TestCreateSpace_NotInitialized(t *testing.T) {
 	}
 }
 
-func TestCreateSpace_Success(t *testing.T) {
+func TestUnit_Spaces_CreateSpaceSuccess(t *testing.T) {
 	// Initialize first
 	resetGlobalState()
 	initReq := &pb.InitRequest{
@@ -53,7 +53,7 @@ func TestCreateSpace_Success(t *testing.T) {
 	}
 }
 
-func TestJoinSpace_NotInitialized(t *testing.T) {
+func TestUnit_Spaces_JoinSpaceNotInitialized(t *testing.T) {
 	resetGlobalState()
 
 	req := &pb.JoinSpaceRequest{
@@ -66,7 +66,7 @@ func TestJoinSpace_NotInitialized(t *testing.T) {
 	}
 }
 
-func TestLeaveSpace_NotInitialized(t *testing.T) {
+func TestUnit_Spaces_LeaveSpaceNotInitialized(t *testing.T) {
 	resetGlobalState()
 
 	req := &pb.LeaveSpaceRequest{
@@ -79,7 +79,7 @@ func TestLeaveSpace_NotInitialized(t *testing.T) {
 	}
 }
 
-func TestListSpaces_NotInitialized(t *testing.T) {
+func TestUnit_Spaces_ListSpacesNotInitialized(t *testing.T) {
 	resetGlobalState()
 
 	req := &pb.ListSpacesRequest{}
@@ -90,7 +90,7 @@ func TestListSpaces_NotInitialized(t *testing.T) {
 	}
 }
 
-func TestListSpaces_Empty(t *testing.T) {
+func TestUnit_Spaces_ListSpacesEmpty(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
 		DataDir:   t.TempDir(),
@@ -115,7 +115,7 @@ func TestListSpaces_Empty(t *testing.T) {
 	}
 }
 
-func TestDeleteSpace_NotInitialized(t *testing.T) {
+func TestUnit_Spaces_DeleteSpaceNotInitialized(t *testing.T) {
 	resetGlobalState()
 
 	req := &pb.DeleteSpaceRequest{
@@ -128,7 +128,7 @@ func TestDeleteSpace_NotInitialized(t *testing.T) {
 	}
 }
 
-func TestListSpaces_WithSpaces(t *testing.T) {
+func TestUnit_Spaces_ListSpacesWithSpaces(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
 		DataDir:   t.TempDir(),
@@ -187,7 +187,7 @@ func TestListSpaces_WithSpaces(t *testing.T) {
 	}
 }
 
-func TestDeleteSpace_Success(t *testing.T) {
+func TestUnit_Spaces_DeleteSpaceSuccess(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
 		DataDir:   t.TempDir(),
@@ -236,7 +236,7 @@ func TestDeleteSpace_Success(t *testing.T) {
 	}
 }
 
-func TestDeleteSpace_NotFound(t *testing.T) {
+func TestUnit_Spaces_DeleteSpaceNotFound(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
 		DataDir:   t.TempDir(),
@@ -258,7 +258,7 @@ func TestDeleteSpace_NotFound(t *testing.T) {
 	}
 }
 
-func TestJoinSpace_NotImplemented(t *testing.T) {
+func TestUnit_Spaces_JoinSpaceNotImplemented(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
 		DataDir:   t.TempDir(),
@@ -279,7 +279,7 @@ func TestJoinSpace_NotImplemented(t *testing.T) {
 	}
 }
 
-func TestLeaveSpace_NotImplemented(t *testing.T) {
+func TestUnit_Spaces_LeaveSpaceNotImplemented(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
 		DataDir:   t.TempDir(),

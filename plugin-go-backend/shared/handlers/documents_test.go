@@ -5,9 +5,67 @@ import (
 	"testing"
 
 	pb "anysync-backend/shared/proto/syncspace/v1"
+
+	"google.golang.org/protobuf/proto"
 )
 
-func TestCreateDocument_NotInitialized(t *testing.T) {
+// TestUnit_DocumentHandlers_NotInitialized tests error handling when handlers are called before Init.
+func TestUnit_DocumentHandlers_NotInitialized(t *testing.T) {
+	resetGlobalState()
+
+	ctx := context.Background()
+
+	tests := []struct {
+		name    string
+		handler func(context.Context, proto.Message) (proto.Message, error)
+		req     proto.Message
+	}{
+		{
+			name:    "CreateDocument",
+			handler: CreateDocument,
+			req:     &pb.CreateDocumentRequest{SpaceId: "test", Data: []byte("test")},
+		},
+		{
+			name:    "GetDocument",
+			handler: GetDocument,
+			req:     &pb.GetDocumentRequest{SpaceId: "test", DocumentId: "test"},
+		},
+		{
+			name:    "UpdateDocument",
+			handler: UpdateDocument,
+			req:     &pb.UpdateDocumentRequest{SpaceId: "test", DocumentId: "test", Data: []byte("test")},
+		},
+		{
+			name:    "DeleteDocument",
+			handler: DeleteDocument,
+			req:     &pb.DeleteDocumentRequest{SpaceId: "test", DocumentId: "test"},
+		},
+		{
+			name:    "ListDocuments",
+			handler: ListDocuments,
+			req:     &pb.ListDocumentsRequest{SpaceId: "test"},
+		},
+		{
+			name:    "QueryDocuments",
+			handler: QueryDocuments,
+			req:     &pb.QueryDocumentsRequest{SpaceId: "test"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := tt.handler(ctx, tt.req)
+			if err == nil {
+				t.Error("Expected error when not initialized")
+			}
+			if err.Error() != "not initialized: call Init first" {
+				t.Errorf("Expected 'not initialized' error, got: %v", err)
+			}
+		})
+	}
+}
+
+func TestUnit_Documents_CreateDocumentNotInitialized(t *testing.T) {
 	resetGlobalState()
 
 	req := &pb.CreateDocumentRequest{
@@ -23,7 +81,7 @@ func TestCreateDocument_NotInitialized(t *testing.T) {
 	}
 }
 
-func TestGetDocument_NotInitialized(t *testing.T) {
+func TestUnit_Documents_GetDocumentNotInitialized(t *testing.T) {
 	resetGlobalState()
 
 	req := &pb.GetDocumentRequest{
@@ -37,7 +95,7 @@ func TestGetDocument_NotInitialized(t *testing.T) {
 	}
 }
 
-func TestGetDocument_NotFound(t *testing.T) {
+func TestUnit_Documents_GetDocumentNotFound(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
 		DataDir:   t.TempDir(),
@@ -45,6 +103,9 @@ func TestGetDocument_NotFound(t *testing.T) {
 		DeviceId:  "test-device",
 	}
 	Init(context.Background(), initReq)
+	t.Cleanup(func() {
+		Shutdown(context.Background(), &pb.ShutdownRequest{})
+	})
 
 	req := &pb.GetDocumentRequest{
 		SpaceId:    "space1",
@@ -62,7 +123,7 @@ func TestGetDocument_NotFound(t *testing.T) {
 	}
 }
 
-func TestUpdateDocument_NotInitialized(t *testing.T) {
+func TestUnit_Documents_UpdateDocumentNotInitialized(t *testing.T) {
 	resetGlobalState()
 
 	req := &pb.UpdateDocumentRequest{
@@ -77,7 +138,7 @@ func TestUpdateDocument_NotInitialized(t *testing.T) {
 	}
 }
 
-func TestDeleteDocument_NotInitialized(t *testing.T) {
+func TestUnit_Documents_DeleteDocumentNotInitialized(t *testing.T) {
 	resetGlobalState()
 
 	req := &pb.DeleteDocumentRequest{
@@ -91,7 +152,7 @@ func TestDeleteDocument_NotInitialized(t *testing.T) {
 	}
 }
 
-func TestDeleteDocument_NotFound(t *testing.T) {
+func TestUnit_Documents_DeleteDocumentNotFound(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
 		DataDir:   t.TempDir(),
@@ -99,6 +160,9 @@ func TestDeleteDocument_NotFound(t *testing.T) {
 		DeviceId:  "test-device",
 	}
 	Init(context.Background(), initReq)
+	t.Cleanup(func() {
+		Shutdown(context.Background(), &pb.ShutdownRequest{})
+	})
 
 	// Test with invalid space ID - should error
 	req := &pb.DeleteDocumentRequest{
@@ -112,7 +176,7 @@ func TestDeleteDocument_NotFound(t *testing.T) {
 	}
 }
 
-func TestListDocuments_NotInitialized(t *testing.T) {
+func TestUnit_Documents_ListDocumentsNotInitialized(t *testing.T) {
 	resetGlobalState()
 
 	req := &pb.ListDocumentsRequest{
@@ -125,7 +189,7 @@ func TestListDocuments_NotInitialized(t *testing.T) {
 	}
 }
 
-func TestListDocuments_Empty(t *testing.T) {
+func TestUnit_Documents_ListDocumentsEmpty(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
 		DataDir:   t.TempDir(),
@@ -133,6 +197,9 @@ func TestListDocuments_Empty(t *testing.T) {
 		DeviceId:  "test-device",
 	}
 	Init(context.Background(), initReq)
+	t.Cleanup(func() {
+		Shutdown(context.Background(), &pb.ShutdownRequest{})
+	})
 
 	req := &pb.ListDocumentsRequest{
 		SpaceId: "space1",
@@ -149,7 +216,7 @@ func TestListDocuments_Empty(t *testing.T) {
 	}
 }
 
-func TestQueryDocuments_NotInitialized(t *testing.T) {
+func TestUnit_Documents_QueryDocumentsNotInitialized(t *testing.T) {
 	resetGlobalState()
 
 	req := &pb.QueryDocumentsRequest{
@@ -163,7 +230,7 @@ func TestQueryDocuments_NotInitialized(t *testing.T) {
 	}
 }
 
-func TestQueryDocuments_Empty(t *testing.T) {
+func TestUnit_Documents_QueryDocumentsEmpty(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
 		DataDir:   t.TempDir(),
@@ -171,6 +238,9 @@ func TestQueryDocuments_Empty(t *testing.T) {
 		DeviceId:  "test-device",
 	}
 	Init(context.Background(), initReq)
+	t.Cleanup(func() {
+		Shutdown(context.Background(), &pb.ShutdownRequest{})
+	})
 
 	req := &pb.QueryDocumentsRequest{
 		SpaceId:    "space1",

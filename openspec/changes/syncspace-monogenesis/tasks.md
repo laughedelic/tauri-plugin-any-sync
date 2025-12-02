@@ -282,13 +282,18 @@
 - [x] 2.40 Fix critical bugs discovered during testing
   - Metadata persistence (implemented loadMetadata/saveMetadata in documents.go)
   - Space initialization on restart (added space.Init() call in spaces.go)
-- [ ] 2.41 Resolve test isolation issues
-  - **Issue**: Tests passed individually but failed together due to global state interference
-  - **Solution**: Separated E2E tests from regular test runs using task organization
-  - Regular tests: `task test` (41 tests, excludes E2E via `-skip` flag)
-  - E2E tests: `task test-e2e` (5 test groups, runs via `-run` flag)
-  - Created `shared/Taskfile.yml` with test organization
-  - Documented approach in `TESTING_STATUS.md` and test file headers
+- [x] 2.41 Resolve test isolation issues
+  - **Solution A (Root Cause)**: Fixed cleanup and state management
+    - Added Close() method to DocumentManager
+    - Enhanced Shutdown() to call all manager Close() methods
+    - Improved resetGlobalState() to close managers properly
+    - Added t.Cleanup() to all tests that call Init()
+    - Added resetGlobalState() to tests needing clean initial state
+  - **Solution C (Refactor)**: Created TestContext helper for cleaner integration tests
+    - New testhelpers.go with SetupIntegrationTest()
+    - New integration_refactored_test.go demonstrating pattern
+    - Single Init/Shutdown cycle for multiple sub-tests
+  - **Result**: All 97 tests pass together, with multiple iterations (-count=3)
 - [ ] 2.42 Validate builds for all platforms
   - Validate cross-platform binaries builds
   - Desktop: macOS, Linux, Windows
@@ -318,8 +323,10 @@
 - Event integration tests: 7 tests ✅ (Phase 2E)
 - Document integration tests: 9 tests ✅ (Phase 2F)
 - E2E integration tests: 5 scenarios (15 sub-tests) ✅ (Phase 2F)
-- **Current total: 89 tests passing**
-- **Target: ~67 tests - EXCEEDED by 33%! 🎉**
+- Integration tests refactored: 10 sub-tests ✅ (Phase 2F - Option C)
+- **Current total: 97 tests passing**
+- **Target: ~67 tests - EXCEEDED by 45%! 🎉**
+- **Test Stability**: All tests pass individually, together, and with multiple iterations
 
 **Architecture Notes:**
 - **Two Proto Files:**

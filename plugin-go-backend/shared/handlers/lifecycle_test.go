@@ -7,7 +7,7 @@ import (
 	pb "anysync-backend/shared/proto/syncspace/v1"
 )
 
-func TestInit_Success(t *testing.T) {
+func TestUnit_Lifecycle_InitSuccess(t *testing.T) {
 	resetGlobalState()
 
 	tmpDir := t.TempDir()
@@ -59,7 +59,7 @@ func TestInit_Success(t *testing.T) {
 	}
 }
 
-func TestInit_AlreadyInitialized(t *testing.T) {
+func TestUnit_Lifecycle_InitAlreadyInitialized(t *testing.T) {
 	resetGlobalState()
 	globalState.mu.Lock()
 	globalState.initialized = true
@@ -77,7 +77,7 @@ func TestInit_AlreadyInitialized(t *testing.T) {
 	}
 }
 
-func TestShutdown_Success(t *testing.T) {
+func TestUnit_Lifecycle_ShutdownSuccess(t *testing.T) {
 	resetGlobalState()
 
 	tmpDir := t.TempDir()
@@ -130,7 +130,7 @@ func TestShutdown_Success(t *testing.T) {
 	}
 }
 
-func TestShutdown_NotInitialized(t *testing.T) {
+func TestUnit_Lifecycle_ShutdownNotInitialized(t *testing.T) {
 	resetGlobalState()
 
 	req := &pb.ShutdownRequest{}
@@ -141,7 +141,7 @@ func TestShutdown_NotInitialized(t *testing.T) {
 	}
 }
 
-func TestInit_KeyPersistenceAcrossRestarts(t *testing.T) {
+func TestUnit_Lifecycle_InitKeyPersistenceAcrossRestarts(t *testing.T) {
 	resetGlobalState()
 
 	tmpDir := t.TempDir()
@@ -194,9 +194,28 @@ func resetGlobalState() {
 	globalState.mu.Lock()
 	defer globalState.mu.Unlock()
 
+	// Close DocumentManager if it exists
+	if globalState.documentManager != nil {
+		globalState.documentManager.Close()
+		globalState.documentManager = nil
+	}
+
+	// Close SpaceManager if it exists
+	if globalState.spaceManager != nil {
+		globalState.spaceManager.Close()
+		globalState.spaceManager = nil
+	}
+
+	// Close EventManager if it exists
+	if globalState.eventManager != nil {
+		globalState.eventManager.Close()
+		globalState.eventManager = nil
+	}
+
 	// Clear keys from memory if accountManager exists
 	if globalState.accountManager != nil {
 		globalState.accountManager.ClearKeys()
+		globalState.accountManager = nil
 	}
 
 	globalState.initialized = false
@@ -204,5 +223,4 @@ func resetGlobalState() {
 	globalState.networkID = ""
 	globalState.deviceID = ""
 	globalState.config = nil
-	globalState.accountManager = nil
 }

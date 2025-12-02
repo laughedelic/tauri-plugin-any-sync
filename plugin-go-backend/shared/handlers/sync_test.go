@@ -7,7 +7,7 @@ import (
 	pb "anysync-backend/shared/proto/syncspace/v1"
 )
 
-func TestStartSync_NotInitialized(t *testing.T) {
+func TestUnit_Sync_StartSyncNotInitialized(t *testing.T) {
 	resetGlobalState()
 
 	req := &pb.StartSyncRequest{
@@ -20,7 +20,7 @@ func TestStartSync_NotInitialized(t *testing.T) {
 	}
 }
 
-func TestPauseSync_NotInitialized(t *testing.T) {
+func TestUnit_Sync_PauseSyncNotInitialized(t *testing.T) {
 	resetGlobalState()
 
 	req := &pb.PauseSyncRequest{
@@ -33,7 +33,7 @@ func TestPauseSync_NotInitialized(t *testing.T) {
 	}
 }
 
-func TestGetSyncStatus_NotInitialized(t *testing.T) {
+func TestUnit_Sync_GetSyncStatusNotInitialized(t *testing.T) {
 	resetGlobalState()
 
 	req := &pb.GetSyncStatusRequest{
@@ -46,7 +46,7 @@ func TestGetSyncStatus_NotInitialized(t *testing.T) {
 	}
 }
 
-func TestGetSyncStatus_Empty(t *testing.T) {
+func TestUnit_Sync_GetSyncStatusEmpty(t *testing.T) {
 	resetGlobalState()
 	initReq := &pb.InitRequest{
 		DataDir:   t.TempDir(),

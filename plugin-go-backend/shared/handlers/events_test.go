@@ -41,7 +41,7 @@ func teardownForEventTests(t *testing.T) {
 }
 
 // TestSubscribe_DocumentCreatedEvent tests that document creation triggers events
-func TestSubscribe_DocumentCreatedEvent(t *testing.T) {
+func TestUnit_Events_SubscribeDocumentCreatedEvent(t *testing.T) {
 	ctx := setupForEventTests(t)
 	defer teardownForEventTests(t)
 
@@ -91,7 +91,7 @@ func TestSubscribe_DocumentCreatedEvent(t *testing.T) {
 }
 
 // TestSubscribe_DocumentUpdatedEvent tests that document updates trigger events
-func TestSubscribe_DocumentUpdatedEvent(t *testing.T) {
+func TestUnit_Events_SubscribeDocumentUpdatedEvent(t *testing.T) {
 	ctx := setupForEventTests(t)
 	defer teardownForEventTests(t)
 
@@ -141,7 +141,7 @@ func TestSubscribe_DocumentUpdatedEvent(t *testing.T) {
 }
 
 // TestSubscribe_SpaceDeletedEvent tests that space deletion triggers events
-func TestSubscribe_SpaceDeletedEvent(t *testing.T) {
+func TestUnit_Events_SubscribeSpaceDeletedEvent(t *testing.T) {
 	ctx := setupForEventTests(t)
 	defer teardownForEventTests(t)
 
@@ -184,7 +184,7 @@ func TestSubscribe_SpaceDeletedEvent(t *testing.T) {
 }
 
 // TestSubscribe_EventFiltering tests that event type filtering works
-func TestSubscribe_EventFiltering(t *testing.T) {
+func TestUnit_Events_SubscribeEventFiltering(t *testing.T) {
 	ctx := setupForEventTests(t)
 	defer teardownForEventTests(t)
 
@@ -235,7 +235,7 @@ func TestSubscribe_EventFiltering(t *testing.T) {
 }
 
 // TestSubscribe_MultipleConcurrentSubscribers tests multiple subscribers receiving events
-func TestSubscribe_MultipleConcurrentSubscribers(t *testing.T) {
+func TestUnit_Events_SubscribeMultipleConcurrentSubscribers(t *testing.T) {
 	ctx := setupForEventTests(t)
 	defer teardownForEventTests(t)
 
@@ -292,7 +292,7 @@ func TestSubscribe_MultipleConcurrentSubscribers(t *testing.T) {
 }
 
 // TestSubscribe_NotInitialized tests subscribing before initialization
-func TestSubscribe_NotInitialized(t *testing.T) {
+func TestUnit_Events_SubscribeNotInitialized(t *testing.T) {
 	// Reset global state
 	globalState = &State{}
 
@@ -306,7 +306,7 @@ func TestSubscribe_NotInitialized(t *testing.T) {
 }
 
 // TestUnsubscribe_NotFound tests unsubscribing with invalid ID
-func TestUnsubscribe_NotFound(t *testing.T) {
+func TestUnit_Events_UnsubscribeNotFound(t *testing.T) {
 	_ = setupForEventTests(t)
 	defer teardownForEventTests(t)
 

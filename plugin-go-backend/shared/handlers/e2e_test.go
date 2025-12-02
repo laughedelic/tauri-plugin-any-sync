@@ -2,18 +2,21 @@ package handlers
 
 // End-to-End Integration Tests
 //
-// These tests use global state (globalState variable) and can interfere with other
-// tests when run in parallel. They are designed to test the complete system lifecycle
-// and validate that data persists correctly across Init/Shutdown cycles.
+// These tests validate the complete system lifecycle and data persistence
+// across Init/Shutdown cycles. They use global state (globalState variable)
+// but are now properly isolated using t.Cleanup() and resetGlobalState().
 //
-// Running E2E tests:
-//   - Separately:  go test ./handlers -run TestE2E -v
-//   - Via task:    task shared:test-e2e  (from plugin-go-backend directory)
+// Test Isolation: ✅ FIXED
+// - All tests properly clean up using t.Cleanup()
+// - State is reset between test iterations
+// - Tests pass individually, together, and with -count=N
 //
-// Regular tests (excluding E2E):
-//   - Via task:    task shared:test  (default, excludes E2E tests)
+// Running tests:
+//   go test ./handlers              # Run all tests (including E2E)
+//   go test ./handlers -run TestE2E # Run only E2E tests
+//   go test ./handlers -count=3     # Run multiple iterations
 //
-// All E2E tests pass when run as a group. They validate:
+// Test Coverage:
 //   1. Full lifecycle (Init → CreateSpace → CreateDocument → Shutdown)
 //   2. Data persistence across restarts
 //   3. Multiple spaces with documents
@@ -212,7 +215,9 @@ func TestE2E_Persistence(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Init failed after restart: %v", err)
 		}
-		defer Shutdown(ctx, &pb.ShutdownRequest{})
+		t.Cleanup(func() {
+			Shutdown(ctx, &pb.ShutdownRequest{})
+		})
 
 		// Verify space still exists
 		listSpacesReq := &pb.ListSpacesRequest{}
@@ -278,7 +283,9 @@ func TestE2E_MultipleSpaces(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Init failed: %v", err)
 	}
-	defer Shutdown(ctx, &pb.ShutdownRequest{})
+	t.Cleanup(func() {
+		Shutdown(ctx, &pb.ShutdownRequest{})
+	})
 
 	// Create multiple spaces
 	spaceCount := 3

@@ -104,7 +104,10 @@ func Shutdown(ctx context.Context, req proto.Message) (proto.Message, error) {
 
 	// Close DocumentManager
 	if globalState.documentManager != nil {
-		// DocumentManager has no close method currently
+		if err := globalState.documentManager.Close(); err != nil {
+			// Log error but continue shutdown
+			fmt.Printf("Warning: failed to close document manager: %v\n", err)
+		}
 		globalState.documentManager = nil
 	}
 

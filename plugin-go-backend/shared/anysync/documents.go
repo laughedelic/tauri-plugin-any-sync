@@ -492,3 +492,15 @@ func extractProtobufField(data []byte, fieldNumber int) ([]byte, error) {
 
 	return nil, fmt.Errorf("field %d not found", fieldNumber)
 }
+
+// Close closes the DocumentManager and releases resources.
+func (dm *DocumentManager) Close() error {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+
+	// Clear metadata cache
+	dm.metadata = make(map[string]map[string]*DocumentMetadata)
+
+	// No other cleanup needed as we don't hold any persistent resources
+	return nil
+}

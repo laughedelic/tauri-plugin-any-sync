@@ -26,11 +26,8 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version-file: "plugin-go-backend/desktop/go.mod"
-          cache-dependency-path: |
-            plugin-go-backend/desktop/go.sum
-            plugin-go-backend/shared/go.sum
-            plugin-go-backend/mobile/go.sum
+          go-version-file: "plugin-go-backend/go.work"
+          cache-dependency-path: "plugin-go-backend/go.work.sum"
 
       - name: Set up protoc
         uses: arduino/setup-protoc@v3

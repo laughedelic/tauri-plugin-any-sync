@@ -41,6 +41,7 @@ type SpaceMetadata struct {
 // - SpaceService creates and manages Space objects
 // - Space objects provide TreeBuilder for document operations
 // - Maintains backward-compatible metadata storage
+// Phase 2E: Integrated with EventManager for space lifecycle events
 type SpaceManager struct {
 	mu           sync.RWMutex
 	dataDir      string
@@ -48,6 +49,7 @@ type SpaceManager struct {
 	spaces       map[string]*SpaceMetadata    // Application-level metadata
 	spaceObjects map[string]commonspace.Space // Any-Sync Space objects
 	storageDir   string                       // Directory for space storage databases
+	eventManager *EventManager                // Event system for broadcasting space events
 
 	// Any-Sync components
 	app             *app.App
@@ -56,9 +58,12 @@ type SpaceManager struct {
 }
 
 // NewSpaceManager creates a new SpaceManager with full Any-Sync integration.
-func NewSpaceManager(dataDir string, keys *accountdata.AccountKeys) (*SpaceManager, error) {
+func NewSpaceManager(dataDir string, keys *accountdata.AccountKeys, eventManager *EventManager) (*SpaceManager, error) {
 	if keys == nil {
 		return nil, fmt.Errorf("account keys required")
+	}
+	if eventManager == nil {
+		return nil, fmt.Errorf("event manager required")
 	}
 
 	storageDir := filepath.Join(dataDir, "spaces")
@@ -72,6 +77,7 @@ func NewSpaceManager(dataDir string, keys *accountdata.AccountKeys) (*SpaceManag
 		spaces:       make(map[string]*SpaceMetadata),
 		spaceObjects: make(map[string]commonspace.Space),
 		storageDir:   storageDir,
+		eventManager: eventManager,
 	}
 
 	// Initialize Any-Sync components
@@ -208,6 +214,11 @@ func (sm *SpaceManager) CreateSpace(referenceName, name string, metadata map[str
 		return fmt.Errorf("failed to save metadata: %w", err)
 	}
 
+	// Emit space.created event
+	sm.eventManager.EmitEvent(EventSpaceCreated, actualSpaceID, map[string]string{
+		"name": name,
+	})
+
 	return nil
 }
 
@@ -315,6 +326,9 @@ func (sm *SpaceManager) DeleteSpace(spaceID string) error {
 	if err := sm.saveMetadata(); err != nil {
 		return fmt.Errorf("failed to save metadata: %w", err)
 	}
+
+	// Emit space.deleted event
+	sm.eventManager.EmitEvent(EventSpaceDeleted, spaceID, map[string]string{})
 
 	return nil
 }

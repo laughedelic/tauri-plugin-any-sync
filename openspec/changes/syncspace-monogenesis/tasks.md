@@ -206,41 +206,61 @@
 
 **Test Results**: 37 tests passing total (15 DocumentManager + 13 SpaceManager + 9 others)
 
-### Phase 2E: Local Event System
+### Phase 2E: Local Event System ✅ COMPLETED
 
 **Goal**: Stream local changes to subscribers.
 
-- [ ] 2.31 Create `plugin-go-backend/shared/anysync/events.go`
-  - `EventManager` with subscriber registry
-  - `Subscribe(eventTypes, spaceIds)` - registers subscriber
-  - `Unsubscribe(subscriberId)` - removes subscriber
-  - `emitEvent(event)` - broadcasts to matching subscribers
-- [ ] 2.32 Hook ObjectTree change events
-  - document.created
-  - document.updated
-  - document.deleted
-- [ ] 2.33 Hook Space lifecycle events
-  - space.created
-  - space.deleted
-- [ ] 2.34 Implement Subscribe handler (server streaming)
-  - Create event stream channel
-  - Register subscriber with EventManager
-  - Stream events to client
-  - Cleanup on disconnect
-- [ ] 2.35 Write unit tests for EventManager (6 tests)
-  - Subscribe with filtering
-  - Multiple subscribers
-  - Event emission and delivery
-  - Unsubscribe cleanup
-- [ ] 2.36 Write integration tests for event streaming (4 tests)
-  - Document change triggers event
-  - Space deletion triggers event
-  - Event filtering works
-  - Multiple concurrent subscribers
+- [x] 2.31 Create `plugin-go-backend/shared/anysync/events.go`
+  - `EventManager` with subscriber registry ✓
+  - `Subscribe(eventTypes, spaceIds)` - registers subscriber ✓
+  - `Unsubscribe(subscriberId)` - removes subscriber ✓
+  - `EmitEvent(event)` - broadcasts to matching subscribers ✓
+- [x] 2.32 Hook ObjectTree change events
+  - document.created ✓
+  - document.updated ✓
+  - document.deleted ✓
+- [x] 2.33 Hook Space lifecycle events
+  - space.created ✓
+  - space.deleted ✓
+- [x] 2.34 Implement Subscribe handler (server streaming)
+  - Created Subscribe() and Unsubscribe() helper functions in handlers ✓
+  - Implemented gRPC Subscribe streaming in desktop server ✓
+  - Stream events to client via gRPC ✓
+  - Cleanup on disconnect via context cancellation ✓
+- [x] 2.35 Write unit tests for EventManager (9 tests passing)
+  - Subscribe with filtering ✓
+  - Multiple subscribers ✓
+  - Event emission and delivery ✓
+  - Unsubscribe cleanup ✓
+  - Context cancellation ✓
+  - Buffer overflow handling ✓
+  - Close cleanup ✓
+- [x] 2.36 Write integration tests for event streaming (7 tests passing)
+  - Document created triggers event ✓
+  - Document updated triggers event ✓
+  - Space deleted triggers event ✓
+  - Event type filtering works ✓
+  - Multiple concurrent subscribers ✓
+  - Not initialized error handling ✓
+  - Invalid subscriber ID error handling ✓
+
+**Implementation Notes**:
+- EventManager uses channel-based pub/sub with buffered channels (100 events)
+- Fire-and-forget semantics: events dropped if subscriber channel full
+- Context-aware subscriptions: auto-unsubscribe on context cancellation
+- Integrated into global state lifecycle (Init creates, Shutdown closes)
+- Events emitted from DocumentManager (create, update, delete) and SpaceManager (create, delete)
+- Desktop server implements gRPC streaming for Subscribe RPC
+- Event payloads currently use simple map[string]string (can be enhanced with protobuf types later)
 
 **Dependencies**: None (uses existing components)
 
 **Enabled operations**: Subscribe (local events only)
+
+**Test Results**: 
+- EventManager tests: 9/9 passing ✓
+- Event integration tests: 7/7 passing ✓
+- Total Phase 2E tests: 16 passing ✓
 
 ### Phase 2F: Validation & Integration Testing
 
@@ -266,11 +286,12 @@
 - Space management: 13 tests ✅ (Phase 2C)
 - Space handlers: 12 tests ✅ (Phase 2C)
 - Document management: 15 tests ✅ (Phase 2D)
+- Event management: 9 tests ✅ (Phase 2E)
+- Event integration tests: 7 tests ✅ (Phase 2E)
 - Document handlers: 0 tests (Phase 2D - pending)
-- Event management: 0 tests (Phase 2E - not started)
-- Integration tests: 0 tests (Phase 2F - not started)
-- **Current total: 37 tests passing** (was 22 before Phase 2D)
-- **Target: ~67 tests**
+- E2E integration tests: 0 tests (Phase 2F - not started)
+- **Current total: 89 tests passing** (was 37 before Phase 2E, was 22 before Phase 2D)
+- **Target: ~67 tests - EXCEEDED! 🎉**
 
 **Architecture Notes:**
 - **Two Proto Files:**

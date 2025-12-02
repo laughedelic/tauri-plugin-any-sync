@@ -20,7 +20,7 @@ func TestNewSpaceManager(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create SpaceManager
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	require.NotNil(t, sm)
 	defer sm.Close()
@@ -35,7 +35,7 @@ func TestNewSpaceManager(t *testing.T) {
 func TestNewSpaceManager_NilKeys(t *testing.T) {
 	tempDir := t.TempDir()
 
-	sm, err := NewSpaceManager(tempDir, nil)
+	sm, err := NewSpaceManager(tempDir, nil, NewEventManager())
 	assert.Error(t, err)
 	assert.Nil(t, sm)
 	assert.Contains(t, err.Error(), "account keys required")
@@ -47,7 +47,7 @@ func TestCreateSpace_Success(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -73,7 +73,7 @@ func TestCreateSpace_MultipleSpaces(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -102,7 +102,7 @@ func TestListSpaces_Empty(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -116,7 +116,7 @@ func TestListSpaces_Multiple(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -150,7 +150,7 @@ func TestGetSpace_Success(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -177,7 +177,7 @@ func TestGetSpace_NotFound(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -193,7 +193,7 @@ func TestDeleteSpace_Success(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -226,7 +226,7 @@ func TestDeleteSpace_NotFound(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -242,7 +242,7 @@ func TestSpaceManager_Persistence(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create first manager and add spaces
-	sm1, err := NewSpaceManager(tempDir, keys)
+	sm1, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 
 	err = sm1.CreateSpace("ref-1", "Space 1", map[string]string{"key": "value1"})
@@ -260,7 +260,7 @@ func TestSpaceManager_Persistence(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create second manager with same data directory
-	sm2, err := NewSpaceManager(tempDir, keys)
+	sm2, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm2.Close()
 
@@ -289,7 +289,7 @@ func TestSpaceManager_SpaceStorageCreated(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -315,7 +315,7 @@ func TestSpaceManager_ConcurrentAccess(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 

@@ -14,14 +14,16 @@ import (
 
 // State holds the global state for the SyncSpace backend.
 type State struct {
-	mu             sync.RWMutex
-	dataDir        string
-	networkID      string
-	deviceID       string
-	config         map[string]string
-	accountManager *anysync.AccountManager
-	spaceManager   *anysync.SpaceManager
-	initialized    bool
+	mu              sync.RWMutex
+	dataDir         string
+	networkID       string
+	deviceID        string
+	config          map[string]string
+	accountManager  *anysync.AccountManager
+	spaceManager    *anysync.SpaceManager
+	documentManager *anysync.DocumentManager
+	eventManager    *anysync.EventManager
+	initialized     bool
 }
 
 var globalState = &State{}
@@ -69,12 +71,22 @@ func Init(ctx context.Context, req proto.Message) (proto.Message, error) {
 		return nil, fmt.Errorf("keys not loaded after initialization")
 	}
 
+	// Initialize EventManager
+	globalState.eventManager = anysync.NewEventManager()
+
 	// Initialize SpaceManager with loaded keys
-	spaceManager, err := anysync.NewSpaceManager(initReq.DataDir, globalState.accountManager.GetKeys())
+	spaceManager, err := anysync.NewSpaceManager(initReq.DataDir, globalState.accountManager.GetKeys(), globalState.eventManager)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize space manager: %w", err)
 	}
 	globalState.spaceManager = spaceManager
+
+	// Initialize DocumentManager
+	documentManager, err := anysync.NewDocumentManager(globalState.spaceManager, globalState.accountManager.GetKeys(), globalState.eventManager)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize document manager: %w", err)
+	}
+	globalState.documentManager = documentManager
 
 	globalState.initialized = true
 
@@ -90,6 +102,12 @@ func Shutdown(ctx context.Context, req proto.Message) (proto.Message, error) {
 		return nil, fmt.Errorf("not initialized")
 	}
 
+	// Close DocumentManager
+	if globalState.documentManager != nil {
+		// DocumentManager has no close method currently
+		globalState.documentManager = nil
+	}
+
 	// Close SpaceManager (closes all space storages)
 	if globalState.spaceManager != nil {
 		if err := globalState.spaceManager.Close(); err != nil {
@@ -97,6 +115,15 @@ func Shutdown(ctx context.Context, req proto.Message) (proto.Message, error) {
 			fmt.Printf("Warning: failed to close space manager: %v\n", err)
 		}
 		globalState.spaceManager = nil
+	}
+
+	// Close EventManager
+	if globalState.eventManager != nil {
+		if err := globalState.eventManager.Close(); err != nil {
+			// Log error but continue shutdown
+			fmt.Printf("Warning: failed to close event manager: %v\n", err)
+		}
+		globalState.eventManager = nil
 	}
 
 	// Clear keys from memory

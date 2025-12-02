@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	transportpb "anysync-backend/desktop/proto/transport/v1"
+	"anysync-backend/shared/anysync"
 	"anysync-backend/shared/dispatcher"
 	"anysync-backend/shared/handlers"
 	syncspacepb "anysync-backend/shared/proto/syncspace/v1"
@@ -85,10 +86,71 @@ func (s *Server) Command(ctx context.Context, req *transportpb.CommandRequest) (
 	}, nil
 }
 
-// Subscribe streams events (not implemented yet)
+// Subscribe streams events to the client
 func (s *Server) Subscribe(req *transportpb.SubscribeRequest, stream transportpb.TransportService_SubscribeServer) error {
-	// TODO: Implement event streaming
-	return fmt.Errorf("event streaming not implemented yet")
+	ctx := stream.Context()
+
+	// Convert transport event types to syncspace event types
+	syncspaceReq := &syncspacepb.SubscribeRequest{
+		EventTypes: req.EventTypes,
+		SpaceIds:   []string{}, // Empty means all spaces
+	}
+
+	// Get subscription from handlers (special handling for streaming)
+	subscriberID, eventChan, err := handlers.Subscribe(ctx, syncspaceReq)
+	if err != nil {
+		return fmt.Errorf("failed to subscribe: %w", err)
+	}
+	defer handlers.Unsubscribe(subscriberID)
+
+	// Stream events to client until context is cancelled or error occurs
+	for {
+		select {
+		case <-ctx.Done():
+			// Client disconnected
+			return ctx.Err()
+		case event, ok := <-eventChan:
+			if !ok {
+				// Channel closed (unsubscribed)
+				return nil
+			}
+
+			// Convert anysync.Event to syncspace.SubscribeResponse
+			syncspaceEvent := &syncspacepb.SubscribeResponse{
+				EventId:   event.ID,
+				EventType: string(event.Type),
+				SpaceId:   event.SpaceID,
+				Timestamp: event.Timestamp,
+				Payload:   marshalEventPayload(event),
+			}
+
+			// Marshal to bytes
+			eventBytes, err := proto.Marshal(syncspaceEvent)
+			if err != nil {
+				log.Printf("Failed to marshal event: %v", err)
+				continue
+			}
+
+			// Send to transport stream
+			transportEvent := &transportpb.SubscribeResponse{
+				Type:      string(event.Type),
+				Data:      eventBytes,
+				Timestamp: event.Timestamp * 1000, // Convert to milliseconds
+			}
+
+			if err := stream.Send(transportEvent); err != nil {
+				return fmt.Errorf("failed to send event: %w", err)
+			}
+		}
+	}
+}
+
+// marshalEventPayload converts event payload map to protobuf bytes
+// For now, this returns empty bytes. In the future, this could marshal
+// specific event types (DocumentCreatedEvent, DocumentUpdatedEvent, etc.)
+func marshalEventPayload(event *anysync.Event) []byte {
+	// TODO: Marshal specific event payload types based on event.Type
+	return []byte{}
 }
 
 // Shutdown shuts down the backend

@@ -14,11 +14,11 @@ func TestNewDocumentManager(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
-	dm, err := NewDocumentManager(sm, keys)
+	dm, err := NewDocumentManager(sm, keys, NewEventManager())
 	require.NoError(t, err)
 	assert.NotNil(t, dm)
 }
@@ -27,7 +27,7 @@ func TestNewDocumentManager_NilSpaceManager(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	dm, err := NewDocumentManager(nil, keys)
+	dm, err := NewDocumentManager(nil, keys, NewEventManager())
 	assert.Error(t, err)
 	assert.Nil(t, dm)
 	assert.Contains(t, err.Error(), "space manager required")
@@ -38,11 +38,11 @@ func TestNewDocumentManager_NilKeys(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
-	dm, err := NewDocumentManager(sm, nil)
+	dm, err := NewDocumentManager(sm, nil, NewEventManager())
 	assert.Error(t, err)
 	assert.Nil(t, dm)
 	assert.Contains(t, err.Error(), "account keys required")
@@ -53,7 +53,7 @@ func TestCreateDocument_Success(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -66,7 +66,7 @@ func TestCreateDocument_Success(t *testing.T) {
 	spaceID := spaces[0].SpaceID
 
 	// Create document manager
-	dm, err := NewDocumentManager(sm, keys)
+	dm, err := NewDocumentManager(sm, keys, NewEventManager())
 	require.NoError(t, err)
 
 	// Create a document
@@ -83,11 +83,11 @@ func TestCreateDocument_InvalidSpace(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
-	dm, err := NewDocumentManager(sm, keys)
+	dm, err := NewDocumentManager(sm, keys, NewEventManager())
 	require.NoError(t, err)
 
 	// Try to create document in non-existent space
@@ -102,7 +102,7 @@ func TestGetDocument_Success(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -113,7 +113,7 @@ func TestGetDocument_Success(t *testing.T) {
 	spaces := sm.ListSpaces()
 	spaceID := spaces[0].SpaceID
 
-	dm, err := NewDocumentManager(sm, keys)
+	dm, err := NewDocumentManager(sm, keys, NewEventManager())
 	require.NoError(t, err)
 
 	// Create a document
@@ -138,7 +138,7 @@ func TestGetDocument_NotFound(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -149,7 +149,7 @@ func TestGetDocument_NotFound(t *testing.T) {
 	spaces := sm.ListSpaces()
 	spaceID := spaces[0].SpaceID
 
-	dm, err := NewDocumentManager(sm, keys)
+	dm, err := NewDocumentManager(sm, keys, NewEventManager())
 	require.NoError(t, err)
 
 	// Try to get non-existent document
@@ -164,7 +164,7 @@ func TestUpdateDocument_Success(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -175,7 +175,7 @@ func TestUpdateDocument_Success(t *testing.T) {
 	spaces := sm.ListSpaces()
 	spaceID := spaces[0].SpaceID
 
-	dm, err := NewDocumentManager(sm, keys)
+	dm, err := NewDocumentManager(sm, keys, NewEventManager())
 	require.NoError(t, err)
 
 	// Create a document
@@ -203,7 +203,7 @@ func TestUpdateDocument_NotFound(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -214,7 +214,7 @@ func TestUpdateDocument_NotFound(t *testing.T) {
 	spaces := sm.ListSpaces()
 	spaceID := spaces[0].SpaceID
 
-	dm, err := NewDocumentManager(sm, keys)
+	dm, err := NewDocumentManager(sm, keys, NewEventManager())
 	require.NoError(t, err)
 
 	// Try to update non-existent document
@@ -228,7 +228,7 @@ func TestDeleteDocument_Success(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -239,7 +239,7 @@ func TestDeleteDocument_Success(t *testing.T) {
 	spaces := sm.ListSpaces()
 	spaceID := spaces[0].SpaceID
 
-	dm, err := NewDocumentManager(sm, keys)
+	dm, err := NewDocumentManager(sm, keys, NewEventManager())
 	require.NoError(t, err)
 
 	// Create a document
@@ -263,7 +263,7 @@ func TestDeleteDocument_NotFound(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -274,7 +274,7 @@ func TestDeleteDocument_NotFound(t *testing.T) {
 	spaces := sm.ListSpaces()
 	spaceID := spaces[0].SpaceID
 
-	dm, err := NewDocumentManager(sm, keys)
+	dm, err := NewDocumentManager(sm, keys, NewEventManager())
 	require.NoError(t, err)
 
 	// Try to delete non-existent document
@@ -287,7 +287,7 @@ func TestListDocuments_Empty(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -298,7 +298,7 @@ func TestListDocuments_Empty(t *testing.T) {
 	spaces := sm.ListSpaces()
 	spaceID := spaces[0].SpaceID
 
-	dm, err := NewDocumentManager(sm, keys)
+	dm, err := NewDocumentManager(sm, keys, NewEventManager())
 	require.NoError(t, err)
 
 	// List documents in empty space
@@ -312,7 +312,7 @@ func TestListDocuments_Multiple(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -323,7 +323,7 @@ func TestListDocuments_Multiple(t *testing.T) {
 	spaces := sm.ListSpaces()
 	spaceID := spaces[0].SpaceID
 
-	dm, err := NewDocumentManager(sm, keys)
+	dm, err := NewDocumentManager(sm, keys, NewEventManager())
 	require.NoError(t, err)
 
 	// Create multiple documents
@@ -355,7 +355,7 @@ func TestQueryDocuments_NoFilter(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -366,7 +366,7 @@ func TestQueryDocuments_NoFilter(t *testing.T) {
 	spaces := sm.ListSpaces()
 	spaceID := spaces[0].SpaceID
 
-	dm, err := NewDocumentManager(sm, keys)
+	dm, err := NewDocumentManager(sm, keys, NewEventManager())
 	require.NoError(t, err)
 
 	// Create documents
@@ -386,7 +386,7 @@ func TestMultipleSpaces(t *testing.T) {
 	keys, err := accountdata.NewRandom()
 	require.NoError(t, err)
 
-	sm, err := NewSpaceManager(tempDir, keys)
+	sm, err := NewSpaceManager(tempDir, keys, NewEventManager())
 	require.NoError(t, err)
 	defer sm.Close()
 
@@ -399,7 +399,7 @@ func TestMultipleSpaces(t *testing.T) {
 	spaces := sm.ListSpaces()
 	require.Len(t, spaces, 2)
 
-	dm, err := NewDocumentManager(sm, keys)
+	dm, err := NewDocumentManager(sm, keys, NewEventManager())
 	require.NoError(t, err)
 
 	// Create documents in different spaces

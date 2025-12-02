@@ -27,27 +27,33 @@ type DocumentMetadata struct {
 
 // DocumentManager manages documents within spaces using ObjectTree.
 // Each document is an ObjectTree with changes stored as a DAG.
+// Phase 2E: Integrated with EventManager for document lifecycle events.
 type DocumentManager struct {
 	mu           sync.RWMutex
 	spaceManager *SpaceManager
 	keys         *accountdata.AccountKeys
+	eventManager *EventManager
 	// Document metadata cache for efficient querying
 	// Key: spaceID -> documentID -> metadata
 	metadata map[string]map[string]*DocumentMetadata
 }
 
 // NewDocumentManager creates a new DocumentManager.
-func NewDocumentManager(spaceManager *SpaceManager, keys *accountdata.AccountKeys) (*DocumentManager, error) {
+func NewDocumentManager(spaceManager *SpaceManager, keys *accountdata.AccountKeys, eventManager *EventManager) (*DocumentManager, error) {
 	if spaceManager == nil {
 		return nil, fmt.Errorf("space manager required")
 	}
 	if keys == nil {
 		return nil, fmt.Errorf("account keys required")
 	}
+	if eventManager == nil {
+		return nil, fmt.Errorf("event manager required")
+	}
 
 	dm := &DocumentManager{
 		spaceManager: spaceManager,
 		keys:         keys,
+		eventManager: eventManager,
 		metadata:     make(map[string]map[string]*DocumentMetadata),
 	}
 
@@ -122,6 +128,12 @@ func (dm *DocumentManager) CreateDocument(spaceID, title string, data []byte, me
 	if err := dm.saveMetadata(spaceID); err != nil {
 		return "", fmt.Errorf("failed to save metadata: %w", err)
 	}
+
+	// Emit document.created event
+	dm.eventManager.EmitEvent(EventDocumentCreated, spaceID, map[string]string{
+		"document_id": documentID,
+		"collection":  "", // TODO: Add collection support
+	})
 
 	return documentID, nil
 }
@@ -245,6 +257,11 @@ func (dm *DocumentManager) UpdateDocument(spaceID, documentID string, data []byt
 		}
 	}
 
+	// Emit document.updated event
+	dm.eventManager.EmitEvent(EventDocumentUpdated, spaceID, map[string]string{
+		"document_id": documentID,
+	})
+
 	return nil
 }
 
@@ -277,6 +294,11 @@ func (dm *DocumentManager) DeleteDocument(spaceID, documentID string) error {
 			return fmt.Errorf("failed to save metadata: %w", err)
 		}
 	}
+
+	// Emit document.deleted event
+	dm.eventManager.EmitEvent(EventDocumentDeleted, spaceID, map[string]string{
+		"document_id": documentID,
+	})
 
 	return nil
 }

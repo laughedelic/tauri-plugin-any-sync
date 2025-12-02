@@ -1,50 +1,61 @@
+// Package mobile provides gomobile-compatible bindings for the SyncSpace API.
+// This package exports the minimal 4-function API for Android/iOS via gomobile.
 package mobile
 
 import (
 	"context"
-	"path/filepath"
-	"time"
+	"sync"
 
-	"anysync-backend/shared/storage"
+	"anysync-backend/shared/dispatcher"
+	"anysync-backend/shared/handlers"
 )
 
-// MobileService provides exported functions for Android/iOS via gomobile
-type MobileService struct {
-	store *storage.Store
+var (
+	globalDispatcher *dispatcher.Dispatcher
+	eventHandler     func([]byte) error
+	eventHandlerMu   sync.RWMutex
+	dispatcherOnce   sync.Once
+)
+
+// Init initializes the global dispatcher.
+// Must be called before any Command calls.
+func Init() error {
+	dispatcherOnce.Do(func() {
+		globalDispatcher = handlers.GetDispatcher()
+	})
+	return nil
 }
 
-// NewMobileService creates a new MobileService
-func NewMobileService() (*MobileService, error) {
-	// Use a reasonable default for mobile
-	dbPath := filepath.Join(".", "anystore.db")
-
-	store, err := storage.New(dbPath)
-	if err != nil {
-		return nil, err
+// Command executes a command and returns the response.
+// cmd is the command name (e.g., "init", "createSpace", "getDocument").
+// data is the serialized protobuf request payload.
+// Returns the serialized protobuf response payload or an error.
+func Command(cmd string, data []byte) ([]byte, error) {
+	if globalDispatcher == nil {
+		return nil, nil // Silently fail if not initialized
 	}
 
-	return &MobileService{store: store}, nil
+	ctx := context.Background()
+	return globalDispatcher.Dispatch(ctx, cmd, data)
 }
 
-// Ping tests the connection and storage layer
-func (ms *MobileService) Ping(message string) string {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	if message == "" {
-		message = "pong"
-	}
-
-	// Test storage by performing a simple operation
-	// For now, just return the message to verify the layer works
-	_ = ctx
-	return message
+// SetEventHandler sets the event handler callback.
+// The handler will be called with serialized event payloads.
+func SetEventHandler(handler func([]byte) error) {
+	eventHandlerMu.Lock()
+	defer eventHandlerMu.Unlock()
+	eventHandler = handler
 }
 
-// Close gracefully shuts down the service
-func (ms *MobileService) Close() error {
-	if ms.store != nil {
-		return ms.store.Close()
-	}
+// Shutdown shuts down the service and cleans up resources.
+func Shutdown() error {
+	eventHandlerMu.Lock()
+	eventHandler = nil
+	eventHandlerMu.Unlock()
+
+	// Reset dispatcher
+	globalDispatcher = nil
+	dispatcherOnce = sync.Once{}
+
 	return nil
 }

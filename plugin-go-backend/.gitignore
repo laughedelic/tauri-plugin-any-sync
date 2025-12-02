@@ -15,11 +15,7 @@
 # vendor/
 
 # Go workspace file
-go.work.sum
-
-# Generated protobuf files (will be regenerated)
-*.pb.go
-*_grpc.pb.go
+# go.work.sum
 
 # IDE files
 .vscode/

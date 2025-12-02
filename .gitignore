@@ -21,9 +21,9 @@ node_modules/
 # Go backend binaries (source)
 /binaries/
 
-# Generated protobuf code
-/plugin-rust-core/src/proto/anysync.rs
-/plugin-go-backend/desktop/proto/*.pb.go
+# Go compiled binaries
+/plugin-go-backend/desktop/desktop
+/plugin-go-backend/mobile/mobile
 
 # OpenSpec prompts
 opencode.json*

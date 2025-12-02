@@ -1,0 +1,29 @@
+version: 3
+
+tasks:
+  generate:
+    desc: Generate code from protobuf definitions
+    cmds:
+      - buf generate --template ./proto/syncspace-api/buf.gen.yaml
+      - buf generate --template ./proto/dispatch-transport/buf.gen.yaml
+    sources:
+      - ./proto/**/*.proto
+      - ./proto/**/*.gen.yaml
+      - ./buf.yaml
+    generates:
+      - "{{.ROOT_DIR}}/plugin-go-backend/**/proto/**/*.pb.go"
+      - "{{.ROOT_DIR}}/plugin-js-api/src/generated/**/*_pb.ts"
+
+  lint:
+    desc: Lint protobuf definitions
+    cmd: buf lint
+
+  breaking:
+    desc: Check for breaking changes in protobuf definitions
+    cmd: buf breaking --against '.git#branch=main'
+
+  clean:
+    desc: Clean generated protobuf code
+    cmds:
+      - find ../plugin-go-backend -type f -path "*/proto/*.pb.go" -delete
+      - find ../plugin-js-api -type f -path "*/src/generated/*_pb.ts" -delete

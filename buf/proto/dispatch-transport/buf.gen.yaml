@@ -1,0 +1,20 @@
+version: v2
+managed:
+  enabled: true
+inputs:
+  - directory: proto/dispatch-transport
+clean: true
+plugins:
+  # Go protobuf structs - transport messages (desktop only)
+  - remote: buf.build/protocolbuffers/go
+    out: ../plugin-go-backend/desktop/proto
+    opt:
+      - paths=source_relative
+
+  # Go gRPC service - transport (desktop gRPC server)
+  - remote: buf.build/grpc/go
+    out: ../plugin-go-backend/desktop/proto
+    opt:
+      - paths=source_relative
+
+  # TODO: Add Rust gRPC client generation for plugin-rust-core

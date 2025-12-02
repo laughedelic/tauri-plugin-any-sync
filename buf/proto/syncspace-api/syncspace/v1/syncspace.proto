@@ -1,0 +1,297 @@
+syntax = "proto3";
+
+package syncspace.v1;
+
+option go_package = "anysync-backend/shared/proto/syncspace/v1;syncspace";
+
+// SyncSpaceService provides the complete SyncSpace API for spaces, documents, and synchronization
+// Note: This service definition is for documentation and TypeScript client generation.
+// The actual Go implementation uses the dispatcher pattern with TransportService (see transport.proto).
+service SyncSpaceService {
+  // Lifecycle operations
+  rpc Init(InitRequest) returns (InitResponse);
+  rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+
+  // Space operations
+  rpc CreateSpace(CreateSpaceRequest) returns (CreateSpaceResponse);
+  rpc JoinSpace(JoinSpaceRequest) returns (JoinSpaceResponse);
+  rpc LeaveSpace(LeaveSpaceRequest) returns (LeaveSpaceResponse);
+  rpc ListSpaces(ListSpacesRequest) returns (ListSpacesResponse);
+  rpc DeleteSpace(DeleteSpaceRequest) returns (DeleteSpaceResponse);
+
+  // Document operations
+  rpc CreateDocument(CreateDocumentRequest) returns (CreateDocumentResponse);
+  rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse);
+  rpc UpdateDocument(UpdateDocumentRequest) returns (UpdateDocumentResponse);
+  rpc DeleteDocument(DeleteDocumentRequest) returns (DeleteDocumentResponse);
+  rpc ListDocuments(ListDocumentsRequest) returns (ListDocumentsResponse);
+  rpc QueryDocuments(QueryDocumentsRequest) returns (QueryDocumentsResponse);
+
+  // Sync control operations
+  rpc StartSync(StartSyncRequest) returns (StartSyncResponse);
+  rpc PauseSync(PauseSyncRequest) returns (PauseSyncResponse);
+  rpc GetSyncStatus(GetSyncStatusRequest) returns (GetSyncStatusResponse);
+
+  // Event streaming
+  rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse);
+}
+
+// Command represents a unified command for single-dispatch pattern
+message Command {
+  string name = 1; // Command name (e.g., "createSpace", "getDocument")
+  bytes payload = 2; // Serialized request message
+}
+
+// CommandResponse represents the unified response
+message CommandResponse {
+  bytes payload = 1; // Serialized response message
+  string error = 2; // Error message if operation failed (empty if success)
+}
+
+// ===== Lifecycle Operations =====
+
+message InitRequest {
+  string data_dir = 1; // Directory for local storage
+  string network_id = 2; // Any-Sync network ID
+  string device_id = 3; // Unique device identifier
+  map<string, string> config = 4; // Additional configuration
+}
+
+message InitResponse {
+  bool success = 1;
+}
+
+message ShutdownRequest {}
+
+message ShutdownResponse {
+  bool success = 1;
+}
+
+// ===== Space Operations =====
+
+message CreateSpaceRequest {
+  string space_id = 1; // Unique space identifier
+  string name = 2; // Human-readable space name
+  map<string, string> metadata = 3; // Space metadata
+}
+
+message CreateSpaceResponse {
+  string space_id = 1;
+}
+
+message JoinSpaceRequest {
+  string space_id = 1; // Space identifier to join
+  string invite_token = 2; // Invitation token (if required)
+}
+
+message JoinSpaceResponse {
+  bool success = 1;
+}
+
+message LeaveSpaceRequest {
+  string space_id = 1; // Space identifier to leave
+}
+
+message LeaveSpaceResponse {
+  bool success = 1;
+}
+
+message ListSpacesRequest {}
+
+message ListSpacesResponse {
+  repeated SpaceInfo spaces = 1;
+}
+
+message SpaceInfo {
+  string space_id = 1;
+  string name = 2;
+  map<string, string> metadata = 3;
+  int64 created_at = 4; // Unix timestamp
+  int64 updated_at = 5; // Unix timestamp
+  SyncStatus sync_status = 6;
+}
+
+message DeleteSpaceRequest {
+  string space_id = 1;
+}
+
+message DeleteSpaceResponse {
+  bool success = 1;
+}
+
+// ===== Document Operations =====
+
+message CreateDocumentRequest {
+  string space_id = 1;
+  string document_id = 2; // Unique document identifier within space
+  string collection = 3; // Logical collection name (e.g., "notes", "tasks")
+  bytes data = 4; // Opaque document payload (application-defined format)
+  map<string, string> metadata = 5; // Indexable metadata fields
+}
+
+message CreateDocumentResponse {
+  string document_id = 1;
+  int64 version = 2; // Document version for optimistic locking
+}
+
+message GetDocumentRequest {
+  string space_id = 1;
+  string document_id = 2;
+}
+
+message GetDocumentResponse {
+  Document document = 1;
+  bool found = 2;
+}
+
+message Document {
+  string document_id = 1;
+  string space_id = 2;
+  string collection = 3;
+  bytes data = 4; // Opaque payload
+  map<string, string> metadata = 5;
+  int64 version = 6;
+  int64 created_at = 7;
+  int64 updated_at = 8;
+}
+
+message UpdateDocumentRequest {
+  string space_id = 1;
+  string document_id = 2;
+  bytes data = 3;
+  map<string, string> metadata = 4;
+  int64 expected_version = 5; // For optimistic locking (0 = skip check)
+}
+
+message UpdateDocumentResponse {
+  int64 version = 1; // New version after update
+}
+
+message DeleteDocumentRequest {
+  string space_id = 1;
+  string document_id = 2;
+}
+
+message DeleteDocumentResponse {
+  bool existed = 1;
+}
+
+message ListDocumentsRequest {
+  string space_id = 1;
+  string collection = 2; // Filter by collection (empty = all)
+  int32 limit = 3; // Max results (0 = no limit)
+  string cursor = 4; // Pagination cursor (empty = first page)
+}
+
+message ListDocumentsResponse {
+  repeated DocumentInfo documents = 1;
+  string next_cursor = 2; // Cursor for next page (empty = no more pages)
+}
+
+message DocumentInfo {
+  string document_id = 1;
+  string collection = 2;
+  map<string, string> metadata = 3;
+  int64 version = 4;
+  int64 created_at = 5;
+  int64 updated_at = 6;
+}
+
+message QueryDocumentsRequest {
+  string space_id = 1;
+  string collection = 2;
+  repeated QueryFilter filters = 3;
+  int32 limit = 4;
+  string cursor = 5;
+}
+
+message QueryFilter {
+  string field = 1; // Metadata field name
+  string operator = 2; // "eq", "ne", "gt", "gte", "lt", "lte", "contains"
+  string value = 3; // Filter value
+}
+
+message QueryDocumentsResponse {
+  repeated DocumentInfo documents = 1;
+  string next_cursor = 2;
+}
+
+// ===== Sync Control Operations =====
+
+message StartSyncRequest {
+  string space_id = 1; // Space to sync (empty = all spaces)
+}
+
+message StartSyncResponse {
+  bool success = 1;
+}
+
+message PauseSyncRequest {
+  string space_id = 1; // Space to pause (empty = all spaces)
+}
+
+message PauseSyncResponse {
+  bool success = 1;
+}
+
+message GetSyncStatusRequest {
+  string space_id = 1; // Space to query (empty = all spaces)
+}
+
+message GetSyncStatusResponse {
+  repeated SpaceSyncStatus statuses = 1;
+}
+
+message SpaceSyncStatus {
+  string space_id = 1;
+  SyncStatus status = 2;
+  int64 last_sync_at = 3; // Unix timestamp
+  int32 pending_changes = 4; // Number of local changes not yet synced
+  string error = 5; // Last sync error (empty if no error)
+}
+
+enum SyncStatus {
+  SYNC_STATUS_UNSPECIFIED = 0;
+  SYNC_STATUS_IDLE = 1;
+  SYNC_STATUS_SYNCING = 2;
+  SYNC_STATUS_PAUSED = 3;
+  SYNC_STATUS_ERROR = 4;
+}
+
+// ===== Event Streaming =====
+
+message SubscribeRequest {
+  repeated string event_types = 1; // Event types to subscribe to (empty = all)
+  repeated string space_ids = 2; // Space IDs to filter by (empty = all)
+}
+
+message SubscribeResponse {
+  string event_id = 1;
+  string event_type = 2; // "document.created", "document.updated", "sync.status_changed", etc.
+  string space_id = 3;
+  int64 timestamp = 4; // Unix timestamp
+  bytes payload = 5; // Event-specific data
+}
+
+// Event payload types
+
+message DocumentCreatedEvent {
+  string document_id = 1;
+  string collection = 2;
+}
+
+message DocumentUpdatedEvent {
+  string document_id = 1;
+  int64 old_version = 2;
+  int64 new_version = 3;
+}
+
+message DocumentDeletedEvent {
+  string document_id = 1;
+}
+
+message SyncStatusChangedEvent {
+  SyncStatus old_status = 1;
+  SyncStatus new_status = 2;
+  string error = 3;
+}

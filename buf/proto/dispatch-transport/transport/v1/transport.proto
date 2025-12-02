@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package transport.v1;
+
+option go_package = "anysync-backend/desktop/proto/v1;transport";
+
+// TransportService provides a simple 4-method interface for desktop gRPC
+// and mobile FFI. Both platforms call the same Go dispatcher underneath.
+service TransportService {
+  // Initialize the backend
+  rpc Init(InitRequest) returns (InitResponse);
+
+  // Execute a command by name with serialized data
+  rpc Command(CommandRequest) returns (CommandResponse);
+
+  // Subscribe to events (server streaming)
+  rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse);
+
+  // Shutdown the backend
+  rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+}
+
+// Init request with configuration
+message InitRequest {
+  // Storage directory path
+  string storage_path = 1;
+
+  // Network ID for Any-Sync
+  string network_id = 2;
+
+  // Optional configuration JSON
+  string config_json = 3;
+}
+
+message InitResponse {
+  // Success message or empty
+  string message = 1;
+}
+
+// Command request with operation name and serialized data
+message CommandRequest {
+  // Command name (e.g., "createSpace", "getDocument")
+  string cmd = 1;
+
+  // Serialized request data (protobuf bytes from syncspace.proto messages)
+  bytes data = 2;
+}
+
+message CommandResponse {
+  // Serialized response data (protobuf bytes from syncspace.proto messages)
+  bytes data = 1;
+}
+
+// Subscribe to event stream
+message SubscribeRequest {
+  // Event filter (optional, empty means all events)
+  repeated string event_types = 1;
+}
+
+// Event notification (streaming response)
+message SubscribeResponse {
+  // Event type (e.g., "documentChanged", "syncStatusChanged")
+  string type = 1;
+
+  // Serialized event data
+  bytes data = 2;
+
+  // Timestamp (Unix milliseconds)
+  int64 timestamp = 3;
+}
+
+// Shutdown request
+message ShutdownRequest {
+  // Graceful shutdown timeout in milliseconds
+  int64 timeout_ms = 1;
+}
+
+message ShutdownResponse {
+  // Success message
+  string message = 1;
+}

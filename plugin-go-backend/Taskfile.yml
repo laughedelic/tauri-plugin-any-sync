@@ -1,4 +1,4 @@
-version: "3"
+version: 3
 
 includes:
   desktop:
@@ -7,47 +7,53 @@ includes:
   mobile:
     taskfile: ./mobile/Taskfile.yml
     dir: ./mobile
+  shared:
+    taskfile: ./shared/Taskfile.yml
+    dir: ./shared
 
 tasks:
   build:
-    desc: "Build Go backend binaries for current platform and mobile"
+    desc: Build Go backend binaries for current platform and mobile
     deps:
       - desktop:build
       - mobile:build
 
   build-all:
-    desc: "Build Go backend binaries for all platforms"
+    desc: Build Go backend binaries for all platforms
     deps:
       - desktop:build-all
       - mobile:build-all
 
   clean:
-    desc: "Clean all build artifacts"
+    desc: Clean all build artifacts
     deps:
       - desktop:clean
       - mobile:clean
 
-  mod-tidy:
-    desc: "Run go mod tidy in all modules"
-    deps:
-      - desktop:mod-tidy
-      - mobile:mod-tidy
-
   test:
-    desc: "Run all Go tests"
+    desc: Run all Go tests across modules
     deps:
+      - shared:test
       - desktop:test
       - mobile:test
-    # TODO: consider using go.work to avoid this
-    cmd: go test ./...
-    dir: ./shared
 
   lint:
-    desc: "Run golangci-lint"
-    cmds:
-      - golangci-lint run ./...
+    desc: Run golangci-lint
+    cmd: golangci-lint run ./...
 
   fmt:
-    desc: "Format Go code"
+    desc: Format Go code
+    cmd: go fmt ./...
+
+  work-sync:
+    desc: Sync go.work with module dependencies
+    cmd: go work sync
+
+  mod-tidy:
+    desc: Run go mod tidy in workspace
+    deps:
+      - work-sync
     cmds:
-      - go fmt ./...
+      - go mod tidy -C shared
+      - go mod tidy -C desktop
+      - go mod tidy -C mobile

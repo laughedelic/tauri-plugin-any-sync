@@ -1,6 +1,10 @@
 version: 3
 
 includes:
+  buf:
+    taskfile: ./buf/Taskfile.yml
+    dir: ./buf
+    aliases: [proto]
   backend:
     taskfile: ./plugin-go-backend/Taskfile.yml
     dir: ./plugin-go-backend

@@ -8,17 +8,16 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
-	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 
-	"anysync-backend/desktop/api/server"
-	"anysync-backend/desktop/config"
-	"anysync-backend/desktop/health"
-	pb "anysync-backend/desktop/proto"
-	"anysync-backend/shared/storage"
+	transportpb "anysync-backend/desktop/proto/transport/v1"
+	"anysync-backend/shared/anysync"
+	"anysync-backend/shared/dispatcher"
+	"anysync-backend/shared/handlers"
+	syncspacepb "anysync-backend/shared/proto/syncspace/v1"
 )
 
 var (
@@ -26,58 +25,193 @@ var (
 	host = flag.String("host", "localhost", "Host to bind to")
 )
 
+// Server implements the TransportService by calling the dispatcher
+type Server struct {
+	transportpb.UnimplementedTransportServiceServer
+	dispatcher *dispatcher.Dispatcher
+}
+
+func NewServer() *Server {
+	return &Server{
+		dispatcher: handlers.GetDispatcher(),
+	}
+}
+
+// Init initializes the backend
+func (s *Server) Init(ctx context.Context, req *transportpb.InitRequest) (*transportpb.InitResponse, error) {
+	// Convert transport.InitRequest to syncspace.InitRequest
+	syncspaceReq := &syncspacepb.InitRequest{
+		DataDir:   req.StoragePath,
+		NetworkId: req.NetworkId,
+	}
+
+	// Marshal to bytes
+	reqBytes, err := proto.Marshal(syncspaceReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal init request: %w", err)
+	}
+
+	// Call dispatcher
+	respBytes, err := s.dispatcher.Dispatch(ctx, "init", reqBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal response
+	var syncspaceResp syncspacepb.InitResponse
+	if err := proto.Unmarshal(respBytes, &syncspaceResp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal init response: %w", err)
+	}
+
+	msg := "initialized successfully"
+	if !syncspaceResp.Success {
+		msg = "initialization failed"
+	}
+
+	return &transportpb.InitResponse{
+		Message: msg,
+	}, nil
+}
+
+// Command executes a command through the dispatcher
+func (s *Server) Command(ctx context.Context, req *transportpb.CommandRequest) (*transportpb.CommandResponse, error) {
+	// Dispatch directly - request data is already serialized
+	respBytes, err := s.dispatcher.Dispatch(ctx, req.Cmd, req.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	return &transportpb.CommandResponse{
+		Data: respBytes,
+	}, nil
+}
+
+// Subscribe streams events to the client
+func (s *Server) Subscribe(req *transportpb.SubscribeRequest, stream transportpb.TransportService_SubscribeServer) error {
+	ctx := stream.Context()
+
+	// Convert transport event types to syncspace event types
+	syncspaceReq := &syncspacepb.SubscribeRequest{
+		EventTypes: req.EventTypes,
+		SpaceIds:   []string{}, // Empty means all spaces
+	}
+
+	// Get subscription from handlers (special handling for streaming)
+	subscriberID, eventChan, err := handlers.Subscribe(ctx, syncspaceReq)
+	if err != nil {
+		return fmt.Errorf("failed to subscribe: %w", err)
+	}
+	defer handlers.Unsubscribe(subscriberID)
+
+	// Stream events to client until context is cancelled or error occurs
+	for {
+		select {
+		case <-ctx.Done():
+			// Client disconnected
+			return ctx.Err()
+		case event, ok := <-eventChan:
+			if !ok {
+				// Channel closed (unsubscribed)
+				return nil
+			}
+
+			// Convert anysync.Event to syncspace.SubscribeResponse
+			syncspaceEvent := &syncspacepb.SubscribeResponse{
+				EventId:   event.ID,
+				EventType: string(event.Type),
+				SpaceId:   event.SpaceID,
+				Timestamp: event.Timestamp,
+				Payload:   marshalEventPayload(event),
+			}
+
+			// Marshal to bytes
+			eventBytes, err := proto.Marshal(syncspaceEvent)
+			if err != nil {
+				log.Printf("Failed to marshal event: %v", err)
+				continue
+			}
+
+			// Send to transport stream
+			transportEvent := &transportpb.SubscribeResponse{
+				Type:      string(event.Type),
+				Data:      eventBytes,
+				Timestamp: event.Timestamp * 1000, // Convert to milliseconds
+			}
+
+			if err := stream.Send(transportEvent); err != nil {
+				return fmt.Errorf("failed to send event: %w", err)
+			}
+		}
+	}
+}
+
+// marshalEventPayload converts event payload map to protobuf bytes
+// For now, this returns empty bytes. In the future, this could marshal
+// specific event types (DocumentCreatedEvent, DocumentUpdatedEvent, etc.)
+func marshalEventPayload(event *anysync.Event) []byte {
+	// TODO: Marshal specific event payload types based on event.Type
+	return []byte{}
+}
+
+// Shutdown shuts down the backend
+func (s *Server) Shutdown(ctx context.Context, req *transportpb.ShutdownRequest) (*transportpb.ShutdownResponse, error) {
+	// Convert transport.ShutdownRequest to syncspace.ShutdownRequest
+	syncspaceReq := &syncspacepb.ShutdownRequest{}
+
+	// Marshal to bytes
+	reqBytes, err := proto.Marshal(syncspaceReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal shutdown request: %w", err)
+	}
+
+	// Call dispatcher
+	respBytes, err := s.dispatcher.Dispatch(ctx, "shutdown", reqBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal response
+	var syncspaceResp syncspacepb.ShutdownResponse
+	if err := proto.Unmarshal(respBytes, &syncspaceResp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal shutdown response: %w", err)
+	}
+
+	msg := "shutdown successfully"
+	if !syncspaceResp.Success {
+		msg = "shutdown failed"
+	}
+
+	return &transportpb.ShutdownResponse{
+		Message: msg,
+	}, nil
+}
+
 func main() {
 	flag.Parse()
-
-	// Load configuration
-	cfg := config.NewConfig()
-
-	// Override with command line flags
-	if *port != 0 {
-		cfg.Port = *port
-	}
-	if *host != "localhost" {
-		cfg.Host = *host
-	}
-
-	// Create health service
-	healthSvc := health.NewService()
-
-	// Initialize storage
-	// Use a database path from environment or default to current directory
-	dbPath := os.Getenv("ANY_SYNC_DB_PATH")
-	if dbPath == "" {
-		dbPath = filepath.Join(".", "anystore.db")
-	}
-	log.Printf("Initializing storage at: %s", dbPath)
-
-	store, err := storage.New(dbPath)
-	if err != nil {
-		log.Fatalf("Failed to initialize storage: %v", err)
-	}
-	defer store.Close()
 
 	// Create gRPC server
 	grpcServer := grpc.NewServer()
 
-	// Register health service
-	healthServer := server.NewHealthServer()
-	pb.RegisterHealthServiceServer(grpcServer, healthServer)
+	// Register Transport service
+	transportServer := NewServer()
+	transportpb.RegisterTransportServiceServer(grpcServer, transportServer)
 
-	// Register storage service
-	storageServer := server.NewStorageServer(store)
-	pb.RegisterStorageServiceServer(grpcServer, storageServer)
+	// Determine listen address
+	listenAddr := fmt.Sprintf("%s:%d", *host, *port)
+	if *port == 0 {
+		listenAddr = fmt.Sprintf("%s:0", *host)
+	}
 
 	// Create listener
-	lis, err := net.Listen("tcp", cfg.GetAddress())
+	lis, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 	defer lis.Close()
 
-	// Get actual port (especially important when using random port)
+	// Get actual port
 	actualPort := lis.Addr().(*net.TCPAddr).Port
-	fmt.Printf("Server listening on %s:%d\n", cfg.Host, actualPort)
+	fmt.Printf("SyncSpace gRPC server listening on %s:%d\n", *host, actualPort)
 
 	// Write port to file for communication with parent process
 	if portFile := os.Getenv("ANY_SYNC_PORT_FILE"); portFile != "" {
@@ -86,11 +220,7 @@ func main() {
 		}
 	}
 
-	// Set up graceful shutdown
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Handle signals
+	// Handle signals for graceful shutdown
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
@@ -101,35 +231,12 @@ func main() {
 		}
 	}()
 
-	// Start health check routine
-	go func() {
-		ticker := time.NewTicker(time.Duration(cfg.HealthCheckInterval) * time.Second)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				healthy, msg := healthSvc.Check(ctx)
-				if !healthy {
-					log.Printf("Health check failed: %s", msg)
-				} else {
-					log.Printf("Health check: %s", msg)
-				}
-			}
-		}
-	}()
-
 	// Wait for shutdown signal
 	<-sigCh
-	fmt.Println("Shutting down server...")
-	cancel()
+	fmt.Println("\nShutting down server...")
 
-	// Graceful stop gRPC server
+	// Graceful stop
 	grpcServer.GracefulStop()
 
-	// Give some time for graceful shutdown
-	time.Sleep(2 * time.Second)
 	fmt.Println("Server stopped")
 }

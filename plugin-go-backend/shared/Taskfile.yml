@@ -1,0 +1,22 @@
+version: 3
+
+tasks:
+  test-unit:
+    desc: Run unit tests only
+    cmd: go test ./... -run '^TestUnit_'
+
+  test-integration:
+    desc: Run integration tests only
+    cmd: go test ./... -run '^TestIntegration_'
+
+  test-e2e:
+    desc: Run E2E integration tests only
+    cmd: go test ./... -run '^TestE2E_'
+
+  test:
+    desc: Run all shared module tests
+    cmd: go test ./...
+
+  mod-tidy:
+    desc: "Run go mod tidy"
+    cmd: go mod tidy

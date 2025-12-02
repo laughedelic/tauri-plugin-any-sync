@@ -1,0 +1,19 @@
+version: v2
+managed:
+  enabled: true
+inputs:
+  - directory: proto/syncspace-api
+clean: true
+plugins:
+  # Go protobuf structs - syncspace messages (shared by mobile + desktop)
+  # Note: Only generates message types, no gRPC service code
+  - remote: buf.build/protocolbuffers/go
+    out: ../plugin-go-backend/shared/proto
+    opt:
+      - paths=source_relative
+
+  # TypeScript code generation (protobuf-es) - syncspace API
+  - remote: buf.build/bufbuild/es
+    out: ../plugin-js-api/src/generated
+    opt:
+      - target=ts

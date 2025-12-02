@@ -346,21 +346,42 @@
 - Sync control (StartSync, PauseSync, GetSyncStatus)
 - Network-related events (sync.started, sync.completed, etc.)
 
-## Phase 3: Rebuild Rust Plugin
+## Phase 3: Rebuild Rust Plugin ✅ COMPLETED
 
-- [ ] 3.1 Delete existing per-operation commands from `plugin-rust-core/src/commands.rs`
-- [ ] 3.2 Delete existing per-operation service methods from `plugin-rust-core/src/desktop.rs` and `mobile.rs`
-- [ ] 3.3 Delete all per-operation permission files in `plugin-rust-core/permissions/` (keep directory structure)
-- [ ] 3.4 Define simplified `AnySyncBackend` trait with 3 methods: `command()`, `set_event_handler()`, `shutdown()`
-- [ ] 3.5 Implement single `command(cmd: String, data: Vec<u8>) -> Result<Vec<u8>>` Tauri command
-- [ ] 3.6 Implement `AnySyncBackend` for desktop (calls sidecar via gRPC or simplified IPC)
-- [ ] 3.7 Implement `AnySyncBackend` for mobile (calls native FFI)
+- [x] 3.1 Delete existing per-operation commands from `plugin-rust-core/src/commands.rs`
+- [x] 3.2 Delete existing per-operation service methods from `plugin-rust-core/src/desktop.rs` and `mobile.rs`
+- [x] 3.3 Delete all per-operation permission files in `plugin-rust-core/permissions/` (keep directory structure)
+- [x] 3.4 Define simplified `AnySyncBackend` trait with 3 methods: `command()`, `set_event_handler()`, `shutdown()`
+- [x] 3.5 Implement single `command(cmd: String, data: Vec<u8>) -> Result<Vec<u8>>` Tauri command
+- [x] 3.6 Implement `AnySyncBackend` for desktop (calls sidecar via gRPC or simplified IPC)
+- [x] 3.7 Implement `AnySyncBackend` for mobile (calls native FFI)
 - [ ] 3.8 Update iOS Swift shim to ~30 lines (pure passthrough to Go C exports)
 - [ ] 3.9 Update Android Kotlin shim to ~30 lines (pure passthrough to Go JNI)
-- [ ] 3.10 Create single permission file `plugin-rust-core/permissions/default.toml` for `command` handler
-- [ ] 3.11 Update `plugin-rust-core/build.rs` to handle new binary structure (if needed)
-- [ ] 3.12 Write minimal Rust passthrough tests (bytes pass through, errors propagate)
-- [ ] 3.13 Validate Rust plugin builds for desktop and mobile
+- [x] 3.10 Create single permission file `plugin-rust-core/permissions/default.toml` for `command` handler
+- [x] 3.11 Update `plugin-rust-core/build.rs` to handle new binary structure (if needed)
+- [x] 3.12 Write minimal Rust passthrough tests (bytes pass through, errors propagate)
+- [x] 3.13 Validate Rust plugin builds for desktop and mobile
+
+**Status**: Core Rust implementation complete with 6 passing passthrough tests. Desktop backend fully implements sidecar management with gRPC client. Mobile backend uses native FFI bridge.
+
+**Architecture Summary**:
+- **Single command handler**: `command(cmd: String, data: Vec<u8>) -> Result<Vec<u8>>`
+- **AnySyncBackend trait**: 3 methods (command, set_event_handler, shutdown)
+- **Desktop implementation**: SidecarManager with automatic startup, port polling, health check via Init, gRPC communication
+- **Mobile implementation**: Plugin registration bridge (Android Kotlin, iOS Swift) via native FFI
+- **Permissions**: Single `allow-command` permission instead of per-operation
+- **Protobuf generation**: Updated build.rs to generate from new transport.proto and syncspace.proto
+
+**Key changes**:
+- Deleted all per-operation Rust commands and service trait methods
+- Replaced `AnySyncService` trait with minimal `AnySyncBackend` trait
+- Rewrote desktop.rs with proper sidecar lifecycle management (matching old code patterns)
+- Rewrote mobile.rs to use new command dispatch pattern
+- Updated build.rs to generate protobuf from buf/proto files instead of old plugin-go-backend paths
+- Created 6 passthrough tests verifying byte integrity, edge cases, and command naming
+
+**Deferred** (to Phase 5):
+- Native shim simplification for iOS and Android (core Rust layer ready, only native code remains)
 
 ## Phase 4: Rebuild TypeScript API
 

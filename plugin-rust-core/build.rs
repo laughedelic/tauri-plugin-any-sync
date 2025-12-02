@@ -1,4 +1,4 @@
-const COMMANDS: &[&str] = &["ping"];
+const COMMANDS: &[&str] = &["command"];
 
 fn main() {
     println!(
@@ -322,18 +322,22 @@ fn compute_sha256(data: &[u8]) -> String {
 }
 
 fn generate_protobuf() -> Result<(), Box<dyn std::error::Error>> {
-    println!("cargo:rerun-if-changed=../plugin-go-backend/desktop/proto/health.proto");
-    println!("cargo:rerun-if-changed=../plugin-go-backend/desktop/proto/storage.proto");
+    // Generate protobuf code from the new unified transport and syncspace APIs
+    println!("cargo:rerun-if-changed=../buf/proto/dispatch-transport/transport/v1/transport.proto");
+    println!("cargo:rerun-if-changed=../buf/proto/syncspace-api/syncspace/v1/syncspace.proto");
 
-    // Generate protobuf code
+    // Generate protobuf code using tonic for gRPC client
     tonic_build::configure()
-        .build_server(false) // We only need the client
+        .build_server(false) // We only need the client (server runs in Go)
         .compile_protos(
             &[
-                "../plugin-go-backend/desktop/proto/health.proto",
-                "../plugin-go-backend/desktop/proto/storage.proto",
+                "../buf/proto/dispatch-transport/transport/v1/transport.proto",
+                "../buf/proto/syncspace-api/syncspace/v1/syncspace.proto",
             ],
-            &["../plugin-go-backend/desktop/proto"],
+            &[
+                "../buf/proto/dispatch-transport",
+                "../buf/proto/syncspace-api",
+            ],
         )?;
 
     Ok(())

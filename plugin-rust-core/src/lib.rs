@@ -3,8 +3,6 @@ use tauri::{
     plugin::{Builder, TauriPlugin},
     Manager, Runtime,
 };
-#[cfg(desktop)]
-use tauri_plugin_shell::ShellExt;
 
 pub use models::*;
 
@@ -21,53 +19,43 @@ mod proto;
 
 pub use error::{Error, Result};
 
-/// Service trait that abstracts platform-specific implementations.
-/// Desktop uses async gRPC calls, Mobile uses sync FFI wrapped in spawn_blocking.
+/// Backend trait that abstracts platform-specific implementations.
+/// Desktop uses gRPC to communicate with sidecar.
+/// Mobile uses FFI to call native library.
 #[async_trait]
-pub trait AnySyncService: Send + Sync {
-    /// Ping the backend service
-    async fn ping(&self, payload: PingRequest) -> Result<PingResponse>;
+pub trait AnySyncBackend: Send + Sync {
+    /// Execute a command - single entry point for all operations.
+    ///
+    /// # Arguments
+    /// * `cmd` - Command name (e.g., "syncspace.v1.SpaceCreate")
+    /// * `data` - Protobuf-encoded request bytes
+    ///
+    /// # Returns
+    /// Protobuf-encoded response bytes or error
+    async fn command(&self, cmd: &str, data: &[u8]) -> Result<Vec<u8>>;
 
-    /// Store a document in a collection
-    async fn storage_put(&self, payload: PutRequest) -> Result<PutResponse>;
+    /// Register event handler callback (receives protobuf-encoded events)
+    fn set_event_handler(&self, handler: Box<dyn Fn(Vec<u8>) + Send + Sync>);
 
-    /// Retrieve a document from a collection
-    async fn storage_get(&self, payload: GetRequest) -> Result<GetResponse>;
-
-    /// Delete a document from a collection
-    async fn storage_delete(&self, payload: DeleteRequest) -> Result<DeleteResponse>;
-
-    /// List all document IDs in a collection
-    async fn storage_list(&self, payload: ListRequest) -> Result<ListResponse>;
+    /// Shutdown the backend
+    async fn shutdown(&self) -> Result<()>;
 }
 
 /// Initializes the plugin.
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("any-sync")
-        .invoke_handler(tauri::generate_handler![
-            commands::ping,
-            commands::storage_put,
-            commands::storage_get,
-            commands::storage_delete,
-            commands::storage_list
-        ])
-        .setup(|app, api| {
-            log::debug!("Initializing any-sync plugin");
-
-            // Initialize shell plugin for sidecar support
+        .invoke_handler(tauri::generate_handler![commands::command])
+        .setup(|app, _api| {
+            // Create platform-specific backend
             #[cfg(desktop)]
-            let _shell = app.shell();
+            let backend: Box<dyn AnySyncBackend> = Box::new(desktop::DesktopBackend::new(app)?);
 
-            // Create the service trait object based on platform
             #[cfg(mobile)]
-            let service: Box<dyn AnySyncService> = { Box::new(mobile::AnySync::new(app, api)?) };
-            #[cfg(desktop)]
-            let service: Box<dyn AnySyncService> = { Box::new(desktop::AnySync::new(app, api)?) };
+            let backend: Box<dyn AnySyncBackend> = Box::new(mobile::MobileBackend::new()?);
 
-            // Manage the service for use in commands
-            app.manage(service);
+            // Register backend as app state
+            app.manage(backend);
 
-            log::debug!("any-sync plugin initialized successfully");
             Ok(())
         })
         .build()

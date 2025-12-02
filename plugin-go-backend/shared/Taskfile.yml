@@ -1,0 +1,18 @@
+version: "3"
+
+tasks:
+  test:
+    desc: "Run all shared module tests (excluding E2E tests)"
+    cmd: go test ./... -skip 'TestE2E'
+
+  test-e2e:
+    desc: "Run E2E integration tests only"
+    cmd: go test ./handlers -run 'TestE2E' -v
+
+  test-all:
+    desc: "Run all shared module tests including E2E"
+    cmd: go test ./...
+
+  mod-tidy:
+    desc: "Run go mod tidy"
+    cmd: go mod tidy

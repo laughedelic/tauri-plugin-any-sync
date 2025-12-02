@@ -256,7 +256,12 @@ func (sm *SpaceManager) GetSpaceObject(spaceID string) (commonspace.Space, error
 		return nil, fmt.Errorf("failed to create space object: %w", err)
 	}
 
-	// Note: NewSpace() handles initialization internally
+	// Initialize the space to set up TreeBuilder
+	if err := space.Init(ctx); err != nil {
+		space.Close()
+		return nil, fmt.Errorf("failed to initialize space: %w", err)
+	}
+
 	sm.spaceObjects[spaceID] = space
 	return space, nil
 }
@@ -380,6 +385,11 @@ func (sm *SpaceManager) saveMetadata() error {
 }
 
 // Close closes all open spaces and shuts down the Any-Sync app.
+// GetDataDir returns the data directory path.
+func (sm *SpaceManager) GetDataDir() string {
+	return sm.dataDir
+}
+
 func (sm *SpaceManager) Close() error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()

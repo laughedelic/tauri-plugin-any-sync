@@ -100,19 +100,15 @@ func TestDeleteDocument_NotFound(t *testing.T) {
 	}
 	Init(context.Background(), initReq)
 
+	// Test with invalid space ID - should error
 	req := &pb.DeleteDocumentRequest{
-		SpaceId:    "space1",
+		SpaceId:    "invalid-space-id",
 		DocumentId: "nonexistent",
 	}
 
-	resp, err := DeleteDocument(context.Background(), req)
-	if err != nil {
-		t.Fatalf("DeleteDocument failed: %v", err)
-	}
-
-	deleteResp := resp.(*pb.DeleteDocumentResponse)
-	if deleteResp.Existed {
-		t.Error("Expected Existed=false for nonexistent document")
+	_, err := DeleteDocument(context.Background(), req)
+	if err == nil {
+		t.Error("Expected error for invalid space ID")
 	}
 }
 

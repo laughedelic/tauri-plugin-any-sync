@@ -7,6 +7,9 @@ includes:
   mobile:
     taskfile: ./mobile/Taskfile.yml
     dir: ./mobile
+  shared:
+    taskfile: ./shared/Taskfile.yml
+    dir: ./shared
 
 tasks:
   build:
@@ -32,15 +35,14 @@ tasks:
     deps:
       - desktop:mod-tidy
       - mobile:mod-tidy
+      - shared:mod-tidy
 
   test:
-    desc: "Run all Go tests"
+    desc: "Run all Go tests (excluding E2E tests)"
     deps:
+      - shared:test
       - desktop:test
       - mobile:test
-    # TODO: consider using go.work to avoid this
-    cmd: go test ./...
-    dir: ./shared
 
   lint:
     desc: "Run golangci-lint"

@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -380,26 +382,54 @@ func (dm *DocumentManager) loadAllMetadata() error {
 }
 
 func (dm *DocumentManager) loadMetadata(spaceID string) error {
-	// TODO: Load from persistent storage
-	// For now, we'll use in-memory only
-	if dm.metadata[spaceID] == nil {
-		dm.metadata[spaceID] = make(map[string]*DocumentMetadata)
+	// Load metadata from JSON file
+	dataDir := dm.spaceManager.GetDataDir()
+	metadataPath := filepath.Join(dataDir, "documents", spaceID+".json")
+
+	data, err := os.ReadFile(metadataPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// File doesn't exist yet, initialize empty
+			if dm.metadata[spaceID] == nil {
+				dm.metadata[spaceID] = make(map[string]*DocumentMetadata)
+			}
+			return nil
+		}
+		return fmt.Errorf("failed to read metadata file: %w", err)
 	}
+
+	var spaceMeta map[string]*DocumentMetadata
+	if err := json.Unmarshal(data, &spaceMeta); err != nil {
+		return fmt.Errorf("failed to unmarshal metadata: %w", err)
+	}
+
+	dm.metadata[spaceID] = spaceMeta
 	return nil
 }
 
 func (dm *DocumentManager) saveMetadata(spaceID string) error {
-	// TODO: Save to persistent storage
-	// For now, we'll use in-memory only
+	// Save metadata to JSON file
 	spaceMeta, exists := dm.metadata[spaceID]
 	if !exists {
 		return nil
 	}
 
-	// Serialize to JSON (for future persistence)
-	_, err := json.Marshal(spaceMeta)
+	dataDir := dm.spaceManager.GetDataDir()
+	documentsDir := filepath.Join(dataDir, "documents")
+
+	// Ensure documents directory exists
+	if err := os.MkdirAll(documentsDir, 0755); err != nil {
+		return fmt.Errorf("failed to create documents directory: %w", err)
+	}
+
+	metadataPath := filepath.Join(documentsDir, spaceID+".json")
+	data, err := json.MarshalIndent(spaceMeta, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal metadata: %w", err)
+	}
+
+	if err := os.WriteFile(metadataPath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write metadata file: %w", err)
 	}
 
 	return nil

@@ -387,9 +387,9 @@
 
 - [x] 4.1 Delete all hand-written API functions from `plugin-js-api/src/index.ts`
 - [x] 4.2 Add @bufbuild/protobuf to dependencies
-- [x] 4.3 Create raw `command(cmd: string, data: Uint8Array)` function calling Tauri invoke
-- [x] 4.4 Implement mechanical typed `AnySyncClient` class with methods for each operation
-- [x] 4.5 Re-export all generated protobuf types from syncspace_pb.ts
+- [x] 4.3 Create raw `dispatch` function calling Tauri invoke
+- [x] 4.4 Implement mechanical typed `SyncSpaceClient` class with methods for each operation and inlined message types
+- [x] 4.5 Re-export all generated types and client from syncspace_api.ts
 - [x] 4.6 Add JSDoc documentation to raw command function and typed client
 - [x] 4.7 Validate TypeScript implementation uses generated schemas for encoding/decoding
 
@@ -397,20 +397,15 @@
 
 **Architecture**:
 - **Raw command function**: Takes cmd name and bytes, invokes Tauri plugin:any-sync|command
-- **Mechanical typed client**: AnySyncClient with 18 methods (one per SyncSpace operation)
+- **Mechanical typed client**: SyncSpaceClient with 18 methods (one per SyncSpace operation)
 - **Message handling**: All encoding/decoding via generated protobuf schemas (toBinary/fromBinary)
 - **Re-exports**: All types exported for convenience (InitRequest, CreateSpaceRequest, Document, etc.)
 
-**Generated types available**:
-- Lifecycle: InitRequest, InitResponse, ShutdownRequest, ShutdownResponse
-- Spaces: CreateSpaceRequest/Response, JoinSpaceRequest/Response, ListSpacesRequest/Response, etc.
-- Documents: CreateDocumentRequest/Response, GetDocumentRequest/Response, UpdateDocumentRequest/Response, etc.
-- Events: SubscribeRequest/Response with event types
-- Sync control: StartSyncRequest/Response, PauseSyncRequest/Response, GetSyncStatusRequest/Response
-
 **File structure**:
-- `plugin-js-api/src/index.ts` - Raw command function and typed client (120 lines)
-- `plugin-js-api/src/generated/syncspace/v1/syncspace_pb.ts` - Generated from buf (auto-generated, not edited)
+- `plugin-js-api/scripts/generate_api.ts` - Buf plugin script for generating TypeScript client
+- `plugin-js-api/src/generated/syncspace/v1/syncspace_pb.ts` - Generated message types (using @bufbuild/es)
+- `plugin-js-api/src/generated/syncspace/v1/syncspace_api.ts` - Generated client and types (using scripts/generate_api.ts)
+- `plugin-js-api/src/index.ts` - Re-exports generated types and client
 - `plugin-js-api/package.json` - Updated with @bufbuild/protobuf dependency
 
 **No build validation yet** - will be done when example app is updated (Phase 7)

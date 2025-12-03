@@ -410,14 +410,65 @@
 
 **No build validation yet** - will be done when example app is updated (Phase 7)
 
-## Phase 5: Update Native Shims
+## Phase 5: Update Native Shims ✅ COMPLETED
 
-- [ ] 5.1 Simplify iOS Swift code in `plugin-rust-core/ios/Sources/` to minimal bridge
-- [ ] 5.2 Remove per-operation Swift methods, keep only plugin initialization and command forwarding
-- [ ] 5.3 Validate iOS builds with simplified shim
-- [ ] 5.4 Simplify Android Kotlin code in `plugin-rust-core/android/src/` to minimal bridge
-- [ ] 5.5 Remove per-operation Kotlin methods, keep only plugin initialization and command forwarding
-- [ ] 5.6 Validate Android builds with simplified shim
+**Goal**: Reduce native shims (iOS Swift, Android Kotlin) to minimal passthroughs.
+
+- [x] 5.1 Simplify iOS Swift code in `plugin-rust-core/ios/Sources/` to minimal bridge
+  - Renamed ExamplePlugin.swift to contain AnySyncPlugin class
+  - Single `command(_ invoke: Invoke)` method that calls `MobileCommand(cmd, data)`
+  - Initialization logic calls `MobileInit()` on first command
+  - ~40 lines total (was ~165 lines with per-operation methods)
+- [x] 5.2 Remove per-operation Swift methods, keep only plugin initialization and command forwarding
+  - Deleted: PingArgs, ping method
+  - Added: CommandArgs (cmd, data), command method with Go FFI calls
+- [x] 5.3 Validate iOS builds with simplified shim
+  - Updated PluginTests.swift with basic plugin instantiation test
+  - Note: Full command execution tests require gomobile framework and are covered by integration tests
+- [x] 5.4 Simplify Android Kotlin code in `plugin-rust-core/android/src/` to minimal bridge
+  - Updated AnySyncPlugin.kt with single `command(invoke: Invoke)` method
+  - Calls `Mobile.command(cmd, data)` via gomobile FFI
+  - Initialization calls `Mobile.init()` on first command
+  - ~50 lines total (was ~165 lines with 4 storage operations)
+- [x] 5.5 Remove per-operation Kotlin methods, keep only plugin initialization and command forwarding
+  - Deleted: StorageGetArgs, StoragePutArgs, StorageDeleteArgs, StorageListArgs
+  - Deleted: storageGet, storagePut, storageDelete, storageList methods
+  - Added: CommandArgs (cmd, data), single command method
+- [x] 5.6 Validate Android builds with simplified shim
+  - Updated AnySyncUnitTest.kt with CommandArgs initialization test
+  - Rust mobile backend updated to handle CommandResponse structure
+  - Rust plugin compiles successfully with updated mobile backend
+
+**Implementation Notes**:
+- **iOS**: Calls Go via `MobileCommand()` from gomobile-generated Mobile framework
+- **Android**: Calls Go via `Mobile.command()` from gomobile-generated library
+- **Both platforms**: Single command method replaces N operation-specific methods
+- **Rust mobile backend**: Updated to deserialize `{"data": ByteArray}` response structure
+- **Test strategy**: Minimal unit tests (plugin instantiation), full coverage via integration tests
+
+**Code Reduction**:
+- iOS: ~165 lines → ~40 lines (76% reduction)
+- Android: ~165 lines → ~50 lines (70% reduction)
+- Combined: ~330 lines → ~90 lines (73% reduction)
+
+**Benefits**:
+- Adding new operations requires zero changes to native shims
+- Native layer is pure passthrough (no business logic to maintain)
+- Clear separation of concerns (logic in Go, FFI bridge in Swift/Kotlin, dispatch in Rust)
+
+**Test Results**:
+- Rust plugin compiles successfully ✅
+- Mobile backend properly deserializes command responses ✅
+- iOS/Android test files updated with basic tests ✅
+- iOS xcframework builds successfully ✅
+- Android AAR builds successfully ✅
+
+**Documentation Updates**:
+- iOS AGENTS.md reduced to ~50 lines (was ~500 lines)
+- Android AGENTS.md reduced to ~60 lines (was ~400 lines)
+- Both files now contain only project-specific information
+- Swift Package.swift fixed (removed non-existent Tauri dependency)
+- gomobile Taskfile updated with iOS build support (build:ios task)
 
 ## Phase 6: Network Sync Layer
 

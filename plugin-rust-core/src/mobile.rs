@@ -1,12 +1,17 @@
 use async_trait::async_trait;
 use log::{debug, error, info};
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Deserialize};
 use tauri::{
     plugin::{PluginApi, PluginHandle},
     AppHandle, Runtime,
 };
 
 use crate::{AnySyncBackend, Result};
+
+#[derive(Debug, Deserialize)]
+struct CommandResponse {
+    data: Vec<u8>,
+}
 
 #[cfg(target_os = "ios")]
 tauri::ios_plugin_binding!(init_plugin_any_sync);
@@ -47,15 +52,18 @@ impl<R: Runtime> AnySyncBackend for MobileBackend<R> {
         let cmd = cmd.to_string();
         let data = data.to_vec();
 
-        self.call_plugin(move |handle| {
-            handle
-                .run_mobile_plugin("command", (cmd, data))
-                .map_err(|e| {
-                    error!("Mobile plugin call failed: {}", e);
-                    format!("Mobile plugin error: {}", e).into()
-                })
-        })
-        .await
+        let response: CommandResponse = self
+            .call_plugin(move |handle| {
+                handle
+                    .run_mobile_plugin("command", (cmd, data))
+                    .map_err(|e| {
+                        error!("Mobile plugin call failed: {}", e);
+                        format!("Mobile plugin error: {}", e).into()
+                    })
+            })
+            .await?;
+
+        Ok(response.data)
     }
 
     fn set_event_handler(&self, _handler: Box<dyn Fn(Vec<u8>) + Send + Sync>) {

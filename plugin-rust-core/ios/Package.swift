@@ -10,23 +10,22 @@ let package = Package(
         .iOS(.v13),
     ],
     products: [
-        // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
             name: "tauri-plugin-any-sync",
             type: .static,
-            targets: ["tauri-plugin-any-sync"]),
+            targets: ["tauri-plugin-any-sync"])
     ],
     dependencies: [
-        .package(name: "Tauri", path: "../.tauri/tauri-api")
+        // Tauri dependency is resolved by the consuming app at build time
     ],
     targets: [
-        // Targets are the basic building blocks of a package. A target can define a module or a test suite.
-        // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "tauri-plugin-any-sync",
-            dependencies: [
-                .byName(name: "Tauri")
-            ],
-            path: "Sources")
+            dependencies: [],
+            path: "Sources"),
+        .testTarget(
+            name: "tauri-plugin-any-sync-tests",
+            dependencies: ["tauri-plugin-any-sync"],
+            path: "Tests/PluginTests"),
     ]
 )

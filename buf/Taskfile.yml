@@ -6,13 +6,15 @@ tasks:
     cmds:
       - buf generate --template ./proto/syncspace-api/buf.gen.yaml
       - buf generate --template ./proto/dispatch-transport/buf.gen.yaml
+      - task: :api:fix
     sources:
       - ./proto/**/*.proto
       - ./proto/**/*.gen.yaml
       - ./buf.yaml
+      - ../plugin-js-api/scripts/protoc-gen-custom-client.ts
     generates:
       - "{{.ROOT_DIR}}/plugin-go-backend/**/proto/**/*.pb.go"
-      - "{{.ROOT_DIR}}/plugin-js-api/src/generated/**/*_pb.ts"
+      - "{{.ROOT_DIR}}/plugin-js-api/src/generated/**/*.ts"
 
   lint:
     desc: Lint protobuf definitions

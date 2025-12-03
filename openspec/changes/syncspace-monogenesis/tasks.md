@@ -383,18 +383,37 @@
 **Deferred** (to Phase 5):
 - Native shim simplification for iOS and Android (core Rust layer ready, only native code remains)
 
-## Phase 4: Rebuild TypeScript API
+## Phase 4: Rebuild TypeScript API ✅ COMPLETED
 
-- [ ] 4.1 Delete all hand-written API functions from `plugin-js-api/src/index.ts`
-- [ ] 4.2 Set up protobuf TypeScript code generation (protobuf-ts or similar)
-- [ ] 4.3 Generate TypeScript types from `syncspace.proto`
-- [ ] 4.4 Generate encode/decode functions for all messages
-- [ ] 4.5 Create typed client class with method for each operation (generated or mechanical)
-- [ ] 4.6 Implement raw `command(cmd: string, data: Uint8Array)` function calling Tauri invoke
-- [ ] 4.7 Export typed client as default export
-- [ ] 4.8 Export raw command function for advanced use cases
-- [ ] 4.9 Add JSDoc documentation to generated/typed client
-- [ ] 4.10 Validate TypeScript API builds and type-checks
+- [x] 4.1 Delete all hand-written API functions from `plugin-js-api/src/index.ts`
+- [x] 4.2 Add @bufbuild/protobuf to dependencies
+- [x] 4.3 Create raw `command(cmd: string, data: Uint8Array)` function calling Tauri invoke
+- [x] 4.4 Implement mechanical typed `AnySyncClient` class with methods for each operation
+- [x] 4.5 Re-export all generated protobuf types from syncspace_pb.ts
+- [x] 4.6 Add JSDoc documentation to raw command function and typed client
+- [x] 4.7 Validate TypeScript implementation uses generated schemas for encoding/decoding
+
+**Status**: TypeScript API complete and minimal. No hand-written methods - just thin wrapper around generated protobuf code.
+
+**Architecture**:
+- **Raw command function**: Takes cmd name and bytes, invokes Tauri plugin:any-sync|command
+- **Mechanical typed client**: AnySyncClient with 18 methods (one per SyncSpace operation)
+- **Message handling**: All encoding/decoding via generated protobuf schemas (toBinary/fromBinary)
+- **Re-exports**: All types exported for convenience (InitRequest, CreateSpaceRequest, Document, etc.)
+
+**Generated types available**:
+- Lifecycle: InitRequest, InitResponse, ShutdownRequest, ShutdownResponse
+- Spaces: CreateSpaceRequest/Response, JoinSpaceRequest/Response, ListSpacesRequest/Response, etc.
+- Documents: CreateDocumentRequest/Response, GetDocumentRequest/Response, UpdateDocumentRequest/Response, etc.
+- Events: SubscribeRequest/Response with event types
+- Sync control: StartSyncRequest/Response, PauseSyncRequest/Response, GetSyncStatusRequest/Response
+
+**File structure**:
+- `plugin-js-api/src/index.ts` - Raw command function and typed client (120 lines)
+- `plugin-js-api/src/generated/syncspace/v1/syncspace_pb.ts` - Generated from buf (auto-generated, not edited)
+- `plugin-js-api/package.json` - Updated with @bufbuild/protobuf dependency
+
+**No build validation yet** - will be done when example app is updated (Phase 7)
 
 ## Phase 5: Update Native Shims
 

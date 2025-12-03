@@ -2,15 +2,18 @@
 // @generated from file syncspace/v1/syncspace.proto (package syncspace.v1, syntax proto3)
 /* eslint-disable */
 
+import type { Message } from "@bufbuild/protobuf";
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file syncspace/v1/syncspace.proto.
  */
-export const file_syncspace_v1_syncspace: GenFile = /*@__PURE__*/
-  fileDesc("ChxzeW5jc3BhY2UvdjEvc3luY3NwYWNlLnByb3RvEgxzeW5jc3BhY2UudjEiKAoHQ29tbWFuZBIMCgRuYW1lGAEgASgJEg8KB3BheWxvYWQYAiABKAwiMQoPQ29tbWFuZFJlc3BvbnNlEg8KB3BheWxvYWQYASABKAwSDQoFZXJyb3IYAiABKAkirAEKC0luaXRSZXF1ZXN0EhAKCGRhdGFfZGlyGAEgASgJEhIKCm5ldHdvcmtfaWQYAiABKAkSEQoJZGV2aWNlX2lkGAMgASgJEjUKBmNvbmZpZxgEIAMoCzIlLnN5bmNzcGFjZS52MS5Jbml0UmVxdWVzdC5Db25maWdFbnRyeRotCgtDb25maWdFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIh8KDEluaXRSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIIhEKD1NodXRkb3duUmVxdWVzdCIjChBTaHV0ZG93blJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgipwEKEkNyZWF0ZVNwYWNlUmVxdWVzdBIQCghzcGFjZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEkAKCG1ldGFkYXRhGAMgAygLMi4uc3luY3NwYWNlLnYxLkNyZWF0ZVNwYWNlUmVxdWVzdC5NZXRhZGF0YUVudHJ5Gi8KDU1ldGFkYXRhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASInChNDcmVhdGVTcGFjZVJlc3BvbnNlEhAKCHNwYWNlX2lkGAEgASgJIjoKEEpvaW5TcGFjZVJlcXVlc3QSEAoIc3BhY2VfaWQYASABKAkSFAoMaW52aXRlX3Rva2VuGAIgASgJIiQKEUpvaW5TcGFjZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiJQoRTGVhdmVTcGFjZVJlcXVlc3QSEAoIc3BhY2VfaWQYASABKAkiJQoSTGVhdmVTcGFjZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiEwoRTGlzdFNwYWNlc1JlcXVlc3QiPQoSTGlzdFNwYWNlc1Jlc3BvbnNlEicKBnNwYWNlcxgBIAMoCzIXLnN5bmNzcGFjZS52MS5TcGFjZUluZm8i7AEKCVNwYWNlSW5mbxIQCghzcGFjZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEjcKCG1ldGFkYXRhGAMgAygLMiUuc3luY3NwYWNlLnYxLlNwYWNlSW5mby5NZXRhZGF0YUVudHJ5EhIKCmNyZWF0ZWRfYXQYBCABKAMSEgoKdXBkYXRlZF9hdBgFIAEoAxItCgtzeW5jX3N0YXR1cxgGIAEoDjIYLnN5bmNzcGFjZS52MS5TeW5jU3RhdHVzGi8KDU1ldGFkYXRhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASImChJEZWxldGVTcGFjZVJlcXVlc3QSEAoIc3BhY2VfaWQYASABKAkiJgoTRGVsZXRlU3BhY2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIItYBChVDcmVhdGVEb2N1bWVudFJlcXVlc3QSEAoIc3BhY2VfaWQYASABKAkSEwoLZG9jdW1lbnRfaWQYAiABKAkSEgoKY29sbGVjdGlvbhgDIAEoCRIMCgRkYXRhGAQgASgMEkMKCG1ldGFkYXRhGAUgAygLMjEuc3luY3NwYWNlLnYxLkNyZWF0ZURvY3VtZW50UmVxdWVzdC5NZXRhZGF0YUVudHJ5Gi8KDU1ldGFkYXRhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASI+ChZDcmVhdGVEb2N1bWVudFJlc3BvbnNlEhMKC2RvY3VtZW50X2lkGAEgASgJEg8KB3ZlcnNpb24YAiABKAMiOwoSR2V0RG9jdW1lbnRSZXF1ZXN0EhAKCHNwYWNlX2lkGAEgASgJEhMKC2RvY3VtZW50X2lkGAIgASgJIk4KE0dldERvY3VtZW50UmVzcG9uc2USKAoIZG9jdW1lbnQYASABKAsyFi5zeW5jc3BhY2UudjEuRG9jdW1lbnQSDQoFZm91bmQYAiABKAgi9QEKCERvY3VtZW50EhMKC2RvY3VtZW50X2lkGAEgASgJEhAKCHNwYWNlX2lkGAIgASgJEhIKCmNvbGxlY3Rpb24YAyABKAkSDAoEZGF0YRgEIAEoDBI2CghtZXRhZGF0YRgFIAMoCzIkLnN5bmNzcGFjZS52MS5Eb2N1bWVudC5NZXRhZGF0YUVudHJ5Eg8KB3ZlcnNpb24YBiABKAMSEgoKY3JlYXRlZF9hdBgHIAEoAxISCgp1cGRhdGVkX2F0GAggASgDGi8KDU1ldGFkYXRhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASLcAQoVVXBkYXRlRG9jdW1lbnRSZXF1ZXN0EhAKCHNwYWNlX2lkGAEgASgJEhMKC2RvY3VtZW50X2lkGAIgASgJEgwKBGRhdGEYAyABKAwSQwoIbWV0YWRhdGEYBCADKAsyMS5zeW5jc3BhY2UudjEuVXBkYXRlRG9jdW1lbnRSZXF1ZXN0Lk1ldGFkYXRhRW50cnkSGAoQZXhwZWN0ZWRfdmVyc2lvbhgFIAEoAxovCg1NZXRhZGF0YUVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiKQoWVXBkYXRlRG9jdW1lbnRSZXNwb25zZRIPCgd2ZXJzaW9uGAEgASgDIj4KFURlbGV0ZURvY3VtZW50UmVxdWVzdBIQCghzcGFjZV9pZBgBIAEoCRITCgtkb2N1bWVudF9pZBgCIAEoCSIpChZEZWxldGVEb2N1bWVudFJlc3BvbnNlEg8KB2V4aXN0ZWQYASABKAgiWwoUTGlzdERvY3VtZW50c1JlcXVlc3QSEAoIc3BhY2VfaWQYASABKAkSEgoKY29sbGVjdGlvbhgCIAEoCRINCgVsaW1pdBgDIAEoBRIOCgZjdXJzb3IYBCABKAkiWwoVTGlzdERvY3VtZW50c1Jlc3BvbnNlEi0KCWRvY3VtZW50cxgBIAMoCzIaLnN5bmNzcGFjZS52MS5Eb2N1bWVudEluZm8SEwoLbmV4dF9jdXJzb3IYAiABKAki3QEKDERvY3VtZW50SW5mbxITCgtkb2N1bWVudF9pZBgBIAEoCRISCgpjb2xsZWN0aW9uGAIgASgJEjoKCG1ldGFkYXRhGAMgAygLMiguc3luY3NwYWNlLnYxLkRvY3VtZW50SW5mby5NZXRhZGF0YUVudHJ5Eg8KB3ZlcnNpb24YBCABKAMSEgoKY3JlYXRlZF9hdBgFIAEoAxISCgp1cGRhdGVkX2F0GAYgASgDGi8KDU1ldGFkYXRhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASKIAQoVUXVlcnlEb2N1bWVudHNSZXF1ZXN0EhAKCHNwYWNlX2lkGAEgASgJEhIKCmNvbGxlY3Rpb24YAiABKAkSKgoHZmlsdGVycxgDIAMoCzIZLnN5bmNzcGFjZS52MS5RdWVyeUZpbHRlchINCgVsaW1pdBgEIAEoBRIOCgZjdXJzb3IYBSABKAkiPQoLUXVlcnlGaWx0ZXISDQoFZmllbGQYASABKAkSEAoIb3BlcmF0b3IYAiABKAkSDQoFdmFsdWUYAyABKAkiXAoWUXVlcnlEb2N1bWVudHNSZXNwb25zZRItCglkb2N1bWVudHMYASADKAsyGi5zeW5jc3BhY2UudjEuRG9jdW1lbnRJbmZvEhMKC25leHRfY3Vyc29yGAIgASgJIiQKEFN0YXJ0U3luY1JlcXVlc3QSEAoIc3BhY2VfaWQYASABKAkiJAoRU3RhcnRTeW5jUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCCIkChBQYXVzZVN5bmNSZXF1ZXN0EhAKCHNwYWNlX2lkGAEgASgJIiQKEVBhdXNlU3luY1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiKAoUR2V0U3luY1N0YXR1c1JlcXVlc3QSEAoIc3BhY2VfaWQYASABKAkiSAoVR2V0U3luY1N0YXR1c1Jlc3BvbnNlEi8KCHN0YXR1c2VzGAEgAygLMh0uc3luY3NwYWNlLnYxLlNwYWNlU3luY1N0YXR1cyKLAQoPU3BhY2VTeW5jU3RhdHVzEhAKCHNwYWNlX2lkGAEgASgJEigKBnN0YXR1cxgCIAEoDjIYLnN5bmNzcGFjZS52MS5TeW5jU3RhdHVzEhQKDGxhc3Rfc3luY19hdBgDIAEoAxIXCg9wZW5kaW5nX2NoYW5nZXMYBCABKAUSDQoFZXJyb3IYBSABKAkiOgoQU3Vic2NyaWJlUmVxdWVzdBITCgtldmVudF90eXBlcxgBIAMoCRIRCglzcGFjZV9pZHMYAiADKAkibwoRU3Vic2NyaWJlUmVzcG9uc2USEAoIZXZlbnRfaWQYASABKAkSEgoKZXZlbnRfdHlwZRgCIAEoCRIQCghzcGFjZV9pZBgDIAEoCRIRCgl0aW1lc3RhbXAYBCABKAMSDwoHcGF5bG9hZBgFIAEoDCI/ChREb2N1bWVudENyZWF0ZWRFdmVudBITCgtkb2N1bWVudF9pZBgBIAEoCRISCgpjb2xsZWN0aW9uGAIgASgJIlUKFERvY3VtZW50VXBkYXRlZEV2ZW50EhMKC2RvY3VtZW50X2lkGAEgASgJEhMKC29sZF92ZXJzaW9uGAIgASgDEhMKC25ld192ZXJzaW9uGAMgASgDIisKFERvY3VtZW50RGVsZXRlZEV2ZW50EhMKC2RvY3VtZW50X2lkGAEgASgJIoMBChZTeW5jU3RhdHVzQ2hhbmdlZEV2ZW50EiwKCm9sZF9zdGF0dXMYASABKA4yGC5zeW5jc3BhY2UudjEuU3luY1N0YXR1cxIsCgpuZXdfc3RhdHVzGAIgASgOMhguc3luY3NwYWNlLnYxLlN5bmNTdGF0dXMSDQoFZXJyb3IYAyABKAkqhwEKClN5bmNTdGF0dXMSGwoXU1lOQ19TVEFUVVNfVU5TUEVDSUZJRUQQABIUChBTWU5DX1NUQVRVU19JRExFEAESFwoTU1lOQ19TVEFUVVNfU1lOQ0lORxACEhYKElNZTkNfU1RBVFVTX1BBVVNFRBADEhUKEVNZTkNfU1RBVFVTX0VSUk9SEAQynAsKEFN5bmNTcGFjZVNlcnZpY2USPQoESW5pdBIZLnN5bmNzcGFjZS52MS5Jbml0UmVxdWVzdBoaLnN5bmNzcGFjZS52MS5Jbml0UmVzcG9uc2USSQoIU2h1dGRvd24SHS5zeW5jc3BhY2UudjEuU2h1dGRvd25SZXF1ZXN0Gh4uc3luY3NwYWNlLnYxLlNodXRkb3duUmVzcG9uc2USUgoLQ3JlYXRlU3BhY2USIC5zeW5jc3BhY2UudjEuQ3JlYXRlU3BhY2VSZXF1ZXN0GiEuc3luY3NwYWNlLnYxLkNyZWF0ZVNwYWNlUmVzcG9uc2USTAoJSm9pblNwYWNlEh4uc3luY3NwYWNlLnYxLkpvaW5TcGFjZVJlcXVlc3QaHy5zeW5jc3BhY2UudjEuSm9pblNwYWNlUmVzcG9uc2USTwoKTGVhdmVTcGFjZRIfLnN5bmNzcGFjZS52MS5MZWF2ZVNwYWNlUmVxdWVzdBogLnN5bmNzcGFjZS52MS5MZWF2ZVNwYWNlUmVzcG9uc2USTwoKTGlzdFNwYWNlcxIfLnN5bmNzcGFjZS52MS5MaXN0U3BhY2VzUmVxdWVzdBogLnN5bmNzcGFjZS52MS5MaXN0U3BhY2VzUmVzcG9uc2USUgoLRGVsZXRlU3BhY2USIC5zeW5jc3BhY2UudjEuRGVsZXRlU3BhY2VSZXF1ZXN0GiEuc3luY3NwYWNlLnYxLkRlbGV0ZVNwYWNlUmVzcG9uc2USWwoOQ3JlYXRlRG9jdW1lbnQSIy5zeW5jc3BhY2UudjEuQ3JlYXRlRG9jdW1lbnRSZXF1ZXN0GiQuc3luY3NwYWNlLnYxLkNyZWF0ZURvY3VtZW50UmVzcG9uc2USUgoLR2V0RG9jdW1lbnQSIC5zeW5jc3BhY2UudjEuR2V0RG9jdW1lbnRSZXF1ZXN0GiEuc3luY3NwYWNlLnYxLkdldERvY3VtZW50UmVzcG9uc2USWwoOVXBkYXRlRG9jdW1lbnQSIy5zeW5jc3BhY2UudjEuVXBkYXRlRG9jdW1lbnRSZXF1ZXN0GiQuc3luY3NwYWNlLnYxLlVwZGF0ZURvY3VtZW50UmVzcG9uc2USWwoORGVsZXRlRG9jdW1lbnQSIy5zeW5jc3BhY2UudjEuRGVsZXRlRG9jdW1lbnRSZXF1ZXN0GiQuc3luY3NwYWNlLnYxLkRlbGV0ZURvY3VtZW50UmVzcG9uc2USWAoNTGlzdERvY3VtZW50cxIiLnN5bmNzcGFjZS52MS5MaXN0RG9jdW1lbnRzUmVxdWVzdBojLnN5bmNzcGFjZS52MS5MaXN0RG9jdW1lbnRzUmVzcG9uc2USWwoOUXVlcnlEb2N1bWVudHMSIy5zeW5jc3BhY2UudjEuUXVlcnlEb2N1bWVudHNSZXF1ZXN0GiQuc3luY3NwYWNlLnYxLlF1ZXJ5RG9jdW1lbnRzUmVzcG9uc2USTAoJU3RhcnRTeW5jEh4uc3luY3NwYWNlLnYxLlN0YXJ0U3luY1JlcXVlc3QaHy5zeW5jc3BhY2UudjEuU3RhcnRTeW5jUmVzcG9uc2USTAoJUGF1c2VTeW5jEh4uc3luY3NwYWNlLnYxLlBhdXNlU3luY1JlcXVlc3QaHy5zeW5jc3BhY2UudjEuUGF1c2VTeW5jUmVzcG9uc2USWAoNR2V0U3luY1N0YXR1cxIiLnN5bmNzcGFjZS52MS5HZXRTeW5jU3RhdHVzUmVxdWVzdBojLnN5bmNzcGFjZS52MS5HZXRTeW5jU3RhdHVzUmVzcG9uc2USTgoJU3Vic2NyaWJlEh4uc3luY3NwYWNlLnYxLlN1YnNjcmliZVJlcXVlc3QaHy5zeW5jc3BhY2UudjEuU3Vic2NyaWJlUmVzcG9uc2UwAUKoAQoQY29tLnN5bmNzcGFjZS52MUIOU3luY3NwYWNlUHJvdG9QAVozYW55c3luYy1iYWNrZW5kL3NoYXJlZC9wcm90by9zeW5jc3BhY2UvdjE7c3luY3NwYWNlogIDU1hYqgIMU3luY3NwYWNlLlYxygIMU3luY3NwYWNlXFYx4gIYU3luY3NwYWNlXFYxXEdQQk1ldGFkYXRh6gINU3luY3NwYWNlOjpWMWIGcHJvdG8z");
+export const file_syncspace_v1_syncspace: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    "ChxzeW5jc3BhY2UvdjEvc3luY3NwYWNlLnByb3RvEgxzeW5jc3BhY2UudjEiKAoHQ29tbWFuZBIMCgRuYW1lGAEgASgJEg8KB3BheWxvYWQYAiABKAwiMQoPQ29tbWFuZFJlc3BvbnNlEg8KB3BheWxvYWQYASABKAwSDQoFZXJyb3IYAiABKAkirAEKC0luaXRSZXF1ZXN0EhAKCGRhdGFfZGlyGAEgASgJEhIKCm5ldHdvcmtfaWQYAiABKAkSEQoJZGV2aWNlX2lkGAMgASgJEjUKBmNvbmZpZxgEIAMoCzIlLnN5bmNzcGFjZS52MS5Jbml0UmVxdWVzdC5Db25maWdFbnRyeRotCgtDb25maWdFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIh8KDEluaXRSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIIhEKD1NodXRkb3duUmVxdWVzdCIjChBTaHV0ZG93blJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgipwEKEkNyZWF0ZVNwYWNlUmVxdWVzdBIQCghzcGFjZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEkAKCG1ldGFkYXRhGAMgAygLMi4uc3luY3NwYWNlLnYxLkNyZWF0ZVNwYWNlUmVxdWVzdC5NZXRhZGF0YUVudHJ5Gi8KDU1ldGFkYXRhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASInChNDcmVhdGVTcGFjZVJlc3BvbnNlEhAKCHNwYWNlX2lkGAEgASgJIjoKEEpvaW5TcGFjZVJlcXVlc3QSEAoIc3BhY2VfaWQYASABKAkSFAoMaW52aXRlX3Rva2VuGAIgASgJIiQKEUpvaW5TcGFjZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiJQoRTGVhdmVTcGFjZVJlcXVlc3QSEAoIc3BhY2VfaWQYASABKAkiJQoSTGVhdmVTcGFjZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiEwoRTGlzdFNwYWNlc1JlcXVlc3QiPQoSTGlzdFNwYWNlc1Jlc3BvbnNlEicKBnNwYWNlcxgBIAMoCzIXLnN5bmNzcGFjZS52MS5TcGFjZUluZm8i7AEKCVNwYWNlSW5mbxIQCghzcGFjZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEjcKCG1ldGFkYXRhGAMgAygLMiUuc3luY3NwYWNlLnYxLlNwYWNlSW5mby5NZXRhZGF0YUVudHJ5EhIKCmNyZWF0ZWRfYXQYBCABKAMSEgoKdXBkYXRlZF9hdBgFIAEoAxItCgtzeW5jX3N0YXR1cxgGIAEoDjIYLnN5bmNzcGFjZS52MS5TeW5jU3RhdHVzGi8KDU1ldGFkYXRhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASImChJEZWxldGVTcGFjZVJlcXVlc3QSEAoIc3BhY2VfaWQYASABKAkiJgoTRGVsZXRlU3BhY2VSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIItYBChVDcmVhdGVEb2N1bWVudFJlcXVlc3QSEAoIc3BhY2VfaWQYASABKAkSEwoLZG9jdW1lbnRfaWQYAiABKAkSEgoKY29sbGVjdGlvbhgDIAEoCRIMCgRkYXRhGAQgASgMEkMKCG1ldGFkYXRhGAUgAygLMjEuc3luY3NwYWNlLnYxLkNyZWF0ZURvY3VtZW50UmVxdWVzdC5NZXRhZGF0YUVudHJ5Gi8KDU1ldGFkYXRhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASI+ChZDcmVhdGVEb2N1bWVudFJlc3BvbnNlEhMKC2RvY3VtZW50X2lkGAEgASgJEg8KB3ZlcnNpb24YAiABKAMiOwoSR2V0RG9jdW1lbnRSZXF1ZXN0EhAKCHNwYWNlX2lkGAEgASgJEhMKC2RvY3VtZW50X2lkGAIgASgJIk4KE0dldERvY3VtZW50UmVzcG9uc2USKAoIZG9jdW1lbnQYASABKAsyFi5zeW5jc3BhY2UudjEuRG9jdW1lbnQSDQoFZm91bmQYAiABKAgi9QEKCERvY3VtZW50EhMKC2RvY3VtZW50X2lkGAEgASgJEhAKCHNwYWNlX2lkGAIgASgJEhIKCmNvbGxlY3Rpb24YAyABKAkSDAoEZGF0YRgEIAEoDBI2CghtZXRhZGF0YRgFIAMoCzIkLnN5bmNzcGFjZS52MS5Eb2N1bWVudC5NZXRhZGF0YUVudHJ5Eg8KB3ZlcnNpb24YBiABKAMSEgoKY3JlYXRlZF9hdBgHIAEoAxISCgp1cGRhdGVkX2F0GAggASgDGi8KDU1ldGFkYXRhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASLcAQoVVXBkYXRlRG9jdW1lbnRSZXF1ZXN0EhAKCHNwYWNlX2lkGAEgASgJEhMKC2RvY3VtZW50X2lkGAIgASgJEgwKBGRhdGEYAyABKAwSQwoIbWV0YWRhdGEYBCADKAsyMS5zeW5jc3BhY2UudjEuVXBkYXRlRG9jdW1lbnRSZXF1ZXN0Lk1ldGFkYXRhRW50cnkSGAoQZXhwZWN0ZWRfdmVyc2lvbhgFIAEoAxovCg1NZXRhZGF0YUVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiKQoWVXBkYXRlRG9jdW1lbnRSZXNwb25zZRIPCgd2ZXJzaW9uGAEgASgDIj4KFURlbGV0ZURvY3VtZW50UmVxdWVzdBIQCghzcGFjZV9pZBgBIAEoCRITCgtkb2N1bWVudF9pZBgCIAEoCSIpChZEZWxldGVEb2N1bWVudFJlc3BvbnNlEg8KB2V4aXN0ZWQYASABKAgiWwoUTGlzdERvY3VtZW50c1JlcXVlc3QSEAoIc3BhY2VfaWQYASABKAkSEgoKY29sbGVjdGlvbhgCIAEoCRINCgVsaW1pdBgDIAEoBRIOCgZjdXJzb3IYBCABKAkiWwoVTGlzdERvY3VtZW50c1Jlc3BvbnNlEi0KCWRvY3VtZW50cxgBIAMoCzIaLnN5bmNzcGFjZS52MS5Eb2N1bWVudEluZm8SEwoLbmV4dF9jdXJzb3IYAiABKAki3QEKDERvY3VtZW50SW5mbxITCgtkb2N1bWVudF9pZBgBIAEoCRISCgpjb2xsZWN0aW9uGAIgASgJEjoKCG1ldGFkYXRhGAMgAygLMiguc3luY3NwYWNlLnYxLkRvY3VtZW50SW5mby5NZXRhZGF0YUVudHJ5Eg8KB3ZlcnNpb24YBCABKAMSEgoKY3JlYXRlZF9hdBgFIAEoAxISCgp1cGRhdGVkX2F0GAYgASgDGi8KDU1ldGFkYXRhRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASKIAQoVUXVlcnlEb2N1bWVudHNSZXF1ZXN0EhAKCHNwYWNlX2lkGAEgASgJEhIKCmNvbGxlY3Rpb24YAiABKAkSKgoHZmlsdGVycxgDIAMoCzIZLnN5bmNzcGFjZS52MS5RdWVyeUZpbHRlchINCgVsaW1pdBgEIAEoBRIOCgZjdXJzb3IYBSABKAkiPQoLUXVlcnlGaWx0ZXISDQoFZmllbGQYASABKAkSEAoIb3BlcmF0b3IYAiABKAkSDQoFdmFsdWUYAyABKAkiXAoWUXVlcnlEb2N1bWVudHNSZXNwb25zZRItCglkb2N1bWVudHMYASADKAsyGi5zeW5jc3BhY2UudjEuRG9jdW1lbnRJbmZvEhMKC25leHRfY3Vyc29yGAIgASgJIiQKEFN0YXJ0U3luY1JlcXVlc3QSEAoIc3BhY2VfaWQYASABKAkiJAoRU3RhcnRTeW5jUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCCIkChBQYXVzZVN5bmNSZXF1ZXN0EhAKCHNwYWNlX2lkGAEgASgJIiQKEVBhdXNlU3luY1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiKAoUR2V0U3luY1N0YXR1c1JlcXVlc3QSEAoIc3BhY2VfaWQYASABKAkiSAoVR2V0U3luY1N0YXR1c1Jlc3BvbnNlEi8KCHN0YXR1c2VzGAEgAygLMh0uc3luY3NwYWNlLnYxLlNwYWNlU3luY1N0YXR1cyKLAQoPU3BhY2VTeW5jU3RhdHVzEhAKCHNwYWNlX2lkGAEgASgJEigKBnN0YXR1cxgCIAEoDjIYLnN5bmNzcGFjZS52MS5TeW5jU3RhdHVzEhQKDGxhc3Rfc3luY19hdBgDIAEoAxIXCg9wZW5kaW5nX2NoYW5nZXMYBCABKAUSDQoFZXJyb3IYBSABKAkiOgoQU3Vic2NyaWJlUmVxdWVzdBITCgtldmVudF90eXBlcxgBIAMoCRIRCglzcGFjZV9pZHMYAiADKAkibwoRU3Vic2NyaWJlUmVzcG9uc2USEAoIZXZlbnRfaWQYASABKAkSEgoKZXZlbnRfdHlwZRgCIAEoCRIQCghzcGFjZV9pZBgDIAEoCRIRCgl0aW1lc3RhbXAYBCABKAMSDwoHcGF5bG9hZBgFIAEoDCI/ChREb2N1bWVudENyZWF0ZWRFdmVudBITCgtkb2N1bWVudF9pZBgBIAEoCRISCgpjb2xsZWN0aW9uGAIgASgJIlUKFERvY3VtZW50VXBkYXRlZEV2ZW50EhMKC2RvY3VtZW50X2lkGAEgASgJEhMKC29sZF92ZXJzaW9uGAIgASgDEhMKC25ld192ZXJzaW9uGAMgASgDIisKFERvY3VtZW50RGVsZXRlZEV2ZW50EhMKC2RvY3VtZW50X2lkGAEgASgJIoMBChZTeW5jU3RhdHVzQ2hhbmdlZEV2ZW50EiwKCm9sZF9zdGF0dXMYASABKA4yGC5zeW5jc3BhY2UudjEuU3luY1N0YXR1cxIsCgpuZXdfc3RhdHVzGAIgASgOMhguc3luY3NwYWNlLnYxLlN5bmNTdGF0dXMSDQoFZXJyb3IYAyABKAkqhwEKClN5bmNTdGF0dXMSGwoXU1lOQ19TVEFUVVNfVU5TUEVDSUZJRUQQABIUChBTWU5DX1NUQVRVU19JRExFEAESFwoTU1lOQ19TVEFUVVNfU1lOQ0lORxACEhYKElNZTkNfU1RBVFVTX1BBVVNFRBADEhUKEVNZTkNfU1RBVFVTX0VSUk9SEAQynAsKEFN5bmNTcGFjZVNlcnZpY2USPQoESW5pdBIZLnN5bmNzcGFjZS52MS5Jbml0UmVxdWVzdBoaLnN5bmNzcGFjZS52MS5Jbml0UmVzcG9uc2USSQoIU2h1dGRvd24SHS5zeW5jc3BhY2UudjEuU2h1dGRvd25SZXF1ZXN0Gh4uc3luY3NwYWNlLnYxLlNodXRkb3duUmVzcG9uc2USUgoLQ3JlYXRlU3BhY2USIC5zeW5jc3BhY2UudjEuQ3JlYXRlU3BhY2VSZXF1ZXN0GiEuc3luY3NwYWNlLnYxLkNyZWF0ZVNwYWNlUmVzcG9uc2USTAoJSm9pblNwYWNlEh4uc3luY3NwYWNlLnYxLkpvaW5TcGFjZVJlcXVlc3QaHy5zeW5jc3BhY2UudjEuSm9pblNwYWNlUmVzcG9uc2USTwoKTGVhdmVTcGFjZRIfLnN5bmNzcGFjZS52MS5MZWF2ZVNwYWNlUmVxdWVzdBogLnN5bmNzcGFjZS52MS5MZWF2ZVNwYWNlUmVzcG9uc2USTwoKTGlzdFNwYWNlcxIfLnN5bmNzcGFjZS52MS5MaXN0U3BhY2VzUmVxdWVzdBogLnN5bmNzcGFjZS52MS5MaXN0U3BhY2VzUmVzcG9uc2USUgoLRGVsZXRlU3BhY2USIC5zeW5jc3BhY2UudjEuRGVsZXRlU3BhY2VSZXF1ZXN0GiEuc3luY3NwYWNlLnYxLkRlbGV0ZVNwYWNlUmVzcG9uc2USWwoOQ3JlYXRlRG9jdW1lbnQSIy5zeW5jc3BhY2UudjEuQ3JlYXRlRG9jdW1lbnRSZXF1ZXN0GiQuc3luY3NwYWNlLnYxLkNyZWF0ZURvY3VtZW50UmVzcG9uc2USUgoLR2V0RG9jdW1lbnQSIC5zeW5jc3BhY2UudjEuR2V0RG9jdW1lbnRSZXF1ZXN0GiEuc3luY3NwYWNlLnYxLkdldERvY3VtZW50UmVzcG9uc2USWwoOVXBkYXRlRG9jdW1lbnQSIy5zeW5jc3BhY2UudjEuVXBkYXRlRG9jdW1lbnRSZXF1ZXN0GiQuc3luY3NwYWNlLnYxLlVwZGF0ZURvY3VtZW50UmVzcG9uc2USWwoORGVsZXRlRG9jdW1lbnQSIy5zeW5jc3BhY2UudjEuRGVsZXRlRG9jdW1lbnRSZXF1ZXN0GiQuc3luY3NwYWNlLnYxLkRlbGV0ZURvY3VtZW50UmVzcG9uc2USWAoNTGlzdERvY3VtZW50cxIiLnN5bmNzcGFjZS52MS5MaXN0RG9jdW1lbnRzUmVxdWVzdBojLnN5bmNzcGFjZS52MS5MaXN0RG9jdW1lbnRzUmVzcG9uc2USWwoOUXVlcnlEb2N1bWVudHMSIy5zeW5jc3BhY2UudjEuUXVlcnlEb2N1bWVudHNSZXF1ZXN0GiQuc3luY3NwYWNlLnYxLlF1ZXJ5RG9jdW1lbnRzUmVzcG9uc2USTAoJU3RhcnRTeW5jEh4uc3luY3NwYWNlLnYxLlN0YXJ0U3luY1JlcXVlc3QaHy5zeW5jc3BhY2UudjEuU3RhcnRTeW5jUmVzcG9uc2USTAoJUGF1c2VTeW5jEh4uc3luY3NwYWNlLnYxLlBhdXNlU3luY1JlcXVlc3QaHy5zeW5jc3BhY2UudjEuUGF1c2VTeW5jUmVzcG9uc2USWAoNR2V0U3luY1N0YXR1cxIiLnN5bmNzcGFjZS52MS5HZXRTeW5jU3RhdHVzUmVxdWVzdBojLnN5bmNzcGFjZS52MS5HZXRTeW5jU3RhdHVzUmVzcG9uc2USTgoJU3Vic2NyaWJlEh4uc3luY3NwYWNlLnYxLlN1YnNjcmliZVJlcXVlc3QaHy5zeW5jc3BhY2UudjEuU3Vic2NyaWJlUmVzcG9uc2UwAUKoAQoQY29tLnN5bmNzcGFjZS52MUIOU3luY3NwYWNlUHJvdG9QAVozYW55c3luYy1iYWNrZW5kL3NoYXJlZC9wcm90by9zeW5jc3BhY2UvdjE7c3luY3NwYWNlogIDU1hYqgIMU3luY3NwYWNlLlYxygIMU3luY3NwYWNlXFYx4gIYU3luY3NwYWNlXFYxXEdQQk1ldGFkYXRh6gINU3luY3NwYWNlOjpWMWIGcHJvdG8z",
+  );
 
 /**
  * Command represents a unified command for single-dispatch pattern
@@ -37,7 +40,8 @@ export type Command = Message<"syncspace.v1.Command"> & {
  * Describes the message syncspace.v1.Command.
  * Use `create(CommandSchema)` to create a new message.
  */
-export const CommandSchema: GenMessage<Command> = /*@__PURE__*/
+export const CommandSchema: GenMessage<Command> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 0);
 
 /**
@@ -65,7 +69,8 @@ export type CommandResponse = Message<"syncspace.v1.CommandResponse"> & {
  * Describes the message syncspace.v1.CommandResponse.
  * Use `create(CommandResponseSchema)` to create a new message.
  */
-export const CommandResponseSchema: GenMessage<CommandResponse> = /*@__PURE__*/
+export const CommandResponseSchema: GenMessage<CommandResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 1);
 
 /**
@@ -105,7 +110,8 @@ export type InitRequest = Message<"syncspace.v1.InitRequest"> & {
  * Describes the message syncspace.v1.InitRequest.
  * Use `create(InitRequestSchema)` to create a new message.
  */
-export const InitRequestSchema: GenMessage<InitRequest> = /*@__PURE__*/
+export const InitRequestSchema: GenMessage<InitRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 2);
 
 /**
@@ -122,20 +128,21 @@ export type InitResponse = Message<"syncspace.v1.InitResponse"> & {
  * Describes the message syncspace.v1.InitResponse.
  * Use `create(InitResponseSchema)` to create a new message.
  */
-export const InitResponseSchema: GenMessage<InitResponse> = /*@__PURE__*/
+export const InitResponseSchema: GenMessage<InitResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 3);
 
 /**
  * @generated from message syncspace.v1.ShutdownRequest
  */
-export type ShutdownRequest = Message<"syncspace.v1.ShutdownRequest"> & {
-};
+export type ShutdownRequest = Message<"syncspace.v1.ShutdownRequest"> & {};
 
 /**
  * Describes the message syncspace.v1.ShutdownRequest.
  * Use `create(ShutdownRequestSchema)` to create a new message.
  */
-export const ShutdownRequestSchema: GenMessage<ShutdownRequest> = /*@__PURE__*/
+export const ShutdownRequestSchema: GenMessage<ShutdownRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 4);
 
 /**
@@ -152,7 +159,8 @@ export type ShutdownResponse = Message<"syncspace.v1.ShutdownResponse"> & {
  * Describes the message syncspace.v1.ShutdownResponse.
  * Use `create(ShutdownResponseSchema)` to create a new message.
  */
-export const ShutdownResponseSchema: GenMessage<ShutdownResponse> = /*@__PURE__*/
+export const ShutdownResponseSchema: GenMessage<ShutdownResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 5);
 
 /**
@@ -185,7 +193,8 @@ export type CreateSpaceRequest = Message<"syncspace.v1.CreateSpaceRequest"> & {
  * Describes the message syncspace.v1.CreateSpaceRequest.
  * Use `create(CreateSpaceRequestSchema)` to create a new message.
  */
-export const CreateSpaceRequestSchema: GenMessage<CreateSpaceRequest> = /*@__PURE__*/
+export const CreateSpaceRequestSchema: GenMessage<CreateSpaceRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 6);
 
 /**
@@ -202,7 +211,8 @@ export type CreateSpaceResponse = Message<"syncspace.v1.CreateSpaceResponse"> & 
  * Describes the message syncspace.v1.CreateSpaceResponse.
  * Use `create(CreateSpaceResponseSchema)` to create a new message.
  */
-export const CreateSpaceResponseSchema: GenMessage<CreateSpaceResponse> = /*@__PURE__*/
+export const CreateSpaceResponseSchema: GenMessage<CreateSpaceResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 7);
 
 /**
@@ -228,7 +238,8 @@ export type JoinSpaceRequest = Message<"syncspace.v1.JoinSpaceRequest"> & {
  * Describes the message syncspace.v1.JoinSpaceRequest.
  * Use `create(JoinSpaceRequestSchema)` to create a new message.
  */
-export const JoinSpaceRequestSchema: GenMessage<JoinSpaceRequest> = /*@__PURE__*/
+export const JoinSpaceRequestSchema: GenMessage<JoinSpaceRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 8);
 
 /**
@@ -245,7 +256,8 @@ export type JoinSpaceResponse = Message<"syncspace.v1.JoinSpaceResponse"> & {
  * Describes the message syncspace.v1.JoinSpaceResponse.
  * Use `create(JoinSpaceResponseSchema)` to create a new message.
  */
-export const JoinSpaceResponseSchema: GenMessage<JoinSpaceResponse> = /*@__PURE__*/
+export const JoinSpaceResponseSchema: GenMessage<JoinSpaceResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 9);
 
 /**
@@ -264,7 +276,8 @@ export type LeaveSpaceRequest = Message<"syncspace.v1.LeaveSpaceRequest"> & {
  * Describes the message syncspace.v1.LeaveSpaceRequest.
  * Use `create(LeaveSpaceRequestSchema)` to create a new message.
  */
-export const LeaveSpaceRequestSchema: GenMessage<LeaveSpaceRequest> = /*@__PURE__*/
+export const LeaveSpaceRequestSchema: GenMessage<LeaveSpaceRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 10);
 
 /**
@@ -281,20 +294,21 @@ export type LeaveSpaceResponse = Message<"syncspace.v1.LeaveSpaceResponse"> & {
  * Describes the message syncspace.v1.LeaveSpaceResponse.
  * Use `create(LeaveSpaceResponseSchema)` to create a new message.
  */
-export const LeaveSpaceResponseSchema: GenMessage<LeaveSpaceResponse> = /*@__PURE__*/
+export const LeaveSpaceResponseSchema: GenMessage<LeaveSpaceResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 11);
 
 /**
  * @generated from message syncspace.v1.ListSpacesRequest
  */
-export type ListSpacesRequest = Message<"syncspace.v1.ListSpacesRequest"> & {
-};
+export type ListSpacesRequest = Message<"syncspace.v1.ListSpacesRequest"> & {};
 
 /**
  * Describes the message syncspace.v1.ListSpacesRequest.
  * Use `create(ListSpacesRequestSchema)` to create a new message.
  */
-export const ListSpacesRequestSchema: GenMessage<ListSpacesRequest> = /*@__PURE__*/
+export const ListSpacesRequestSchema: GenMessage<ListSpacesRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 12);
 
 /**
@@ -311,7 +325,8 @@ export type ListSpacesResponse = Message<"syncspace.v1.ListSpacesResponse"> & {
  * Describes the message syncspace.v1.ListSpacesResponse.
  * Use `create(ListSpacesResponseSchema)` to create a new message.
  */
-export const ListSpacesResponseSchema: GenMessage<ListSpacesResponse> = /*@__PURE__*/
+export const ListSpacesResponseSchema: GenMessage<ListSpacesResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 13);
 
 /**
@@ -357,7 +372,8 @@ export type SpaceInfo = Message<"syncspace.v1.SpaceInfo"> & {
  * Describes the message syncspace.v1.SpaceInfo.
  * Use `create(SpaceInfoSchema)` to create a new message.
  */
-export const SpaceInfoSchema: GenMessage<SpaceInfo> = /*@__PURE__*/
+export const SpaceInfoSchema: GenMessage<SpaceInfo> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 14);
 
 /**
@@ -374,7 +390,8 @@ export type DeleteSpaceRequest = Message<"syncspace.v1.DeleteSpaceRequest"> & {
  * Describes the message syncspace.v1.DeleteSpaceRequest.
  * Use `create(DeleteSpaceRequestSchema)` to create a new message.
  */
-export const DeleteSpaceRequestSchema: GenMessage<DeleteSpaceRequest> = /*@__PURE__*/
+export const DeleteSpaceRequestSchema: GenMessage<DeleteSpaceRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 15);
 
 /**
@@ -391,7 +408,8 @@ export type DeleteSpaceResponse = Message<"syncspace.v1.DeleteSpaceResponse"> & 
  * Describes the message syncspace.v1.DeleteSpaceResponse.
  * Use `create(DeleteSpaceResponseSchema)` to create a new message.
  */
-export const DeleteSpaceResponseSchema: GenMessage<DeleteSpaceResponse> = /*@__PURE__*/
+export const DeleteSpaceResponseSchema: GenMessage<DeleteSpaceResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 16);
 
 /**
@@ -436,7 +454,8 @@ export type CreateDocumentRequest = Message<"syncspace.v1.CreateDocumentRequest"
  * Describes the message syncspace.v1.CreateDocumentRequest.
  * Use `create(CreateDocumentRequestSchema)` to create a new message.
  */
-export const CreateDocumentRequestSchema: GenMessage<CreateDocumentRequest> = /*@__PURE__*/
+export const CreateDocumentRequestSchema: GenMessage<CreateDocumentRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 17);
 
 /**
@@ -460,7 +479,8 @@ export type CreateDocumentResponse = Message<"syncspace.v1.CreateDocumentRespons
  * Describes the message syncspace.v1.CreateDocumentResponse.
  * Use `create(CreateDocumentResponseSchema)` to create a new message.
  */
-export const CreateDocumentResponseSchema: GenMessage<CreateDocumentResponse> = /*@__PURE__*/
+export const CreateDocumentResponseSchema: GenMessage<CreateDocumentResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 18);
 
 /**
@@ -482,7 +502,8 @@ export type GetDocumentRequest = Message<"syncspace.v1.GetDocumentRequest"> & {
  * Describes the message syncspace.v1.GetDocumentRequest.
  * Use `create(GetDocumentRequestSchema)` to create a new message.
  */
-export const GetDocumentRequestSchema: GenMessage<GetDocumentRequest> = /*@__PURE__*/
+export const GetDocumentRequestSchema: GenMessage<GetDocumentRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 19);
 
 /**
@@ -504,7 +525,8 @@ export type GetDocumentResponse = Message<"syncspace.v1.GetDocumentResponse"> & 
  * Describes the message syncspace.v1.GetDocumentResponse.
  * Use `create(GetDocumentResponseSchema)` to create a new message.
  */
-export const GetDocumentResponseSchema: GenMessage<GetDocumentResponse> = /*@__PURE__*/
+export const GetDocumentResponseSchema: GenMessage<GetDocumentResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 20);
 
 /**
@@ -558,7 +580,8 @@ export type Document = Message<"syncspace.v1.Document"> & {
  * Describes the message syncspace.v1.Document.
  * Use `create(DocumentSchema)` to create a new message.
  */
-export const DocumentSchema: GenMessage<Document> = /*@__PURE__*/
+export const DocumentSchema: GenMessage<Document> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 21);
 
 /**
@@ -597,7 +620,8 @@ export type UpdateDocumentRequest = Message<"syncspace.v1.UpdateDocumentRequest"
  * Describes the message syncspace.v1.UpdateDocumentRequest.
  * Use `create(UpdateDocumentRequestSchema)` to create a new message.
  */
-export const UpdateDocumentRequestSchema: GenMessage<UpdateDocumentRequest> = /*@__PURE__*/
+export const UpdateDocumentRequestSchema: GenMessage<UpdateDocumentRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 22);
 
 /**
@@ -616,7 +640,8 @@ export type UpdateDocumentResponse = Message<"syncspace.v1.UpdateDocumentRespons
  * Describes the message syncspace.v1.UpdateDocumentResponse.
  * Use `create(UpdateDocumentResponseSchema)` to create a new message.
  */
-export const UpdateDocumentResponseSchema: GenMessage<UpdateDocumentResponse> = /*@__PURE__*/
+export const UpdateDocumentResponseSchema: GenMessage<UpdateDocumentResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 23);
 
 /**
@@ -638,7 +663,8 @@ export type DeleteDocumentRequest = Message<"syncspace.v1.DeleteDocumentRequest"
  * Describes the message syncspace.v1.DeleteDocumentRequest.
  * Use `create(DeleteDocumentRequestSchema)` to create a new message.
  */
-export const DeleteDocumentRequestSchema: GenMessage<DeleteDocumentRequest> = /*@__PURE__*/
+export const DeleteDocumentRequestSchema: GenMessage<DeleteDocumentRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 24);
 
 /**
@@ -655,7 +681,8 @@ export type DeleteDocumentResponse = Message<"syncspace.v1.DeleteDocumentRespons
  * Describes the message syncspace.v1.DeleteDocumentResponse.
  * Use `create(DeleteDocumentResponseSchema)` to create a new message.
  */
-export const DeleteDocumentResponseSchema: GenMessage<DeleteDocumentResponse> = /*@__PURE__*/
+export const DeleteDocumentResponseSchema: GenMessage<DeleteDocumentResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 25);
 
 /**
@@ -693,7 +720,8 @@ export type ListDocumentsRequest = Message<"syncspace.v1.ListDocumentsRequest"> 
  * Describes the message syncspace.v1.ListDocumentsRequest.
  * Use `create(ListDocumentsRequestSchema)` to create a new message.
  */
-export const ListDocumentsRequestSchema: GenMessage<ListDocumentsRequest> = /*@__PURE__*/
+export const ListDocumentsRequestSchema: GenMessage<ListDocumentsRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 26);
 
 /**
@@ -717,7 +745,8 @@ export type ListDocumentsResponse = Message<"syncspace.v1.ListDocumentsResponse"
  * Describes the message syncspace.v1.ListDocumentsResponse.
  * Use `create(ListDocumentsResponseSchema)` to create a new message.
  */
-export const ListDocumentsResponseSchema: GenMessage<ListDocumentsResponse> = /*@__PURE__*/
+export const ListDocumentsResponseSchema: GenMessage<ListDocumentsResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 27);
 
 /**
@@ -759,7 +788,8 @@ export type DocumentInfo = Message<"syncspace.v1.DocumentInfo"> & {
  * Describes the message syncspace.v1.DocumentInfo.
  * Use `create(DocumentInfoSchema)` to create a new message.
  */
-export const DocumentInfoSchema: GenMessage<DocumentInfo> = /*@__PURE__*/
+export const DocumentInfoSchema: GenMessage<DocumentInfo> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 28);
 
 /**
@@ -796,7 +826,8 @@ export type QueryDocumentsRequest = Message<"syncspace.v1.QueryDocumentsRequest"
  * Describes the message syncspace.v1.QueryDocumentsRequest.
  * Use `create(QueryDocumentsRequestSchema)` to create a new message.
  */
-export const QueryDocumentsRequestSchema: GenMessage<QueryDocumentsRequest> = /*@__PURE__*/
+export const QueryDocumentsRequestSchema: GenMessage<QueryDocumentsRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 29);
 
 /**
@@ -829,7 +860,8 @@ export type QueryFilter = Message<"syncspace.v1.QueryFilter"> & {
  * Describes the message syncspace.v1.QueryFilter.
  * Use `create(QueryFilterSchema)` to create a new message.
  */
-export const QueryFilterSchema: GenMessage<QueryFilter> = /*@__PURE__*/
+export const QueryFilterSchema: GenMessage<QueryFilter> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 30);
 
 /**
@@ -851,7 +883,8 @@ export type QueryDocumentsResponse = Message<"syncspace.v1.QueryDocumentsRespons
  * Describes the message syncspace.v1.QueryDocumentsResponse.
  * Use `create(QueryDocumentsResponseSchema)` to create a new message.
  */
-export const QueryDocumentsResponseSchema: GenMessage<QueryDocumentsResponse> = /*@__PURE__*/
+export const QueryDocumentsResponseSchema: GenMessage<QueryDocumentsResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 31);
 
 /**
@@ -870,7 +903,8 @@ export type StartSyncRequest = Message<"syncspace.v1.StartSyncRequest"> & {
  * Describes the message syncspace.v1.StartSyncRequest.
  * Use `create(StartSyncRequestSchema)` to create a new message.
  */
-export const StartSyncRequestSchema: GenMessage<StartSyncRequest> = /*@__PURE__*/
+export const StartSyncRequestSchema: GenMessage<StartSyncRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 32);
 
 /**
@@ -887,7 +921,8 @@ export type StartSyncResponse = Message<"syncspace.v1.StartSyncResponse"> & {
  * Describes the message syncspace.v1.StartSyncResponse.
  * Use `create(StartSyncResponseSchema)` to create a new message.
  */
-export const StartSyncResponseSchema: GenMessage<StartSyncResponse> = /*@__PURE__*/
+export const StartSyncResponseSchema: GenMessage<StartSyncResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 33);
 
 /**
@@ -906,7 +941,8 @@ export type PauseSyncRequest = Message<"syncspace.v1.PauseSyncRequest"> & {
  * Describes the message syncspace.v1.PauseSyncRequest.
  * Use `create(PauseSyncRequestSchema)` to create a new message.
  */
-export const PauseSyncRequestSchema: GenMessage<PauseSyncRequest> = /*@__PURE__*/
+export const PauseSyncRequestSchema: GenMessage<PauseSyncRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 34);
 
 /**
@@ -923,7 +959,8 @@ export type PauseSyncResponse = Message<"syncspace.v1.PauseSyncResponse"> & {
  * Describes the message syncspace.v1.PauseSyncResponse.
  * Use `create(PauseSyncResponseSchema)` to create a new message.
  */
-export const PauseSyncResponseSchema: GenMessage<PauseSyncResponse> = /*@__PURE__*/
+export const PauseSyncResponseSchema: GenMessage<PauseSyncResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 35);
 
 /**
@@ -942,7 +979,8 @@ export type GetSyncStatusRequest = Message<"syncspace.v1.GetSyncStatusRequest"> 
  * Describes the message syncspace.v1.GetSyncStatusRequest.
  * Use `create(GetSyncStatusRequestSchema)` to create a new message.
  */
-export const GetSyncStatusRequestSchema: GenMessage<GetSyncStatusRequest> = /*@__PURE__*/
+export const GetSyncStatusRequestSchema: GenMessage<GetSyncStatusRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 36);
 
 /**
@@ -959,7 +997,8 @@ export type GetSyncStatusResponse = Message<"syncspace.v1.GetSyncStatusResponse"
  * Describes the message syncspace.v1.GetSyncStatusResponse.
  * Use `create(GetSyncStatusResponseSchema)` to create a new message.
  */
-export const GetSyncStatusResponseSchema: GenMessage<GetSyncStatusResponse> = /*@__PURE__*/
+export const GetSyncStatusResponseSchema: GenMessage<GetSyncStatusResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 37);
 
 /**
@@ -1002,7 +1041,8 @@ export type SpaceSyncStatus = Message<"syncspace.v1.SpaceSyncStatus"> & {
  * Describes the message syncspace.v1.SpaceSyncStatus.
  * Use `create(SpaceSyncStatusSchema)` to create a new message.
  */
-export const SpaceSyncStatusSchema: GenMessage<SpaceSyncStatus> = /*@__PURE__*/
+export const SpaceSyncStatusSchema: GenMessage<SpaceSyncStatus> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 38);
 
 /**
@@ -1028,7 +1068,8 @@ export type SubscribeRequest = Message<"syncspace.v1.SubscribeRequest"> & {
  * Describes the message syncspace.v1.SubscribeRequest.
  * Use `create(SubscribeRequestSchema)` to create a new message.
  */
-export const SubscribeRequestSchema: GenMessage<SubscribeRequest> = /*@__PURE__*/
+export const SubscribeRequestSchema: GenMessage<SubscribeRequest> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 39);
 
 /**
@@ -1071,7 +1112,8 @@ export type SubscribeResponse = Message<"syncspace.v1.SubscribeResponse"> & {
  * Describes the message syncspace.v1.SubscribeResponse.
  * Use `create(SubscribeResponseSchema)` to create a new message.
  */
-export const SubscribeResponseSchema: GenMessage<SubscribeResponse> = /*@__PURE__*/
+export const SubscribeResponseSchema: GenMessage<SubscribeResponse> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 40);
 
 /**
@@ -1093,7 +1135,8 @@ export type DocumentCreatedEvent = Message<"syncspace.v1.DocumentCreatedEvent"> 
  * Describes the message syncspace.v1.DocumentCreatedEvent.
  * Use `create(DocumentCreatedEventSchema)` to create a new message.
  */
-export const DocumentCreatedEventSchema: GenMessage<DocumentCreatedEvent> = /*@__PURE__*/
+export const DocumentCreatedEventSchema: GenMessage<DocumentCreatedEvent> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 41);
 
 /**
@@ -1120,7 +1163,8 @@ export type DocumentUpdatedEvent = Message<"syncspace.v1.DocumentUpdatedEvent"> 
  * Describes the message syncspace.v1.DocumentUpdatedEvent.
  * Use `create(DocumentUpdatedEventSchema)` to create a new message.
  */
-export const DocumentUpdatedEventSchema: GenMessage<DocumentUpdatedEvent> = /*@__PURE__*/
+export const DocumentUpdatedEventSchema: GenMessage<DocumentUpdatedEvent> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 42);
 
 /**
@@ -1137,7 +1181,8 @@ export type DocumentDeletedEvent = Message<"syncspace.v1.DocumentDeletedEvent"> 
  * Describes the message syncspace.v1.DocumentDeletedEvent.
  * Use `create(DocumentDeletedEventSchema)` to create a new message.
  */
-export const DocumentDeletedEventSchema: GenMessage<DocumentDeletedEvent> = /*@__PURE__*/
+export const DocumentDeletedEventSchema: GenMessage<DocumentDeletedEvent> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 43);
 
 /**
@@ -1164,7 +1209,8 @@ export type SyncStatusChangedEvent = Message<"syncspace.v1.SyncStatusChangedEven
  * Describes the message syncspace.v1.SyncStatusChangedEvent.
  * Use `create(SyncStatusChangedEventSchema)` to create a new message.
  */
-export const SyncStatusChangedEventSchema: GenMessage<SyncStatusChangedEvent> = /*@__PURE__*/
+export const SyncStatusChangedEventSchema: GenMessage<SyncStatusChangedEvent> =
+  /*@__PURE__*/
   messageDesc(file_syncspace_v1_syncspace, 44);
 
 /**
@@ -1200,7 +1246,8 @@ export enum SyncStatus {
 /**
  * Describes the enum syncspace.v1.SyncStatus.
  */
-export const SyncStatusSchema: GenEnum<SyncStatus> = /*@__PURE__*/
+export const SyncStatusSchema: GenEnum<SyncStatus> =
+  /*@__PURE__*/
   enumDesc(file_syncspace_v1_syncspace, 0);
 
 /**
@@ -1220,7 +1267,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof InitRequestSchema;
     output: typeof InitResponseSchema;
-  },
+  };
   /**
    * @generated from rpc syncspace.v1.SyncSpaceService.Shutdown
    */
@@ -1228,7 +1275,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof ShutdownRequestSchema;
     output: typeof ShutdownResponseSchema;
-  },
+  };
   /**
    * Space operations
    *
@@ -1238,7 +1285,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof CreateSpaceRequestSchema;
     output: typeof CreateSpaceResponseSchema;
-  },
+  };
   /**
    * @generated from rpc syncspace.v1.SyncSpaceService.JoinSpace
    */
@@ -1246,7 +1293,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof JoinSpaceRequestSchema;
     output: typeof JoinSpaceResponseSchema;
-  },
+  };
   /**
    * @generated from rpc syncspace.v1.SyncSpaceService.LeaveSpace
    */
@@ -1254,7 +1301,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof LeaveSpaceRequestSchema;
     output: typeof LeaveSpaceResponseSchema;
-  },
+  };
   /**
    * @generated from rpc syncspace.v1.SyncSpaceService.ListSpaces
    */
@@ -1262,7 +1309,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof ListSpacesRequestSchema;
     output: typeof ListSpacesResponseSchema;
-  },
+  };
   /**
    * @generated from rpc syncspace.v1.SyncSpaceService.DeleteSpace
    */
@@ -1270,7 +1317,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof DeleteSpaceRequestSchema;
     output: typeof DeleteSpaceResponseSchema;
-  },
+  };
   /**
    * Document operations
    *
@@ -1280,7 +1327,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof CreateDocumentRequestSchema;
     output: typeof CreateDocumentResponseSchema;
-  },
+  };
   /**
    * @generated from rpc syncspace.v1.SyncSpaceService.GetDocument
    */
@@ -1288,7 +1335,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof GetDocumentRequestSchema;
     output: typeof GetDocumentResponseSchema;
-  },
+  };
   /**
    * @generated from rpc syncspace.v1.SyncSpaceService.UpdateDocument
    */
@@ -1296,7 +1343,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof UpdateDocumentRequestSchema;
     output: typeof UpdateDocumentResponseSchema;
-  },
+  };
   /**
    * @generated from rpc syncspace.v1.SyncSpaceService.DeleteDocument
    */
@@ -1304,7 +1351,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof DeleteDocumentRequestSchema;
     output: typeof DeleteDocumentResponseSchema;
-  },
+  };
   /**
    * @generated from rpc syncspace.v1.SyncSpaceService.ListDocuments
    */
@@ -1312,7 +1359,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof ListDocumentsRequestSchema;
     output: typeof ListDocumentsResponseSchema;
-  },
+  };
   /**
    * @generated from rpc syncspace.v1.SyncSpaceService.QueryDocuments
    */
@@ -1320,7 +1367,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof QueryDocumentsRequestSchema;
     output: typeof QueryDocumentsResponseSchema;
-  },
+  };
   /**
    * Sync control operations
    *
@@ -1330,7 +1377,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof StartSyncRequestSchema;
     output: typeof StartSyncResponseSchema;
-  },
+  };
   /**
    * @generated from rpc syncspace.v1.SyncSpaceService.PauseSync
    */
@@ -1338,7 +1385,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof PauseSyncRequestSchema;
     output: typeof PauseSyncResponseSchema;
-  },
+  };
   /**
    * @generated from rpc syncspace.v1.SyncSpaceService.GetSyncStatus
    */
@@ -1346,7 +1393,7 @@ export const SyncSpaceService: GenService<{
     methodKind: "unary";
     input: typeof GetSyncStatusRequestSchema;
     output: typeof GetSyncStatusResponseSchema;
-  },
+  };
   /**
    * Event streaming
    *
@@ -1356,7 +1403,5 @@ export const SyncSpaceService: GenService<{
     methodKind: "server_streaming";
     input: typeof SubscribeRequestSchema;
     output: typeof SubscribeResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_syncspace_v1_syncspace, 0);
-
+  };
+}> = /*@__PURE__*/ serviceDesc(file_syncspace_v1_syncspace, 0);

@@ -17,3 +17,9 @@ plugins:
     out: ../plugin-js-api/src/generated
     opt:
       - target=ts
+
+  # Local plugin: TypeScript SyncSpace client generation
+  - local: ../plugin-js-api/scripts/protoc-gen-custom-client.ts
+    out: ../plugin-js-api/src/generated
+    opt:
+      - target=ts

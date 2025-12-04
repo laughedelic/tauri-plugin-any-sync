@@ -365,7 +365,8 @@
 **Status**: Core Rust implementation complete with 6 passing passthrough tests. Desktop backend fully implements sidecar management with gRPC client. Mobile backend uses native FFI bridge.
 
 **Architecture Summary**:
-- **Single command handler**: `command(cmd: String, data: Vec<u8>) -> Result<Vec<u8>>`
+- **Single command handler**: `command(request: ipc::Request) -> Result<ipc::Response>` using raw binary transport
+- **Binary transport**: Command name in `X-Command` header, protobuf bytes in request body (bypasses JSON serialization)
 - **AnySyncBackend trait**: 3 methods (command, set_event_handler, shutdown)
 - **Desktop implementation**: SidecarManager with automatic startup, port polling, health check via Init, gRPC communication
 - **Mobile implementation**: Plugin registration bridge (Android Kotlin, iOS Swift) via native FFI
@@ -396,7 +397,7 @@
 **Status**: TypeScript API complete and minimal. No hand-written methods - just thin wrapper around generated protobuf code.
 
 **Architecture**:
-- **Raw command function**: Takes cmd name and bytes, invokes Tauri plugin:any-sync|command
+- **Binary transport**: Passes `Uint8Array` directly to `invoke()` as raw body with command name in `X-Command` header
 - **Mechanical typed client**: SyncSpaceClient with 18 methods (one per SyncSpace operation)
 - **Message handling**: All encoding/decoding via generated protobuf schemas (toBinary/fromBinary)
 - **Re-exports**: All types exported for convenience (InitRequest, CreateSpaceRequest, Document, etc.)

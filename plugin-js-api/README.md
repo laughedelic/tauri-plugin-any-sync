@@ -1,27 +1,32 @@
 # TypeScript API
 
-Promise-based TypeScript API for tauri-plugin-any-sync.
+Promise-based TypeScript API for tauri-plugin-any-sync, generated from protobuf definitions.
 
 ## Usage
 
 ```typescript
-import {
-  ping,
-  storagePut,
-  storageGet,
-  storageDelete,
-  storageList
-} from 'tauri-plugin-any-sync-api'
+import { syncspace } from 'tauri-plugin-any-sync-api'
 
-// Health check
-const response = await ping('Hello')
+// Initialize
+await syncspace.init({ dataDir: '/path/to/data', networkId: 'local' })
 
-// CRUD operations
-await storagePut('users', 'user123', { name: 'Alice' })
-const user = await storageGet('users', 'user123')
-const deleted = await storageDelete('users', 'user123')
-const ids = await storageList('users')
+// Space operations
+const space = await syncspace.createSpace({ name: 'My Space' })
+const spaces = await syncspace.listSpaces({})
+
+// Document operations
+const doc = await syncspace.createDocument({
+  spaceId: space.spaceId,
+  title: 'Note',
+  data: new TextEncoder().encode(JSON.stringify({ content: 'Hello' }))
+})
 ```
+
+## Implementation
+
+**Binary transport**: Protobuf messages serialized to `Uint8Array` and passed directly to Tauri via `ipc::Request` (no JSON conversion).
+
+**Generated code**: Client methods auto-generated from `syncspace.proto` using `scripts/generate_api.ts`.
 
 ## Structure
 

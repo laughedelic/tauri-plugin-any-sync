@@ -2,7 +2,9 @@
 
 ## Architecture
 
-The plugin uses a unified `AnySyncService` trait with platform-specific implementations:
+The plugin uses a unified `AnySyncBackend` trait with a single command dispatcher:
+- **Binary transport**: Uses `tauri::ipc::Request`/`Response` to pass protobuf bytes without JSON serialization
+- **Command routing**: Command name in `X-Command` header, protobuf payload in raw request body
 - **Desktop**: Sidecar process with gRPC communication
 - **Mobile**: Direct FFI calls to gomobile bindings
 

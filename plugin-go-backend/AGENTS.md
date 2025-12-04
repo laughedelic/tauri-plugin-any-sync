@@ -19,17 +19,21 @@ All tasks use Taskfile from project root.
 
 ```
 plugin-go-backend/
-├── shared/                    # Shared storage logic
-│   └── storage/
-├── desktop/                   # gRPC server
-│   ├── proto/
-│   │   ├── *.proto            # Protobuf definitions
-│   │   └── *.pb.go            # Generated (git-ignored)
-│   └── api/server/            # gRPC handlers
+├── shared/                    # Shared logic
+│   ├── dispatcher/            # Command routing
+│   ├── handlers/              # Operation implementations
+│   └── anysync/               # Any-Sync integration
+├── desktop/                   # gRPC server (TransportService)
+│   ├── proto/transport/v1/    # Transport protocol (4 methods)
+│   └── main.go                # Server + dispatcher integration
 └── mobile/                    # gomobile FFI bindings
-    ├── main.go
-    └── storage.go
+    └── main.go                # 4-function API (Init, Command, Subscribe, Shutdown)
 ```
+
+**Transport Layer**:
+- Desktop: gRPC `TransportService` with `Command(cmd, protobuf_bytes)` RPC
+- Mobile: Direct Go exports via gomobile FFI
+- Both use same dispatcher routing to `shared/handlers/`
 
 **Module dependencies:**
 - `shared`: Common interface with Any-Sync/Any-Store dependencies

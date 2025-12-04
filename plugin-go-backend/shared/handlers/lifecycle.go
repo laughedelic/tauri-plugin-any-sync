@@ -35,8 +35,13 @@ func Init(ctx context.Context, req proto.Message) (proto.Message, error) {
 	globalState.mu.Lock()
 	defer globalState.mu.Unlock()
 
+	// If already initialized with same data directory, return success (idempotent)
 	if globalState.initialized {
-		return nil, fmt.Errorf("already initialized")
+		// FIXME: WHAT IF other parameters differ?
+		if globalState.dataDir == initReq.DataDir {
+			return &pb.InitResponse{Success: true}, nil
+		}
+		return nil, fmt.Errorf("already initialized with different data directory")
 	}
 
 	// Store configuration

@@ -1,35 +1,38 @@
 <script>
-  import { storagePut, storageGet, storageDelete, storageList, ping } from 'tauri-plugin-any-sync-api'
+  import { NotesService } from './services/notes'
+  import { onMount } from 'svelte'
+  import { homeDir } from '@tauri-apps/api/path'
 
-  let collection = $state('notes')
-  let documentId = $state('note1')
-  let documentJson = $state('')
-  
-  let collections = $state(['notes', 'tasks', 'users', 'settings'])
-  let documents = $state([])
+  const notesService = new NotesService()
+
+  let notes = $state([])
+  let selectedNoteId = $state(null)
+  let noteTitle = $state('')
+  let noteContent = $state('')
+  let noteTags = $state('')
   let result = $state('')
-  let error = $state('')
-  let pingStatus = $state('')
   let initialized = $state(false)
   let documentsListContainer = $state(null)
 
-  // Load example data on mount
-  $effect(() => {
-    if (!initialized) {
-      loadExample()
-      // If collections exist, select the first one
-      if (collections.length > 0) {
-        selectCollection(collections[0])
-      }
+  // Initialize service on mount
+  onMount(async () => {
+    try {
+      const home = await homeDir()
+      const dataDir = `${home}/.tauri-plugin-any-sync/example-app`
+      await notesService.initialize(dataDir)
+      await refreshNotes()
       initialized = true
+      result = '✓ Plugin initialized'
+    } catch (e) {
+      result = `✗ Initialization failed: ${e.message}`
+      console.error(e)
     }
   })
 
-  // Scroll active document into view when documentId changes
+  // Scroll active document into view when selection changes
   $effect(() => {
-    documentId
+    selectedNoteId
     if (documentsListContainer) {
-      // Find the active button and scroll it into view
       const activeButton = documentsListContainer.querySelector('.list-item.active')
       if (activeButton) {
         activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
@@ -37,195 +40,133 @@
     }
   })
 
-  function loadExample() {
-    documentJson = JSON.stringify({
-      title: "My First Note",
-      content: "Hello, AnyStore!",
-      created: new Date().toISOString().split('T')[0]
-    }, null, 2)
-  }
-
-  async function refreshDocuments() {
+  async function refreshNotes() {
     try {
-      documents = await storageList(collection)
+      notes = await notesService.listNotes()
     } catch (e) {
-      documents = []
+      notes = []
+      console.error('Failed to refresh notes:', e)
     }
   }
 
-  async function handleStore() {
-    error = ''
-    result = ''
+  async function selectNote(id) {
     try {
-      const doc = JSON.parse(documentJson)
-      await storagePut(collection, documentId, doc)
-      if (!collections.includes(collection)) {
-        collections = [...collections, collection]
+      selectedNoteId = id
+      const note = await notesService.getNote(id)
+      if (note) {
+        noteTitle = note.title
+        noteContent = note.content
+        noteTags = note.tags?.join(', ') || ''
+        result = `✓ Loaded note: ${note.title}`
       }
-      result = `✓ Stored ${collection}/${documentId}`
-      await refreshDocuments()
     } catch (e) {
       result = `✗ ${e.message}`
     }
   }
 
-  async function handleRetrieve() {
-    error = ''
+  async function handleSave() {
     result = ''
     try {
-      const doc = await storageGet(collection, documentId)
-      if (doc === null) {
-        result = `✗ Not found: ${collection}/${documentId}`
+      const tags = noteTags.split(',').map(t => t.trim()).filter(t => t)
+      
+      if (selectedNoteId) {
+        // Update existing note
+        await notesService.updateNote(selectedNoteId, {
+          title: noteTitle || 'Untitled',
+          content: noteContent,
+          created: notes.find(n => n.id === selectedNoteId)?.created || new Date().toISOString(),
+          tags
+        })
+        result = `✓ Updated: ${noteTitle}`
       } else {
-        documentJson = JSON.stringify(doc, null, 2)
-        result = `✓ Loaded ${collection}/${documentId}`
+        // Create new note
+        const id = await notesService.createNote({
+          title: noteTitle || 'Untitled',
+          content: noteContent,
+          created: new Date().toISOString(),
+          tags
+        })
+        selectedNoteId = id
+        result = `✓ Created: ${noteTitle}`
       }
+      
+      await refreshNotes()
     } catch (e) {
       result = `✗ ${e.message}`
     }
   }
 
   async function handleDelete() {
-    error = ''
+    if (!selectedNoteId) return
+    
     result = ''
     try {
-      // Find current document index before deletion
-      const currentIndex = documents.indexOf(documentId)
+      const currentIndex = notes.findIndex(n => n.id === selectedNoteId)
+      const deleted = await notesService.deleteNote(selectedNoteId)
       
-      const existed = await storageDelete(collection, documentId)
-      if (existed) {
-        result = `✓ Deleted ${collection}/${documentId}`
+      if (deleted) {
+        result = `✓ Deleted note`
+        await refreshNotes()
         
-        // Refresh the UI
-        await refreshDocuments()
-        
-        // Select adjacent document
-        const newDocs = await storageList(collection)
-        if (newDocs.length > 0) {
-          // Try to select the document at the same index, or the previous one, or the first one
-          const newIndex = Math.min(currentIndex, newDocs.length - 1)
-          documentId = newDocs[newIndex]
-          await handleRetrieve()
+        // Select adjacent note
+        if (notes.length > 0) {
+          const newIndex = Math.min(currentIndex, notes.length - 1)
+          await selectNote(notes[newIndex].id)
         } else {
-          // No documents left, clear the form
-          documentJson = ''
-          documentId = ''
+          // No notes left, clear form
+          selectedNoteId = null
+          noteTitle = ''
+          noteContent = ''
+          noteTags = ''
         }
-      } else {
-        result = `✗ Document didn't exist: ${collection}/${documentId}`
       }
     } catch (e) {
       result = `✗ ${e.message}`
     }
   }
 
-  async function selectCollection(name) {
-    collection = name
-    await refreshDocuments()
-    // Load first document if available
-    const docs = await storageList(name)
-    if (docs.length > 0) {
-      documentId = docs[0]
-      await handleRetrieve()
-    } else {
-      documentId = ''
-      documentJson = ''
-      result = ''
-    }
-  }
-
-  async function selectDocument(id) {
-    documentId = id
-    await handleRetrieve()
-  }
-
   function createNew() {
-    // Generate random ID
-    const randomId = `doc-${Math.random().toString(36).substring(2, 9)}`
-    documentId = randomId
-    
-    // Generate varied content based on collection name
-    const templates = {
-      notes: {
-        title: ["Quick Note", "Important", "Reminder", "Ideas", "Meeting Notes"][Math.floor(Math.random() * 5)],
-        content: ["Remember to...", "Key points:", "Follow up on...", "Ideas for..."][Math.floor(Math.random() * 4)],
-        created: new Date().toISOString().split('T')[0]
-      },
-      tasks: {
-        title: ["New Task", "Todo Item", "Action Item", "Task"][Math.floor(Math.random() * 4)],
-        completed: false,
-        priority: ["low", "medium", "high"][Math.floor(Math.random() * 3)],
-        created: new Date().toISOString()
-      },
-      users: {
-        name: ["Alice", "Bob", "Charlie", "Diana"][Math.floor(Math.random() * 4)],
-        email: `user${Math.floor(Math.random() * 1000)}@example.com`,
-        active: true
-      }
-    }
-    
-    const template = templates[collection] || templates.notes
-    documentJson = JSON.stringify(template, null, 2)
+    selectedNoteId = null
+    noteTitle = ''
+    noteContent = ''
+    noteTags = ''
     result = ''
-  }
-
-  async function testPing() {
-    pingStatus = 'Testing...'
-    try {
-      await ping("test")
-      pingStatus = '✓'
-      setTimeout(() => pingStatus = '', 2000)
-    } catch (e) {
-      pingStatus = `✗ ${e.message}`
-    }
   }
 </script>
 
 <main class="container">
   <header>
-    <h1>AnySync Storage Demo</h1>
-    <button class="ping-btn" onclick={testPing} title="Test backend connection">
-      {pingStatus || '⚡'}
-    </button>
+    <h1>SyncSpace Notes Demo</h1>
+    <div class="status">
+      {#if initialized}
+        <span class="status-badge success">✓ Connected</span>
+      {:else}
+        <span class="status-badge">⏳ Initializing...</span>
+      {/if}
+    </div>
   </header>
 
   <div class="layout">
     <aside class="sidebar">
       <div class="section">
-        <h3>Collections</h3>
-        {#if collections.length > 0}
-          <div class="list">
-            {#each collections as name}
-              <button 
-                class="list-item" 
-                class:active={collection === name}
-                onclick={() => selectCollection(name)}
-              >
-                {name}
-              </button>
-            {/each}
-          </div>
-        {:else}
-          <p class="empty">No collections yet</p>
-        {/if}
-      </div>
-
-      <div class="section">
-        <h3>Documents in "{collection}"</h3>
-        {#if documents.length > 0}
+        <h3>All Notes ({notes.length})</h3>
+        {#if notes.length > 0}
           <div class="list" bind:this={documentsListContainer}>
-            {#each documents as id}
+            {#each notes as note}
               <button 
                 class="list-item" 
-                class:active={documentId === id}
-                onclick={() => selectDocument(id)}
+                class:active={selectedNoteId === note.id}
+                onclick={() => selectNote(note.id)}
               >
-                {id}
+                <div class="note-item">
+                  <div class="note-title">{note.title}</div>
+                  <div class="note-date">{new Date(note.created).toLocaleDateString()}</div>
+                </div>
               </button>
             {/each}
           </div>
         {:else}
-          <p class="empty">Empty collection</p>
+          <p class="empty">No notes yet. Create one!</p>
         {/if}
       </div>
     </aside>
@@ -233,28 +174,33 @@
     <div class="main">
       <div class="form">
         <div class="form-section">
-          <div class="input-row">
-            <label>
-              Collection
-              <input type="text" bind:value={collection} placeholder="notes" />
-            </label>
-            <label>
-              Document ID
-              <input type="text" bind:value={documentId} placeholder="note1" />
-            </label>
-          </div>
+          <label>
+            Title
+            <input type="text" bind:value={noteTitle} placeholder="Note title" />
+          </label>
           
           <label>
-            Document Data (JSON)
-            <textarea bind:value={documentJson} rows="8" placeholder="Enter JSON..."></textarea>
+            Content
+            <textarea bind:value={noteContent} rows="10" placeholder="Start writing..."></textarea>
+          </label>
+
+          <label>
+            Tags (comma-separated)
+            <input type="text" bind:value={noteTags} placeholder="personal, work, ideas" />
           </label>
         </div>
 
         <div class="form-footer">
           <div class="actions">
-            <button onclick={handleStore} class="primary">💾 Store Document</button>
-            <button onclick={handleDelete} class="danger" disabled={!documentId}>🗑️ Delete Document</button>
-            <button onclick={createNew} title="Create new document" class="secondary">➕ New</button>
+            <button onclick={handleSave} class="primary">
+              {selectedNoteId ? '💾 Save' : '➕ Create Note'}
+            </button>
+            <button onclick={handleDelete} class="danger" disabled={!selectedNoteId}>
+              🗑️ Delete
+            </button>
+            <button onclick={createNew} class="secondary">
+              📄 New Note
+            </button>
           </div>
 
           {#if result}
@@ -299,34 +245,31 @@
     color: #111;
   }
 
-  .ping-btn {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
-    padding: 0;
-    background: #f5f5f5;
-    color: #555;
-    border: 1px solid #d4d4d4;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
+  .status {
     display: flex;
     align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-    flex-shrink: 0;
+    gap: 0.5rem;
   }
 
-  .ping-btn:hover {
-    background: #e5e5e5;
-    color: #000;
+  .status-badge {
+    padding: 0.375rem 0.75rem;
+    background: #f5f5f5;
+    color: #666;
+    border: 1px solid #d4d4d4;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .status-badge.success {
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #86efac;
   }
 
   .layout {
     display: grid;
-    grid-template-columns: 1fr 1fr 2fr;
-    grid-template-rows: 1fr auto;
+    grid-template-columns: 1fr 2fr;
     gap: 1rem;
     flex: 1;
     min-height: 0;
@@ -335,7 +278,9 @@
   }
 
   .sidebar {
-    display: contents;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
 
   .section {
@@ -346,16 +291,7 @@
     border-radius: 6px;
     overflow: hidden;
     background: #fafafa;
-  }
-
-  .section:first-of-type {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .section:nth-of-type(2) {
-    grid-column: 2;
-    grid-row: 1;
+    flex: 1;
   }
 
   .section h3 {
@@ -409,6 +345,28 @@
     scroll-margin: 0.5rem;
   }
 
+  .note-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .note-title {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .note-date {
+    font-size: 0.75rem;
+    opacity: 0.6;
+  }
+
+  .list-item.active .note-date {
+    opacity: 0.8;
+  }
+
   .empty {
     font-size: 0.875rem;
     color: #999;
@@ -418,8 +376,6 @@
   }
 
   .main {
-    grid-column: 3;
-    grid-row: 1 / 3;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -451,13 +407,6 @@
     gap: 1rem;
     padding-top: 1rem;
     border-top: 1px solid #e5e5e5;
-  }
-
-  .input-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    flex-shrink: 0;
   }
 
   label {
@@ -587,21 +536,13 @@
 
     .layout {
       grid-template-columns: 1fr;
-      grid-template-rows: auto auto 1fr auto auto;
+      grid-template-rows: auto 1fr;
       gap: 0.75rem;
       padding: 0.75rem;
     }
 
-    .section:first-of-type {
-      grid-column: 1;
-      grid-row: 1;
-      max-height: 120px;
-    }
-
-    .section:nth-of-type(2) {
-      grid-column: 1;
-      grid-row: 2;
-      max-height: 120px;
+    .sidebar {
+      max-height: 200px;
     }
 
     .section h3 {
@@ -622,19 +563,9 @@
       align-items: center;
     }
 
-    .main {
-      grid-column: 1;
-      grid-row: 3 / 6;
-    }
-
     .form {
       padding: 1rem;
       gap: 0.75rem;
-    }
-
-    .input-row {
-      grid-template-columns: 1fr;
-      gap: 0.5rem;
     }
 
     label {

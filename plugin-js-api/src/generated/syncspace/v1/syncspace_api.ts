@@ -190,15 +190,18 @@ export class SyncSpaceClient {
     ResShape extends MessageShape<ResSchema>,
   >(cmd: string, reqSchema: ReqSchema, resSchema: ResSchema, req: ReqShape): Promise<ResShape> {
     try {
-      // Serialize: Interface -> Uint8Array
+      // Serialize: Interface -> Uint8Array (protobuf)
       const instance = create(reqSchema, req);
-      const data = toBinary(reqSchema, instance);
+      const requestBytes = toBinary(reqSchema, instance);
 
-      // Invoke: Uint8Array -> Uint8Array (Direct!)
-      const response = await invoke<Uint8Array>("plugin:any-sync|command", { cmd, data });
+      // Invoke: Send protobuf bytes as raw body, command name in header
+      // Must pass Uint8Array directly (not converted to array) for Tauri to treat it as raw binary
+      const responseBytes = await invoke<Uint8Array>("plugin:any-sync|command", requestBytes, {
+        headers: { "X-Command": cmd },
+      });
 
       // Deserialize: Uint8Array -> Interface
-      return fromBinary(resSchema, response) as ResShape;
+      return fromBinary(resSchema, new Uint8Array(responseBytes)) as ResShape;
     } catch (error) {
       throw new Error(
         `Failed to execute command '${cmd}': ${error instanceof Error ? error.message : String(error)}`,

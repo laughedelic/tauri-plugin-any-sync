@@ -11,7 +11,7 @@ tasks:
     internal: true
     run: once
     deps:
-      - :js:build
+      - :api:build
     cmd: bun install
 
   build:

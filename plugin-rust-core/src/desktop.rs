@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use log::{debug, error, info, warn};
 use std::sync::Arc;
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::{AppHandle, Runtime};
 use tauri_plugin_shell::ShellExt;
 use tokio::sync::RwLock;
 use tokio::time::{sleep, timeout, Duration};
@@ -10,7 +10,6 @@ use tonic::Request;
 
 use crate::proto::transport::v1::{
     transport_service_client::TransportServiceClient, CommandRequest as GrpcCommandRequest,
-    InitRequest,
 };
 use crate::{AnySyncBackend, Result};
 
@@ -87,26 +86,6 @@ impl SidecarManager {
         let port_file_path = port_file.path().to_str().unwrap();
         debug!("Created port file: {}", port_file_path);
 
-        // Get database path (outside src-tauri to avoid file watcher loops)
-        let db_path = app
-            .path()
-            .app_data_dir()
-            .map_err(|e| {
-                error!("Failed to get app data dir: {}", e);
-                std::io::Error::other(format!("Failed to get app data dir: {}", e))
-            })?
-            .join("any-sync-data");
-
-        // Ensure the data directory exists
-        if let Some(parent) = db_path.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-
-        let db_path_str = db_path
-            .to_str()
-            .ok_or_else(|| std::io::Error::other("Invalid database path"))?;
-        debug!("Database path: {}", db_path_str);
-
         // Start sidecar using Tauri shell plugin
         // Tauri automatically finds any-sync-{target-triple} in binaries/
         debug!("Creating sidecar command for 'any-sync'");
@@ -118,7 +97,6 @@ impl SidecarManager {
         debug!("Spawning sidecar process...");
         let (_rx, child) = sidecar_command
             .env("ANY_SYNC_PORT_FILE", port_file_path)
-            .env("ANY_SYNC_DB_PATH", db_path_str)
             .spawn()
             .map_err(|e| {
                 error!("Failed to spawn sidecar: {}", e);
@@ -148,31 +126,7 @@ impl SidecarManager {
         let client = TransportServiceClient::new(channel);
         debug!("gRPC client created successfully");
 
-        // Test connection with init call
-        debug!("Testing gRPC connection with init request...");
-        let mut test_client = client.clone();
-        let request = Request::new(InitRequest {
-            storage_path: db_path_str.to_string(),
-            network_id: String::new(),
-            config_json: String::new(),
-        });
-        match timeout(Duration::from_secs(5), test_client.init(request)).await {
-            Ok(Ok(_)) => {
-                info!("Init call passed, sidecar is ready");
-            }
-            Ok(Err(e)) => {
-                error!("Connection test failed: {}", e);
-                return Err(std::io::Error::other(format!("Connection test failed: {}", e)).into());
-            }
-            Err(_) => {
-                error!("Connection test timed out");
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::TimedOut,
-                    "Connection test timed out",
-                )
-                .into());
-            }
-        }
+        info!("Sidecar is ready");
 
         self.child = Some(child);
         self.port = Some(port);

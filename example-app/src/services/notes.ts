@@ -5,11 +5,6 @@
  * 1. Application defines its own data model (Note interface)
  * 2. Application handles serialization/deserialization
  * 3. Plugin provides generic document storage with opaque bytes
- *
- * Note: Using `as any` type assertions throughout to work around generated
- * protobuf types that incorrectly require Message properties. The protobuf-es
- * create() function accepts plain objects, but TypeScript doesn't recognize this.
- * This is a known limitation and will be addressed in a future update.
  */
 
 import { syncspace } from "tauri-plugin-any-sync-api";
@@ -49,15 +44,14 @@ export class NotesService {
 		console.log("[NotesService] Plugin initialized");
 
 		// Check if we already have a notes space
-		const spaces = await syncspace.listSpaces();
-		console.log("[NotesService] listSpaces response:", spaces);
-		console.log("[NotesService] spaces array:", spaces.spaces);
-		console.log("[NotesService] spaces length:", spaces.spaces?.length);
+		const { spaces } = await syncspace.listSpaces();
+		console.log(
+			`[NotesService] listing spaces (${spaces.length}): [${spaces.map((s) => s.name).join(", ")}]`,
+		);
 
-		const notesSpace = spaces.spaces.find((s) => s.name === "notes");
-		console.log("[NotesService] Found notes space:", notesSpace);
-
+		const notesSpace = spaces.find((s) => s.name === "notes");
 		if (notesSpace) {
+			console.log("[NotesService] Found notes space:", notesSpace);
 			this.spaceId = notesSpace.spaceId;
 			console.log("[NotesService] Using existing space:", this.spaceId);
 		} else {

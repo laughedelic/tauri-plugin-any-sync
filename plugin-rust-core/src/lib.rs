@@ -45,13 +45,13 @@ pub trait AnySyncBackend: Send + Sync {
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("any-sync")
         .invoke_handler(tauri::generate_handler![commands::command])
-        .setup(|app, _api| {
+        .setup(|app, api| {
             // Create platform-specific backend
             #[cfg(desktop)]
             let backend: Box<dyn AnySyncBackend> = Box::new(desktop::DesktopBackend::new(app)?);
 
             #[cfg(mobile)]
-            let backend: Box<dyn AnySyncBackend> = Box::new(mobile::MobileBackend::new()?);
+            let backend: Box<dyn AnySyncBackend> = Box::new(mobile::MobileBackend::new(app, api)?);
 
             // Register backend as app state
             app.manage(backend);

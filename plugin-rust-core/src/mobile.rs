@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use log::{debug, error, info};
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use tauri::{
     plugin::{PluginApi, PluginHandle},
     AppHandle, Runtime,
@@ -8,8 +8,16 @@ use tauri::{
 
 use crate::{AnySyncBackend, Result};
 
+#[derive(Debug, Serialize)]
+struct CommandArgs {
+    cmd: String,
+    data: Vec<u8>,
+}
+
 #[derive(Debug, Deserialize)]
 struct CommandResponse {
+    /// Response data from native plugin
+    /// Serialized as JSON array of integers (0-255) from Kotlin/Swift
     data: Vec<u8>,
 }
 
@@ -40,7 +48,7 @@ impl<R: Runtime> MobileBackend<R> {
         let handle = PluginHandle::clone(&self.0);
         tokio::task::spawn_blocking(move || f(&handle))
             .await
-            .map_err(|e| format!("Task join error: {}", e).into())?
+            .map_err(|e| crate::Error::TaskJoin(e.to_string()))?
     }
 }
 
@@ -52,14 +60,15 @@ impl<R: Runtime> AnySyncBackend for MobileBackend<R> {
         let cmd = cmd.to_string();
         let data = data.to_vec();
 
+        // Mobile uses CommandArgs struct instead of raw bytes
+        // because run_mobile_plugin serializes args to JSON
         let response: CommandResponse = self
             .call_plugin(move |handle| {
-                handle
-                    .run_mobile_plugin("command", (cmd, data))
-                    .map_err(|e| {
-                        error!("Mobile plugin call failed: {}", e);
-                        format!("Mobile plugin error: {}", e).into()
-                    })
+                let args = CommandArgs { cmd, data };
+                handle.run_mobile_plugin("command", args).map_err(|e| {
+                    error!("Mobile plugin call failed: {}", e);
+                    crate::Error::from(e)
+                })
             })
             .await?;
 

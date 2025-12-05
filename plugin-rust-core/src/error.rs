@@ -11,6 +11,9 @@ pub enum Error {
     #[cfg(mobile)]
     #[error(transparent)]
     PluginInvoke(#[from] tauri::plugin::mobile::PluginInvokeError),
+    #[cfg(mobile)]
+    #[error("Task join error: {0}")]
+    TaskJoin(String),
 }
 
 impl Serialize for Error {

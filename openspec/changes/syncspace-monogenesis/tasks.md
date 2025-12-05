@@ -642,7 +642,7 @@
 - **Phase 6 total: ~64 tests**
 - **Grand total with Phase 2: ~131 tests**
 
-## Phase 7: Update Example App ✅ COMPLETED (Validation Ready)
+## Phase 7: Update Example App (In Progress)
 
 - [x] 7.1 Delete old storage integration code from `example-app/src/App.svelte`
 - [x] 7.2 Create example domain service `example-app/src/services/notes.ts` using SyncSpace API
@@ -654,7 +654,8 @@
 - [ ] 7.8 Implement event subscription and display (document changes, sync status) - Deferred to Phase 2E integration
 - [ ] 7.9 Write E2E tests covering happy paths for all SyncSpace operations - Deferred
 - [ ] 7.10 Write E2E tests for at least one error path - Deferred
-- [x] 7.11 Validate example app compiles and runs on desktop
+- [x] 7.11 Validate example app compiles and runs on desktop (macOS)
+- [x] 7.12 Validate example app compiles and runs on mobile (Android)
 
 **Status**: Example app successfully demonstrates the intended SyncSpace API usage pattern. All layers compile and run, but runtime functionality requires completing Phase 2D-2E Go backend implementation.
 

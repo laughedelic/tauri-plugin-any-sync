@@ -4,6 +4,8 @@ package mobile
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"sync"
 
 	"anysync-backend/shared/dispatcher"
@@ -31,12 +33,29 @@ func Init() error {
 // data is the serialized protobuf request payload.
 // Returns the serialized protobuf response payload or an error.
 func Command(cmd string, data []byte) ([]byte, error) {
+	log.Printf("[Mobile.Command] cmd=%s, data.len=%d", cmd, len(data))
+
 	if globalDispatcher == nil {
-		return nil, nil // Silently fail if not initialized
+		err := fmt.Errorf("dispatcher not initialized")
+		log.Printf("[Mobile.Command] ERROR: %v", err)
+		return nil, err
 	}
 
 	ctx := context.Background()
-	return globalDispatcher.Dispatch(ctx, cmd, data)
+	result, err := globalDispatcher.Dispatch(ctx, cmd, data)
+	if err != nil {
+		log.Printf("[Mobile.Command] Dispatch failed for cmd=%s: %v", cmd, err)
+		return nil, fmt.Errorf("dispatch failed: %w", err)
+	}
+
+	if result == nil {
+		log.Printf("[Mobile.Command] WARNING: Dispatch returned nil result for cmd=%s", cmd)
+		// Return empty slice instead of nil to avoid null in Java/Kotlin
+		return []byte{}, nil
+	}
+
+	log.Printf("[Mobile.Command] SUCCESS: cmd=%s, result.len=%d, result.isNil=%v", cmd, len(result), result == nil)
+	return result, nil
 }
 
 // SetEventHandler sets the event handler callback.

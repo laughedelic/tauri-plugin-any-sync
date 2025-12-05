@@ -1,7 +1,7 @@
 <script>
   import { NotesService } from './services/notes'
   import { onMount } from 'svelte'
-  import { homeDir } from '@tauri-apps/api/path'
+  import { appDataDir } from '@tauri-apps/api/path'
 
   const notesService = new NotesService()
 
@@ -17,8 +17,8 @@
   // Initialize service on mount
   onMount(async () => {
     try {
-      const home = await homeDir()
-      const dataDir = `${home}/.tauri-plugin-any-sync/example-app`
+      const appData = await appDataDir()
+      const dataDir = `${appData}/any-sync`
       await notesService.initialize(dataDir)
       await refreshNotes()
       initialized = true

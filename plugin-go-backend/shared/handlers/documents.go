@@ -111,12 +111,12 @@ func UpdateDocument(ctx context.Context, req proto.Message) (proto.Message, erro
 		updateReq.SpaceId,
 		updateReq.DocumentId,
 		updateReq.Data,
+		updateReq.Metadata,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update document: %w", err)
 	}
 
-	// TODO: Update metadata if provided in request
 	// TODO: Implement version checking for optimistic locking
 
 	return &pb.UpdateDocumentResponse{

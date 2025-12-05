@@ -205,7 +205,7 @@ func (dm *DocumentManager) GetDocument(spaceID, documentID string) ([]byte, *Doc
 }
 
 // UpdateDocument updates an existing document by adding a new change to its ObjectTree.
-func (dm *DocumentManager) UpdateDocument(spaceID, documentID string, data []byte) error {
+func (dm *DocumentManager) UpdateDocument(spaceID, documentID string, data []byte, metadata map[string]string) error {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 
@@ -250,10 +250,21 @@ func (dm *DocumentManager) UpdateDocument(spaceID, documentID string, data []byt
 		return fmt.Errorf("failed to add content: %w", err)
 	}
 
-	// Update metadata timestamp
+	// Update metadata
 	now := time.Now().Unix()
 	if dm.metadata[spaceID] != nil && dm.metadata[spaceID][documentID] != nil {
-		dm.metadata[spaceID][documentID].UpdatedAt = now
+		docMeta := dm.metadata[spaceID][documentID]
+		docMeta.UpdatedAt = now
+
+		// Update title if provided in metadata
+		if metadata != nil {
+			if title, ok := metadata["title"]; ok {
+				docMeta.Title = title
+			}
+			// Update the metadata map
+			docMeta.Metadata = metadata
+		}
+
 		if err := dm.saveMetadata(spaceID); err != nil {
 			return fmt.Errorf("failed to save metadata: %w", err)
 		}

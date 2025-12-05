@@ -42,7 +42,14 @@
 
   async function refreshNotes() {
     try {
-      notes = await notesService.listNotes()
+      console.log('[App] Refreshing notes...')
+      const fetchedNotes = await notesService.listNotes()
+      console.log('[App] Fetched notes:', fetchedNotes)
+      console.log('[App] Fetched notes length:', fetchedNotes.length)
+      console.log('[App] Before assignment - notes:', notes)
+      notes = fetchedNotes
+      console.log('[App] After assignment - notes:', notes)
+      console.log('[App] After assignment - notes.length:', notes.length)
     } catch (e) {
       notes = []
       console.error('Failed to refresh notes:', e)
@@ -65,12 +72,17 @@
   }
 
   async function handleSave() {
+    console.log('[App] handleSave called')
     result = ''
     try {
       const tags = noteTags.split(',').map(t => t.trim()).filter(t => t)
-      
+      console.log('[App] selectedNoteId:', selectedNoteId)
+      console.log('[App] noteTitle:', noteTitle)
+      console.log('[App] noteContent length:', noteContent.length)
+
       if (selectedNoteId) {
         // Update existing note
+        console.log('[App] Updating existing note')
         await notesService.updateNote(selectedNoteId, {
           title: noteTitle || 'Untitled',
           content: noteContent,
@@ -80,18 +92,23 @@
         result = `✓ Updated: ${noteTitle}`
       } else {
         // Create new note
+        console.log('[App] Creating new note')
         const id = await notesService.createNote({
           title: noteTitle || 'Untitled',
           content: noteContent,
           created: new Date().toISOString(),
           tags
         })
+        console.log('[App] Created note with ID:', id)
         selectedNoteId = id
         result = `✓ Created: ${noteTitle}`
       }
-      
+
+      console.log('[App] Calling refreshNotes after save')
       await refreshNotes()
+      console.log('[App] refreshNotes completed')
     } catch (e) {
+      console.error('[App] Error in handleSave:', e)
       result = `✗ ${e.message}`
     }
   }

@@ -38,6 +38,7 @@ export class NotesService {
 	 * Initialize the service - creates or gets the notes space
 	 */
 	async initialize(dataDir: string): Promise<void> {
+		console.log("[NotesService] Initializing with dataDir:", dataDir);
 		// Initialize the plugin backend
 		await syncspace.init({
 			dataDir,
@@ -45,15 +46,23 @@ export class NotesService {
 			deviceId: "example-app",
 			config: {},
 		});
+		console.log("[NotesService] Plugin initialized");
 
 		// Check if we already have a notes space
 		const spaces = await syncspace.listSpaces();
+		console.log("[NotesService] listSpaces response:", spaces);
+		console.log("[NotesService] spaces array:", spaces.spaces);
+		console.log("[NotesService] spaces length:", spaces.spaces?.length);
+
 		const notesSpace = spaces.spaces.find((s) => s.name === "notes");
+		console.log("[NotesService] Found notes space:", notesSpace);
 
 		if (notesSpace) {
 			this.spaceId = notesSpace.spaceId;
+			console.log("[NotesService] Using existing space:", this.spaceId);
 		} else {
 			// Create a new space for notes
+			console.log("[NotesService] Creating new notes space");
 			const response = await syncspace.createSpace({
 				spaceId: "", // Let backend generate ID
 				name: "notes",
@@ -63,6 +72,7 @@ export class NotesService {
 				},
 			});
 			this.spaceId = response.spaceId;
+			console.log("[NotesService] Created new space:", this.spaceId);
 		}
 	}
 
@@ -74,6 +84,7 @@ export class NotesService {
 			throw new Error("NotesService not initialized");
 		}
 
+		console.log("[NotesService] Creating note:", note);
 		// Serialize the note to bytes (application's responsibility)
 		const json = JSON.stringify(note);
 		const data = this.encoder.encode(json);
@@ -90,6 +101,7 @@ export class NotesService {
 				tags: note.tags?.join(",") || "",
 			},
 		});
+		console.log("[NotesService] Created note with ID:", response.documentId);
 
 		return response.documentId;
 	}
@@ -183,18 +195,24 @@ export class NotesService {
 			throw new Error("NotesService not initialized");
 		}
 
+		console.log("[NotesService] Listing notes for spaceId:", this.spaceId);
 		const response = await syncspace.listDocuments({
 			spaceId: this.spaceId,
 			collection: "notes",
 			limit: 0,
 			cursor: "",
 		});
+		console.log("[NotesService] listDocuments response:", response);
+		console.log("[NotesService] documents array:", response.documents);
+		console.log("[NotesService] documents length:", response.documents?.length);
 
-		return response.documents.map((doc) => ({
+		const mapped = response.documents.map((doc) => ({
 			id: doc.documentId,
 			title: doc.metadata["title"] || "Untitled",
 			created: doc.metadata["created"] || "",
 		}));
+		console.log("[NotesService] mapped notes:", mapped);
+		return mapped;
 	}
 
 	/**

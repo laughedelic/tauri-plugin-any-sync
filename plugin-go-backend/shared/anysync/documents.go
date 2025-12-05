@@ -29,7 +29,6 @@ type DocumentMetadata struct {
 
 // DocumentManager manages documents within spaces using ObjectTree.
 // Each document is an ObjectTree with changes stored as a DAG.
-// Phase 2E: Integrated with EventManager for document lifecycle events.
 type DocumentManager struct {
 	mu           sync.RWMutex
 	spaceManager *SpaceManager
@@ -40,7 +39,7 @@ type DocumentManager struct {
 	metadata map[string]map[string]*DocumentMetadata
 }
 
-// NewDocumentManager creates a new DocumentManager.
+// DocumentManager constructor
 func NewDocumentManager(spaceManager *SpaceManager, keys *accountdata.AccountKeys, eventManager *EventManager) (*DocumentManager, error) {
 	if spaceManager == nil {
 		return nil, fmt.Errorf("space manager required")
@@ -256,12 +255,15 @@ func (dm *DocumentManager) UpdateDocument(spaceID, documentID string, data []byt
 		docMeta := dm.metadata[spaceID][documentID]
 		docMeta.UpdatedAt = now
 
-		// Update title if provided in metadata
+		// Replace metadata entirely with provided metadata
+		// Frontend should send complete metadata map to preserve fields
 		if metadata != nil {
+			// Update title if provided
 			if title, ok := metadata["title"]; ok {
 				docMeta.Title = title
 			}
-			// Update the metadata map
+
+			// Full replacement, application controls what's kept
 			docMeta.Metadata = metadata
 		}
 

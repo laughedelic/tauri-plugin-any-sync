@@ -152,12 +152,14 @@ export class NotesService {
 		const data = this.encoder.encode(json);
 
 		// Update using plugin API
+		// NOTE: Metadata is fully replaced (not merged), so send complete metadata
 		await syncspace.updateDocument({
 			spaceId: this.spaceId,
 			documentId,
 			data,
 			metadata: {
 				title: updatedNote.title,
+				created: updatedNote.created, // Must include to preserve
 				updated: updatedNote.updated,
 				tags: updatedNote.tags?.join(",") || "",
 			},

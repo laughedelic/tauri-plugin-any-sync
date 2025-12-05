@@ -355,8 +355,8 @@
 - [x] 3.5 Implement single `command(cmd: String, data: Vec<u8>) -> Result<Vec<u8>>` Tauri command
 - [x] 3.6 Implement `AnySyncBackend` for desktop (calls sidecar via gRPC or simplified IPC)
 - [x] 3.7 Implement `AnySyncBackend` for mobile (calls native FFI)
-- [ ] 3.8 Update iOS Swift shim to ~30 lines (pure passthrough to Go C exports)
-- [ ] 3.9 Update Android Kotlin shim to ~30 lines (pure passthrough to Go JNI)
+- [x] 3.8 Update iOS Swift shim to ~30 lines (pure passthrough to Go C exports)
+- [x] 3.9 Update Android Kotlin shim to ~30 lines (pure passthrough to Go JNI)
 - [x] 3.10 Create single permission file `plugin-rust-core/permissions/default.toml` for `command` handler
 - [x] 3.11 Update `plugin-rust-core/build.rs` to handle new binary structure (if needed)
 - [x] 3.12 Write minimal Rust passthrough tests (bytes pass through, errors propagate)
@@ -471,7 +471,7 @@
 - Swift Package.swift fixed (removed non-existent Tauri dependency)
 - gomobile Taskfile updated with iOS build support (build:ios task)
 
-## Phase 6: Network Sync Layer
+## Phase 6: Network Sync Layer (DEFERRED)
 
 **Goal**: Enable synchronization with Any-Sync network.
 
@@ -657,7 +657,7 @@
 - [x] 7.11 Validate example app compiles and runs on desktop (macOS)
 - [x] 7.12 Validate example app compiles and runs on mobile (Android)
 
-**Status**: Example app successfully demonstrates the intended SyncSpace API usage pattern. All layers compile and run, but runtime functionality requires completing Phase 2D-2E Go backend implementation.
+**Status**: Example app successfully demonstrates the intended SyncSpace API usage pattern. All layers compile and run, but runtime functionality requires completing Phase 6 Sync implementation.
 
 **Implementation Summary**:
 
@@ -682,16 +682,6 @@
 2. **Domain service pattern** - Clean separation between app logic and plugin API
 3. **Opaque bytes model** - Application fully controls data format (JSON in this case)
 4. **Environment variable needed** - `ANY_SYNC_GO_BINARIES_DIR` must be set for local development
-
-**Build & Run**:
-```bash
-# Build JS API plugin (required before example app)
-task js:build
-
-# Run example app with local binaries
-cd example-app
-ANY_SYNC_GO_BINARIES_DIR=/path/to/binaries task dev
-```
 
 **Validation Results** ✅:
 - App compiles successfully with new binaries

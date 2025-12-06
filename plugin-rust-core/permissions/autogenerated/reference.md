@@ -1,14 +1,10 @@
 ## Default Permission
 
-Default permissions for the plugin
+Default permissions for the any-sync plugin
 
 #### This default permission set includes the following:
 
-- `allow-ping`
-- `allow-storage-put`
-- `allow-storage-get`
-- `allow-storage-delete`
-- `allow-storage-list`
+- `allow-command`
 
 ## Permission Table
 
@@ -22,25 +18,12 @@ Default permissions for the plugin
 <tr>
 <td>
 
-`any-sync:allow-ping`
+`any-sync:allow-command`
 
 </td>
 <td>
 
-Enables the ping command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`any-sync:deny-ping`
-
-</td>
-<td>
-
-Denies the ping command without any pre-configured scope.
+Enables the command command without any pre-configured scope.
 
 </td>
 </tr>
@@ -48,103 +31,12 @@ Denies the ping command without any pre-configured scope.
 <tr>
 <td>
 
-`any-sync:allow-storage-delete`
+`any-sync:deny-command`
 
 </td>
 <td>
 
-Enables the storage_delete command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`any-sync:deny-storage-delete`
-
-</td>
-<td>
-
-Denies the storage_delete command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`any-sync:allow-storage-get`
-
-</td>
-<td>
-
-Enables the storage_get command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`any-sync:deny-storage-get`
-
-</td>
-<td>
-
-Denies the storage_get command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`any-sync:allow-storage-list`
-
-</td>
-<td>
-
-Enables the storage_list command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`any-sync:deny-storage-list`
-
-</td>
-<td>
-
-Denies the storage_list command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`any-sync:allow-storage-put`
-
-</td>
-<td>
-
-Enables the storage_put command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`any-sync:deny-storage-put`
-
-</td>
-<td>
-
-Denies the storage_put command without any pre-configured scope.
+Denies the command command without any pre-configured scope.
 
 </td>
 </tr>

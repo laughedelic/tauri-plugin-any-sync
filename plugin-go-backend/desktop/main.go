@@ -51,8 +51,8 @@ func (s *Server) Init(ctx context.Context, req *transportpb.InitRequest) (*trans
 		return nil, fmt.Errorf("failed to marshal init request: %w", err)
 	}
 
-	// Call dispatcher
-	respBytes, err := s.dispatcher.Dispatch(ctx, "init", reqBytes)
+	// Call dispatcher with PascalCase command name
+	respBytes, err := s.dispatcher.Dispatch(ctx, "Init", reqBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,8 @@ func (s *Server) Init(ctx context.Context, req *transportpb.InitRequest) (*trans
 
 // Command executes a command through the dispatcher
 func (s *Server) Command(ctx context.Context, req *transportpb.CommandRequest) (*transportpb.CommandResponse, error) {
-	// Dispatch directly - request data is already serialized
+	// req.Data contains protobuf bytes from TypeScript via Rust
+	// Dispatch directly - handlers expect and return protobuf bytes
 	respBytes, err := s.dispatcher.Dispatch(ctx, req.Cmd, req.Data)
 	if err != nil {
 		return nil, err
@@ -164,8 +165,8 @@ func (s *Server) Shutdown(ctx context.Context, req *transportpb.ShutdownRequest)
 		return nil, fmt.Errorf("failed to marshal shutdown request: %w", err)
 	}
 
-	// Call dispatcher
-	respBytes, err := s.dispatcher.Dispatch(ctx, "shutdown", reqBytes)
+	// Call dispatcher with PascalCase command name
+	respBytes, err := s.dispatcher.Dispatch(ctx, "Shutdown", reqBytes)
 	if err != nil {
 		return nil, err
 	}

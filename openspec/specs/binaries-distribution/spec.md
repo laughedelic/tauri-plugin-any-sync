@@ -1,7 +1,7 @@
 # binaries-distribution Specification
 
 ## Purpose
-TBD - created by archiving change binaries-dist. Update Purpose after archive.
+Establishes the automated binary distribution system for pre-compiled Go backend binaries across all platforms (macOS, Linux, Windows, and Android). Uses GitHub Releases for hosting with SHA256 verification, feature-based selective downloads, and environment variable propagation to consuming applications.
 ## Requirements
 ### Requirement: GitHub Release Workflow
 The plugin SHALL publish pre-compiled Go backend binaries **for all supported platforms** to GitHub Releases on version tags.

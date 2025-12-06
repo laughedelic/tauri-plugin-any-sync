@@ -186,9 +186,14 @@ func TestUpdateDocument_Success(t *testing.T) {
 	// Add a small delay to ensure timestamp difference
 	time.Sleep(1 * time.Second)
 
-	// Update the document
+	// Update the document with new data and metadata
 	newData := []byte("Version 2")
-	err = dm.UpdateDocument(spaceID, docID, newData)
+	updateMetadata := map[string]string{
+		"title":   "Updated Document",
+		"updated": "2023-01-01T00:00:00Z",
+		"custom":  "value",
+	}
+	err = dm.UpdateDocument(spaceID, docID, newData, updateMetadata)
 	require.NoError(t, err)
 
 	// Retrieve and verify the updated document
@@ -196,6 +201,12 @@ func TestUpdateDocument_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, newData, retrievedData)
 	assert.Greater(t, meta.UpdatedAt, meta.CreatedAt)
+
+	// Verify metadata was updated
+	assert.Equal(t, "Updated Document", meta.Title, "Title should be updated")
+	assert.Equal(t, "Updated Document", meta.Metadata["title"], "Metadata title should be updated")
+	assert.Equal(t, "2023-01-01T00:00:00Z", meta.Metadata["updated"], "Custom metadata should be preserved")
+	assert.Equal(t, "value", meta.Metadata["custom"], "Custom metadata should be preserved")
 }
 
 func TestUpdateDocument_NotFound(t *testing.T) {
@@ -219,7 +230,7 @@ func TestUpdateDocument_NotFound(t *testing.T) {
 
 	// Try to update non-existent document
 	newData := []byte("Version 2")
-	err = dm.UpdateDocument(spaceID, "non-existent-doc-id", newData)
+	err = dm.UpdateDocument(spaceID, "non-existent-doc-id", newData, nil)
 	assert.Error(t, err)
 }
 

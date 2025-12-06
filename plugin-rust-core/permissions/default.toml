@@ -1,9 +1,3 @@
 [default]
-description = "Default permissions for the plugin"
-permissions = [
-  "allow-ping",
-  "allow-storage-put",
-  "allow-storage-get",
-  "allow-storage-delete",
-  "allow-storage-list",
-]
+description = "Default permissions for the any-sync plugin"
+permissions = ["allow-command"]

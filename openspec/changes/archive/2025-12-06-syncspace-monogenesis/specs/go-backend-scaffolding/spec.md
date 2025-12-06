@@ -2,51 +2,55 @@
 
 ## REMOVED Requirements
 
-### Requirement: Per-Operation Mobile Exports
+### Requirement: AnyStore Integration
 
-~~The mobile package SHALL export individual functions for each storage operation.~~
-
-**Reason:** Replaced by single Command function in single-dispatch pattern.
-
-### Requirement: Storage Wrapper Abstraction
-
-~~The Go backend SHALL provide a storage wrapper in `internal/storage/anystore.go` that abstracts AnyStore-specific types.~~
+~~The Go backend SHALL integrate AnyStore for document storage capabilities.~~
 
 **Reason:** Replaced by Any-Sync integration layer that uses SpaceService and ObjectTree.
 
+### Requirement: Storage Module Organization
+
+~~The Go backend SHALL organize storage code in `internal/storage/` to isolate AnyStore integration.~~
+
+**Reason:** Replaced by Any-Sync integration layer.
+
+### Requirement: gRPC Server Registration
+
+~~The Go backend SHALL register the StorageService with the gRPC server during initialization.~~
+
+**Reason:** Replaced by unified single-dispatch SyncSpace API.
+
 ## MODIFIED Requirements
 
-### Requirement: Mobile Package Structure
+### Requirement: Basic Go Backend Structure
 
-The mobile package SHALL provide gomobile-compatible exports for Android and iOS integration.
+The project SHALL provide a Go backend with proper package structure separating API and internal code.
 
 **Changes:**
-- Exports are reduced from N per-operation functions to exactly 4 functions: Init, Command, SetEventHandler, Shutdown
-- Functions use dispatcher pattern instead of direct operation handlers
+- Adds `shared/dispatcher/` for command routing
+- Adds `shared/handlers/` for operation handlers
+- Adds `shared/anysync/` for Any-Sync integration
+- Removes `internal/storage/` (replaced by Any-Sync integration)
 
-#### Scenario: Mobile package exports Init function
+#### Scenario: Go backend package structure
 
-- **GIVEN** the mobile package is compiled with gomobile
-- **WHEN** the exported API is inspected
-- **THEN** an Init function with signature `Init(dataPath string) error` is available
+- **GIVEN** the Go backend project
+- **WHEN** the directory structure is reviewed
+- **THEN** it includes dispatcher, handlers, and anysync packages for unified API
 
-#### Scenario: Mobile package exports Command function
+### Requirement: gRPC Ping Service
 
-- **GIVEN** the mobile package is compiled with gomobile
-- **WHEN** the exported API is inspected
-- **THEN** a Command function with signature `Command(cmd string, data []byte) ([]byte, error)` is available
+The Go backend SHALL provide a gRPC ping service for testing communication between frontend and backend.
 
-#### Scenario: Mobile package exports SetEventHandler function
+**Changes:**
+- Ping remains as a single operation in the dispatcher pattern
+- No structural changes to ping implementation
 
-- **GIVEN** the mobile package is compiled with gomobile
-- **WHEN** the exported API is inspected
-- **THEN** a SetEventHandler function with signature `SetEventHandler(handler func([]byte))` is available
+#### Scenario: Ping service via dispatcher
 
-#### Scenario: Mobile package exports Shutdown function
-
-- **GIVEN** the mobile package is compiled with gomobile
-- **WHEN** the exported API is inspected
-- **THEN** a Shutdown function with signature `Shutdown() error` is available
+- **GIVEN** a ping command via the SyncSpace API
+- **WHEN** the command is dispatched
+- **THEN** a pong response is returned
 
 ## ADDED Requirements
 

@@ -35,8 +35,10 @@ func Init(ctx context.Context, req proto.Message) (proto.Message, error) {
 	globalState.mu.Lock()
 	defer globalState.mu.Unlock()
 
+	// Prevent double initialization - caller must Shutdown first
 	if globalState.initialized {
-		return nil, fmt.Errorf("already initialized")
+		return nil, fmt.Errorf("already initialized (dataDir: %s, networkId: %s, deviceId: %s) - call Shutdown first",
+			globalState.dataDir, globalState.networkID, globalState.deviceID)
 	}
 
 	// Store configuration

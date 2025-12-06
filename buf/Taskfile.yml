@@ -1,10 +1,9 @@
 version: 3
 
 tasks:
-  generate:
-    desc: Generate code from protobuf definitions
+  generate-transport:
+    desc: Generate transport code from protobuf
     cmds:
-      - buf generate --template ./proto/syncspace-api/buf.gen.yaml
       - buf generate --template ./proto/dispatch-transport/buf.gen.yaml
     sources:
       - ./proto/**/*.proto
@@ -12,7 +11,29 @@ tasks:
       - ./buf.yaml
     generates:
       - "{{.ROOT_DIR}}/plugin-go-backend/**/proto/**/*.pb.go"
-      - "{{.ROOT_DIR}}/plugin-js-api/src/generated/**/*_pb.ts"
+
+  generate-syncspace:
+    desc: Generate syncspace code from protobuf
+    cmds:
+      - buf generate --template ./proto/syncspace-api/buf.gen.yaml
+      # Fix generated TypeScript code formatting
+      - task: :api:fix
+        vars:
+          CLI_ARGS: "./src/generated"
+    sources:
+      - ./proto/**/*.proto
+      - ./proto/**/*.gen.yaml
+      - ./buf.yaml
+      - ../plugin-js-api/scripts/generate_api.ts
+    generates:
+      - "{{.ROOT_DIR}}/plugin-go-backend/**/proto/**/*.pb.go"
+      - "{{.ROOT_DIR}}/plugin-js-api/src/generated/**/*.ts"
+
+  generate:
+    desc: Generate all protobuf code
+    deps:
+      - generate-syncspace
+      - generate-transport
 
   lint:
     desc: Lint protobuf definitions

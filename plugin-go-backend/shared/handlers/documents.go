@@ -111,12 +111,12 @@ func UpdateDocument(ctx context.Context, req proto.Message) (proto.Message, erro
 		updateReq.SpaceId,
 		updateReq.DocumentId,
 		updateReq.Data,
+		updateReq.Metadata,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update document: %w", err)
 	}
 
-	// TODO: Update metadata if provided in request
 	// TODO: Implement version checking for optimistic locking
 
 	return &pb.UpdateDocumentResponse{
@@ -180,11 +180,8 @@ func ListDocuments(ctx context.Context, req proto.Message) (proto.Message, error
 	// Convert to protobuf DocumentInfo
 	documents := make([]*pb.DocumentInfo, 0, len(metadataList))
 	for _, metadata := range metadataList {
-		// Apply collection filter if specified
-		if listReq.Collection != "" {
-			// TODO: Add collection support to metadata
-			continue
-		}
+		// TODO: Apply collection filter when collection support is implemented
+		// For now, ignore collection filter to return all documents
 
 		// Apply limit if specified
 		if listReq.Limit > 0 && len(documents) >= int(listReq.Limit) {
@@ -193,7 +190,7 @@ func ListDocuments(ctx context.Context, req proto.Message) (proto.Message, error
 
 		documents = append(documents, &pb.DocumentInfo{
 			DocumentId: metadata.DocumentID,
-			Collection: "", // TODO: Add collection support
+			Collection: listReq.Collection, // Echo back the requested collection
 			Metadata:   metadata.Metadata,
 			Version:    1, // TODO: Add version tracking
 			CreatedAt:  metadata.CreatedAt,
@@ -241,11 +238,8 @@ func QueryDocuments(ctx context.Context, req proto.Message) (proto.Message, erro
 	// Convert to protobuf DocumentInfo
 	documents := make([]*pb.DocumentInfo, 0, len(metadataList))
 	for _, metadata := range metadataList {
-		// Apply collection filter if specified
-		if queryReq.Collection != "" {
-			// TODO: Add collection support to metadata
-			continue
-		}
+		// TODO: Apply collection filter when collection support is implemented
+		// For now, ignore collection filter to return all documents
 
 		// Apply limit if specified
 		if queryReq.Limit > 0 && len(documents) >= int(queryReq.Limit) {
@@ -254,7 +248,7 @@ func QueryDocuments(ctx context.Context, req proto.Message) (proto.Message, erro
 
 		documents = append(documents, &pb.DocumentInfo{
 			DocumentId: metadata.DocumentID,
-			Collection: "", // TODO: Add collection support
+			Collection: queryReq.Collection, // Echo back the requested collection
 			Metadata:   metadata.Metadata,
 			Version:    1, // TODO: Add version tracking
 			CreatedAt:  metadata.CreatedAt,

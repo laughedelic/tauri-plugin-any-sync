@@ -295,70 +295,22 @@
       "type": "string",
       "oneOf": [
         {
-          "description": "Enables the ping command without any pre-configured scope.",
+          "description": "Enables the command command without any pre-configured scope.",
           "type": "string",
-          "const": "allow-ping",
-          "markdownDescription": "Enables the ping command without any pre-configured scope."
+          "const": "allow-command",
+          "markdownDescription": "Enables the command command without any pre-configured scope."
         },
         {
-          "description": "Denies the ping command without any pre-configured scope.",
+          "description": "Denies the command command without any pre-configured scope.",
           "type": "string",
-          "const": "deny-ping",
-          "markdownDescription": "Denies the ping command without any pre-configured scope."
+          "const": "deny-command",
+          "markdownDescription": "Denies the command command without any pre-configured scope."
         },
         {
-          "description": "Enables the storage_delete command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-storage-delete",
-          "markdownDescription": "Enables the storage_delete command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the storage_delete command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-storage-delete",
-          "markdownDescription": "Denies the storage_delete command without any pre-configured scope."
-        },
-        {
-          "description": "Enables the storage_get command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-storage-get",
-          "markdownDescription": "Enables the storage_get command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the storage_get command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-storage-get",
-          "markdownDescription": "Denies the storage_get command without any pre-configured scope."
-        },
-        {
-          "description": "Enables the storage_list command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-storage-list",
-          "markdownDescription": "Enables the storage_list command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the storage_list command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-storage-list",
-          "markdownDescription": "Denies the storage_list command without any pre-configured scope."
-        },
-        {
-          "description": "Enables the storage_put command without any pre-configured scope.",
-          "type": "string",
-          "const": "allow-storage-put",
-          "markdownDescription": "Enables the storage_put command without any pre-configured scope."
-        },
-        {
-          "description": "Denies the storage_put command without any pre-configured scope.",
-          "type": "string",
-          "const": "deny-storage-put",
-          "markdownDescription": "Denies the storage_put command without any pre-configured scope."
-        },
-        {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-ping`\n- `allow-storage-put`\n- `allow-storage-get`\n- `allow-storage-delete`\n- `allow-storage-list`",
+          "description": "Default permissions for the any-sync plugin\n#### This default permission set includes:\n\n- `allow-command`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-ping`\n- `allow-storage-put`\n- `allow-storage-get`\n- `allow-storage-delete`\n- `allow-storage-list`"
+          "markdownDescription": "Default permissions for the any-sync plugin\n#### This default permission set includes:\n\n- `allow-command`"
         }
       ]
     }

@@ -1,139 +1,101 @@
 # Mobile Package - gomobile Bindings
 
-This package provides gomobile-compatible bindings for the AnySync storage API, allowing the Go backend to be embedded in mobile applications (Android and iOS).
+gomobile FFI bindings for embedding the Go backend in mobile apps (Android/iOS).
 
-## API Overview
+## 4-Function API
 
-All functions use simple types (string, bool, error) that are compatible with gomobile. Complex data is serialized as JSON strings.
-
-### InitStorage
+The mobile layer exports 4 functions that dispatch to shared handlers via binary protobuf:
 
 ```go
-func InitStorage(dbPath string) error
+func Init(dataDir string) error
+func Command(cmdName string, protobufBytes []byte) ([]byte, error)
+func SetEventHandler(handler func([]byte))
+func Shutdown() error
 ```
 
-Initializes the storage with the given database path. Must be called before any other storage operations.
+### Usage Pattern
 
-**Parameters:**
-- `dbPath`: Absolute path to the SQLite database file
+**Kotlin (Android)**:
+```kotlin
+import anysync.Mobile
 
-**Returns:**
-- `error`: Error if initialization fails, nil on success
+// Initialize
+Mobile.init("/data/data/com.app/anysync")
 
-### StoragePut
+// Execute command with protobuf bytes
+val request = InitRequest.newBuilder()
+    .setDataDir("/data/...")
+    .build()
+val responseBytes = Mobile.command("Init", request.toByteArray())
+val response = InitResponse.parseFrom(responseBytes)
 
-```go
-func StoragePut(collection, id, documentJson string) error
+// Set event handler
+Mobile.setEventHandler { bytes ->
+    val event = Event.parseFrom(bytes)
+    // Handle event
+}
+
+// Shutdown
+Mobile.shutdown()
 ```
 
-Stores a document in the specified collection.
+**Swift (iOS)**:
+```swift
+import AnySync
 
-**Parameters:**
-- `collection`: Collection name
-- `id`: Document ID
-- `documentJson`: Document as JSON string
+// Initialize
+try! AnysyncInit("/Library/Application Support/anysync")
 
-**Returns:**
-- `error`: Error if operation fails, nil on success
+// Execute command
+let request = InitRequest.with { $0.dataDir = "..." }
+let requestData = try! request.serializedData()
+let responseData = try! AnysyncCommand("Init", requestData)
+let response = try! InitResponse(serializedData: responseData)
 
-### StorageGet
-
-```go
-func StorageGet(collection, id string) (string, error)
+// Shutdown
+try! AnysyncShutdown()
 ```
 
-Retrieves a document from the specified collection.
+## Binary Dispatch Pattern
 
-**Parameters:**
-- `collection`: Collection name
-- `id`: Document ID
+All operations route through `Command(cmdName, protobufBytes)`:
 
-**Returns:**
-- `string`: Document as JSON string
-- `error`: Error if not found or operation fails
+1. Mobile app encodes protobuf request
+2. Calls `Command("OperationName", bytes)`
+3. Go dispatcher routes to handler in `shared/handlers/`
+4. Handler decodes request, executes logic, encodes response
+5. Returns protobuf response bytes
 
-### StorageDelete
-
-```go
-func StorageDelete(collection, id string) (bool, error)
-```
-
-Deletes a document from the specified collection.
-
-**Parameters:**
-- `collection`: Collection name
-- `id`: Document ID
-
-**Returns:**
-- `bool`: True if document was deleted, false if it didn't exist
-- `error`: Error if operation fails
-
-### StorageList
-
-```go
-func StorageList(collection string) (string, error)
-```
-
-Lists all document IDs in the specified collection.
-
-**Parameters:**
-- `collection`: Collection name
-
-**Returns:**
-- `string`: JSON array of document IDs, e.g., `["id1", "id2", "id3"]`
-- `error`: Error if operation fails
+Same handlers used by desktop gRPC layer (100% code reuse).
 
 ## Building
 
-### Android
-
+### Android (.aar)
 ```bash
-gomobile bind -target=android -o any-sync-android.aar ./cmd/mobile
+task go:mobile:build
+# Outputs: binaries/any-sync-android.aar
 ```
 
-This generates an `.aar` file containing:
-- `libgojni.so` for all Android ABIs (arm64-v8a, armeabi-v7a, x86, x86_64)
-- Generated Java classes in the `mobile` package
-
-### iOS (Future)
-
+### iOS (.xcframework)
 ```bash
-gomobile bind -target=ios -o AnySync.xcframework ./cmd/mobile
-```
-
-## Usage
-
-### Android (Kotlin)
-
-```kotlin
-import mobile.Mobile
-
-// Initialize storage
-Mobile.initStorage("/data/data/com.example.app/databases/anystore.db")
-
-// Store a document
-Mobile.storagePut("users", "user1", """{"name": "Alice", "age": 30}""")
-
-// Retrieve a document
-val json = Mobile.storageGet("users", "user1")
-
-// List documents
-val ids = Mobile.storageList("users")
-
-// Delete a document
-val deleted = Mobile.storageDelete("users", "user1")
+gomobile bind -target=ios -o binaries/AnySync.xcframework ./mobile
 ```
 
 ## Architecture
 
-This package is part of the mobile integration layer:
-
+**Mobile flow**:
 ```
-TypeScript API → Rust Plugin → Kotlin/Swift Bridge → gomobile JNI → Go Mobile Package → Storage Layer
+TypeScript → Rust → Kotlin/Swift → gomobile FFI → Go Command() → Dispatcher → Handlers → Any-Sync
 ```
 
-The same storage implementation (`internal/storage`) is used by both:
-- Desktop: via gRPC sidecar (`cmd/server`)
-- Mobile: via direct function calls (`cmd/mobile`)
+**vs Desktop flow**:
+```
+TypeScript → Rust → gRPC Client → Go gRPC Server → Dispatcher → Handlers → Any-Sync
+```
 
-This ensures >95% code reuse and consistent behavior across platforms.
+Both platforms share:
+- `shared/dispatcher/` - Command routing
+- `shared/handlers/` - Operation logic
+- `shared/anysync/` - Any-Sync integration
+
+See [root README](../../README.md) for architecture overview.

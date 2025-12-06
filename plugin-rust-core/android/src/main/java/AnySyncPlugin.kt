@@ -9,29 +9,12 @@ import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
 import app.tauri.plugin.Invoke
 import mobile.Mobile
+import org.json.JSONArray
 
 @InvokeArg
-class StorageGetArgs {
-    var collection: String = ""
-    var id: String = ""
-}
-
-@InvokeArg
-class StoragePutArgs {
-    var collection: String = ""
-    var id: String = ""
-    var documentJson: String = ""
-}
-
-@InvokeArg
-class StorageDeleteArgs {
-    var collection: String = ""
-    var id: String = ""
-}
-
-@InvokeArg
-class StorageListArgs {
-    var collection: String = ""
+class CommandArgs {
+    var cmd: String = ""
+    var data: ByteArray = ByteArray(0)
 }
 
 @TauriPlugin
@@ -54,108 +37,49 @@ class AnySyncPlugin(private val activity: Activity): Plugin(activity) {
 
     private fun ensureInitialized() {
         if (!initialized) {
-            val dbPath = activity.filesDir.absolutePath + "/anysync.db"
             try {
-                Mobile.initStorage(dbPath)
+                Mobile.init()
                 initialized = true
-                Log.d(TAG, "Storage initialized at: $dbPath")
+                Log.d(TAG, "Mobile backend initialized")
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to initialize storage", e)
+                Log.e(TAG, "Failed to initialize mobile backend", e)
                 throw e
             }
         }
     }
 
     @Command
-    fun storageGet(invoke: Invoke) {
+    fun command(invoke: Invoke) {
         try {
             ensureInitialized()
-            val args = invoke.parseArgs(StorageGetArgs::class.java)
-            
-            Log.d(TAG, "storageGet: collection=${args.collection}, id=${args.id}")
-            
-            val result = Mobile.storageGet(args.collection, args.id)
-            val ret = JSObject()
-            // Match GetResponse: documentJson and found fields
-            if (result.isNullOrEmpty()) {
-                ret.put("documentJson", null)
-                ret.put("found", false)
-            } else {
-                ret.put("documentJson", result)
-                ret.put("found", true)
+
+            val args = invoke.parseArgs(CommandArgs::class.java)
+            Log.d(TAG, "command: cmd=${args.cmd}, data.size=${args.data.size}")
+
+            // Call Go via gomobile FFI
+            val response = try {
+                Mobile.command(args.cmd, args.data)
+            } catch (e: Exception) {
+                Log.e(TAG, "Go command threw exception: ${e.message}", e)
+                invoke.reject(e.message ?: "Go command failed")
+                return
             }
-            invoke.resolve(ret)
-        } catch (e: Exception) {
-            Log.e(TAG, "storageGet failed", e)
-            invoke.reject(e.message ?: "Unknown error")
-        }
-    }
 
-    @Command
-    fun storagePut(invoke: Invoke) {
-        try {
-            ensureInitialized()
-            val args = invoke.parseArgs(StoragePutArgs::class.java)
-            
-            Log.d(TAG, "storagePut: collection=${args.collection}, id=${args.id}")
-            
-            Mobile.storagePut(args.collection, args.id, args.documentJson)
-            val ret = JSObject()
-            ret.put("success", true)
-            invoke.resolve(ret)
-        } catch (e: Exception) {
-            Log.e(TAG, "storagePut failed", e)
-            invoke.reject(e.message ?: "Unknown error")
-        }
-    }
+            // Handle null response from gomobile
+            // Note: gomobile converts empty Go slices ([]byte{} with len==0) to null in Java/Kotlin
+            // This is documented behavior, not a bug. Treat null as empty response.
+            val responseBytes = response ?: ByteArray(0)
 
-    @Command
-    fun storageDelete(invoke: Invoke) {
-        try {
-            ensureInitialized()
-            val args = invoke.parseArgs(StorageDeleteArgs::class.java)
-            
-            Log.d(TAG, "storageDelete: collection=${args.collection}, id=${args.id}")
-            
-            val existed = Mobile.storageDelete(args.collection, args.id)
-            val ret = JSObject()
-            // Match DeleteResponse: existed field
-            ret.put("existed", existed)
-            invoke.resolve(ret)
-        } catch (e: Exception) {
-            Log.e(TAG, "storageDelete failed", e)
-            invoke.reject(e.message ?: "Unknown error")
-        }
-    }
+            Log.d(TAG, "command succeeded, response.size=${responseBytes.size}")
 
-    @Command
-    fun storageList(invoke: Invoke) {
-        try {
-            ensureInitialized()
-            val args = invoke.parseArgs(StorageListArgs::class.java)
-            
-            Log.d(TAG, "storageList: collection=${args.collection}")
-            
-            // Go backend returns JSON array string like ["id1","id2"]
-            val result = Mobile.storageList(args.collection)
             val ret = JSObject()
-            
-            // Handle empty/null results gracefully
-            if (result.isNullOrEmpty()) {
-                Log.d(TAG, "storageList returned empty/null, using empty array")
-                ret.put("ids", org.json.JSONArray())
-            } else {
-                try {
-                    ret.put("ids", org.json.JSONArray(result))
-                } catch (e: org.json.JSONException) {
-                    Log.w(TAG, "Failed to parse list result as JSON array: $result", e)
-                    // Return empty array on parse error
-                    ret.put("ids", org.json.JSONArray())
-                }
-            }
+            // Convert ByteArray to JSONArray for proper JSON serialization
+            val jsonArray = JSONArray()
+            responseBytes.forEach { byte -> jsonArray.put(byte.toInt() and 0xFF) }
+            ret.put("data", jsonArray)
             invoke.resolve(ret)
         } catch (e: Exception) {
-            Log.e(TAG, "storageList failed", e)
+            Log.e(TAG, "command failed", e)
             invoke.reject(e.message ?: "Unknown error")
         }
     }

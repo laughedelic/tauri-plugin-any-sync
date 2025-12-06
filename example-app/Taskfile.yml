@@ -3,15 +3,13 @@ version: 3
 vars:
   TAURI_CMD: "cargo tauri"
 
-output: prefixed
-
 tasks:
   frontend-install:
     desc: Install frontend dependencies
     internal: true
     run: once
     deps:
-      - :js:build
+      - :api:build
     cmd: bun install
 
   build:

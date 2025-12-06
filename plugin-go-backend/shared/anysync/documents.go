@@ -29,7 +29,6 @@ type DocumentMetadata struct {
 
 // DocumentManager manages documents within spaces using ObjectTree.
 // Each document is an ObjectTree with changes stored as a DAG.
-// Phase 2E: Integrated with EventManager for document lifecycle events.
 type DocumentManager struct {
 	mu           sync.RWMutex
 	spaceManager *SpaceManager
@@ -40,7 +39,7 @@ type DocumentManager struct {
 	metadata map[string]map[string]*DocumentMetadata
 }
 
-// NewDocumentManager creates a new DocumentManager.
+// DocumentManager constructor
 func NewDocumentManager(spaceManager *SpaceManager, keys *accountdata.AccountKeys, eventManager *EventManager) (*DocumentManager, error) {
 	if spaceManager == nil {
 		return nil, fmt.Errorf("space manager required")
@@ -205,7 +204,7 @@ func (dm *DocumentManager) GetDocument(spaceID, documentID string) ([]byte, *Doc
 }
 
 // UpdateDocument updates an existing document by adding a new change to its ObjectTree.
-func (dm *DocumentManager) UpdateDocument(spaceID, documentID string, data []byte) error {
+func (dm *DocumentManager) UpdateDocument(spaceID, documentID string, data []byte, metadata map[string]string) error {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 
@@ -250,10 +249,24 @@ func (dm *DocumentManager) UpdateDocument(spaceID, documentID string, data []byt
 		return fmt.Errorf("failed to add content: %w", err)
 	}
 
-	// Update metadata timestamp
+	// Update metadata
 	now := time.Now().Unix()
 	if dm.metadata[spaceID] != nil && dm.metadata[spaceID][documentID] != nil {
-		dm.metadata[spaceID][documentID].UpdatedAt = now
+		docMeta := dm.metadata[spaceID][documentID]
+		docMeta.UpdatedAt = now
+
+		// Replace metadata entirely with provided metadata
+		// Frontend should send complete metadata map to preserve fields
+		if metadata != nil {
+			// Update title if provided
+			if title, ok := metadata["title"]; ok {
+				docMeta.Title = title
+			}
+
+			// Full replacement, application controls what's kept
+			docMeta.Metadata = metadata
+		}
+
 		if err := dm.saveMetadata(spaceID); err != nil {
 			return fmt.Errorf("failed to save metadata: %w", err)
 		}

@@ -2,34 +2,47 @@
 
 ## REMOVED Requirements
 
-### Requirement: Direct Storage API Usage
+### Requirement: Storage Demo Component
 
-~~The example app SHALL use the storage API functions directly from the plugin.~~
+~~The example app SHALL provide an interactive UI component for demonstrating storage operations.~~
 
-**Reason:** Replaced by domain service layer pattern demonstrating proper usage of generic document API.
+**Reason:** Replaced by domain service layer pattern and SyncSpace API demonstration.
+
+### Requirement: Storage API Demonstration
+
+~~The example app SHALL demonstrate practical usage of the storage API with example data.~~
+
+**Reason:** Replaced by domain service pattern and generic document API demonstration.
 
 ## MODIFIED Requirements
 
-### Requirement: API Usage Demonstration
+### Requirement: Plugin Integration
 
-The example app SHALL demonstrate how to use the plugin's API.
+The example app SHALL successfully import and initialize the any-sync plugin.
 
 **Changes:**
-- Demonstrates domain service pattern instead of direct API calls
-- Shows how to serialize/deserialize application data models
-- Demonstrates space management in addition to document operations
+- Now initializes SyncSpace API instead of direct storage API
+- Demonstrates space creation and join workflow
 
-#### Scenario: Example demonstrates space management
+#### Scenario: Plugin initializes SyncSpace
+
+- **GIVEN** the example app
+- **WHEN** it starts
+- **THEN** it successfully imports and initializes the any-sync plugin with SyncSpace API
+
+### Requirement: Example App Frontend
+
+The existing Svelte frontend SHALL include components to demonstrate plugin functionality.
+
+**Changes:**
+- Shows domain service pattern with NotesService
+- Demonstrates space management, document CRUD, sync control, and events
+
+#### Scenario: Frontend uses domain service layer
 
 - **GIVEN** the example app UI
-- **WHEN** the app is running
-- **THEN** it provides UI for creating, listing, and joining spaces
-
-#### Scenario: Example demonstrates document operations
-
-- **GIVEN** the example app UI
-- **WHEN** the app is running
-- **THEN** it provides UI for creating, reading, updating, deleting, and listing documents
+- **WHEN** components are loaded
+- **THEN** they use NotesService instead of calling storage API directly
 
 ## ADDED Requirements
 

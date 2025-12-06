@@ -6,6 +6,12 @@ Tauri plugin local-first storage with P2P synchronization using [Any-Sync](https
 
 This plugin is a thin wrapper for the Any-Sync Go backend with a Rust and TypeScript API for Tauri applications. It provides a unified interface for local-first data storage and synchronization across desktop and mobile platforms.
 
+### Current Status
+
+**Available**: Local-first storage with spaces, documents, and event subscriptions. All data stored using Any-Sync structures with cryptographic keys.
+
+**Coming Soon**: Network peer-to-peer synchronization.
+
 ## Architecture
 
 ```mermaid
@@ -58,11 +64,14 @@ graph LR
     style XCF fill:#ff7043,color:#fff
 ```
 
-**Key Design Patterns**:
-- **Desktop** (macOS/Linux/Windows): Sidecar process (Go executable bundled with app, gRPC IPC)
-- **Mobile** (Android/iOS): gomobile embedded library (Go compiled as .aar/.xcframework, direct JNI/FFI calls)
-- **Unified API**: Single TypeScript interface across all platforms (>95% shared Go code)
-- **Communication**: Platform-appropriate transport (gRPC for desktop, native calls for mobile)
+**Communication Flow**:
+- **Desktop**: TypeScript → Rust → gRPC → Go Sidecar → Dispatcher → Handlers → Any-Sync (local)
+- **Mobile**: TypeScript → Rust → Native Plugin → Go FFI → Dispatcher → Handlers → Any-Sync (local)
+
+**Key Patterns**:
+- Single-dispatch architecture (one command handler, protobuf-based routing)
+- Protobuf as source of truth (generated TypeScript client, Go handlers)
+- Platform-appropriate transport (gRPC for desktop, FFI for mobile)
 
 ## Quick Start
 
@@ -362,142 +371,48 @@ task app:dev
 
 ## Usage
 
-### Storage API (CRUD Operations)
+### SyncSpace API
 
-The plugin provides a complete CRUD (Create, Read, Update, Delete) API for local document storage using AnyStore. Documents are organized into collections (similar to MongoDB collections or SQL tables) and stored as JSON objects.
+The plugin provides local-first storage with spaces and documents. See [example-app](./example-app/) for complete usage patterns.
 
 ```typescript
-import { storagePut, storageGet, storageDelete, storageList } from 'tauri-plugin-any-sync-api'
+import { SyncSpaceClient } from 'tauri-plugin-any-sync-api'
 
-// Store a document (create or update)
-await storagePut('users', 'user123', {
-  name: 'Alice',
-  email: 'alice@example.com',
-  created: new Date().toISOString()
+const client = new SyncSpaceClient()
+
+// Initialize with data directory
+await client.init({ dataDir: './data' })
+
+// Create a space
+const { spaceId } = await client.createSpace({
+  name: 'My Notes',
+  metadata: { type: 'notes' }
 })
 
-// Retrieve a document by ID
-const user = await storageGet('users', 'user123')
-if (user) {
-  console.log(user.name) // "Alice"
-} else {
-  console.log('User not found')
-}
-
-// Delete a document
-const existed = await storageDelete('users', 'user123')
-if (existed) {
-  console.log('User was deleted')
-} else {
-  console.log('User did not exist')
-}
-
-// List all document IDs in a collection
-const userIds = await storageList('users')
-console.log(`Found ${userIds.length} users:`, userIds)
-// ["user123", "user456", ...]
-```
-
-#### Storage API Details
-
-**`storagePut(collection: string, id: string, document: any): Promise<void>`**
-- Stores or updates a document in the specified collection
-- Document is automatically JSON-serialized
-- Creates collection if it doesn't exist
-- Throws error if document cannot be serialized or stored
-
-**`storageGet(collection: string, id: string): Promise<any | null>`**
-- Retrieves a document by ID from the specified collection
-- Returns parsed JavaScript object or `null` if not found
-- Throws error if document cannot be retrieved or parsed
-
-**`storageDelete(collection: string, id: string): Promise<boolean>`**
-- Deletes a document from the specified collection
-- Returns `true` if document existed and was deleted, `false` if it didn't exist
-- Operation is idempotent - deleting non-existent documents succeeds without error
-- Throws error only on database or connection failures
-
-**`storageList(collection: string): Promise<string[]>`**
-- Lists all document IDs in the specified collection
-- Returns empty array if collection doesn't exist or is empty
-- Throws error if collection cannot be listed
-
-#### Error Handling
-
-```typescript
-try {
-  await storagePut('users', 'user123', { name: 'Alice' })
-  console.log('Document stored successfully')
-} catch (error) {
-  console.error('Storage operation failed:', error)
-}
-```
-
-#### Complete CRUD Example
-
-```typescript
-// Create: Store a new document
-await storagePut('notes', 'note1', {
-  title: 'Meeting Notes',
-  content: 'Discussed project roadmap',
-  tags: ['work', 'important'],
-  created: '2025-11-23'
+// Create a document (data as opaque bytes)
+const noteData = { title: 'First note', content: 'Hello world' }
+const { documentId } = await client.createDocument({
+  spaceId,
+  title: 'First note',
+  data: new TextEncoder().encode(JSON.stringify(noteData)),
+  metadata: { tags: ['example'] }
 })
 
-// Read: Retrieve the document
-const note = await storageGet('notes', 'note1')
-console.log(note.title) // "Meeting Notes"
+// Retrieve document
+const doc = await client.getDocument({ spaceId, documentId })
+const decoded = JSON.parse(new TextDecoder().decode(doc.data))
+console.log(decoded.title) // "First note"
 
-// Update: Modify and store again
-note.tags.push('archived')
-await storagePut('notes', 'note1', note)
-
-// Delete: Remove the document
-const existed = await storageDelete('notes', 'note1')
-console.log(existed) // true
-
-// Verify deletion
-const deletedNote = await storageGet('notes', 'note1')
-console.log(deletedNote) // null
-
-// List remaining documents
-const noteIds = await storageList('notes')
-console.log(noteIds) // []
+// Subscribe to changes (local events)
+await client.subscribe({
+  eventTypes: ['document.created', 'document.updated'],
+  spaceIds: [spaceId]
+})
 ```
 
-### Health Check API
+**Available Operations**: `init`, `createSpace`, `listSpaces`, `deleteSpace`, `createDocument`, `getDocument`, `updateDocument`, `deleteDocument`, `listDocuments`, `queryDocuments`, `subscribe`
 
-```typescript
-import { ping } from 'tauri-plugin-any-sync-api'
-
-// Ping the Go backend
-const response = await ping('Hello from TypeScript!')
-console.log(response) // "Echo: Hello from TypeScript!"
-
-// Error handling
-try {
-  const response = await ping('test message')
-  console.log('Success:', response)
-} catch (error) {
-  console.error('Ping failed:', error)
-}
-```
-
-### Data Persistence
-
-Documents are stored locally using SQLite via AnyStore. The database is automatically created in the application's data directory:
-
-- **macOS**: `~/Library/Application Support/{app-name}/anystore.db`
-- **Linux**: `~/.local/share/{app-name}/anystore.db`
-- **Windows**: `%APPDATA%\{app-name}\anystore.db`
-
-Data persists across application restarts automatically. No additional configuration is required.
-
-**Database Location Notes**:
-- The `{app-name}` is determined by your Tauri app's bundle identifier
-- The database file is created on first storage operation
-- All collections are stored in a single SQLite database file
-- Storage operations are ACID-compliant (Atomic, Consistent, Isolated, Durable)
+**Coming Soon**: `joinSpace`, `leaveSpace`, `startSync`, `pauseSync`, `getSyncStatus` (network synchronization)
 
 ## Configuration
 

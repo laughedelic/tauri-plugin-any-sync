@@ -2,45 +2,39 @@
 
 ## REMOVED Requirements
 
-### Requirement: Individual Storage Operation Exports
+### Requirement: gomobile-Compatible Storage API
 
-~~The mobile package SHALL export separate functions for Put, Get, Delete, and List operations.~~
+~~The Go backend SHALL provide a mobile-specific entrypoint with gomobile-compatible function signatures for all storage operations.~~
 
-**Reason:** Replaced by single Command function.
+**Reason:** Replaced by generic four-function Command API via single-dispatch pattern.
 
-### Requirement: JSON Serialization in Mobile Layer
+### Requirement: Shared Backend Code
 
-~~The mobile package SHALL handle JSON marshaling/unmarshaling for storage list results.~~
+~~The mobile entrypoint SHALL reuse >95% of the existing storage implementation.~~
 
-**Reason:** All serialization now handled via protobuf, mobile layer only passes bytes.
+**Reason:** Replaced by unified dispatcher pattern and Any-Sync integration.
+
+### Requirement: State Management
+
+~~The mobile backend SHALL manage database connection lifecycle internally.~~
+
+**Reason:** Replaced by init-dispatch-shutdown pattern.
 
 ## MODIFIED Requirements
 
-### Requirement: Gomobile-Compatible Exports
+### Requirement: Type Compatibility
 
-The mobile package SHALL export functions that are compatible with gomobile's type restrictions.
+All exported mobile functions SHALL use only gomobile-compatible types.
 
 **Changes:**
-- Exports reduced to 4 functions total
+- Exports reduced to 4 functions total: Init, Command, SetEventHandler, Shutdown
 - All functions use gomobile-compatible types (string, []byte, error, func([]byte))
 
-#### Scenario: Init function is gomobile-compatible
+#### Scenario: All mobile functions use gomobile-compatible signatures
 
-- **GIVEN** the Init function signature
+- **GIVEN** the mobile package exported functions
 - **WHEN** gomobile compatibility is checked
-- **THEN** it uses only string (dataPath) and error return type
-
-#### Scenario: Command function is gomobile-compatible
-
-- **GIVEN** the Command function signature
-- **WHEN** gomobile compatibility is checked
-- **THEN** it uses only string (cmd), []byte (data), []byte (response), and error
-
-#### Scenario: SetEventHandler function is gomobile-compatible
-
-- **GIVEN** the SetEventHandler function signature
-- **WHEN** gomobile compatibility is checked
-- **THEN** it uses only func([]byte) callback type
+- **THEN** all 4 functions (Init, Command, SetEventHandler, Shutdown) use only compatible types
 
 ## ADDED Requirements
 

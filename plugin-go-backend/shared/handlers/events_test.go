@@ -126,7 +126,7 @@ func TestUnit_Events_SubscribeDocumentUpdatedEvent(t *testing.T) {
 
 	// Update the document
 	updatedData := []byte("updated content")
-	err = dm.UpdateDocument(spaceID, documentID, updatedData)
+	err = dm.UpdateDocument(spaceID, documentID, updatedData, nil)
 	require.NoError(t, err)
 
 	// Wait for event

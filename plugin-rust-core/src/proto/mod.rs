@@ -4,6 +4,7 @@ pub mod transport {
     }
 }
 
+#[allow(dead_code)]
 pub mod syncspace {
     pub mod v1 {
         include!(concat!(env!("OUT_DIR"), "/syncspace.v1.rs"));

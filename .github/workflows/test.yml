@@ -47,6 +47,9 @@ jobs:
       - uses: go-task/setup-task@v1
 
       - name: Type check
+        run: task api:install
+
+      - name: Type check
         run: task api:typecheck
 
       - name: Check linting and formatting

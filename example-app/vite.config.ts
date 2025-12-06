@@ -1,11 +1,11 @@
 import { defineConfig } from "vite";
-import { svelte } from "@sveltejs/vite-plugin-svelte";
+import react from "@vitejs/plugin-react";
 
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [svelte()],
+  plugins: [react()],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   // prevent Vite from obscuring rust errors
@@ -15,10 +15,12 @@ export default defineConfig({
     host: host || false,
     port: 1420,
     strictPort: true,
-    hmr: host ? {
-      protocol: 'ws',
-      host,
-      port: 1421
-    } : undefined,
+    hmr: host
+      ? {
+          protocol: "ws",
+          host,
+          port: 1421,
+        }
+      : undefined,
   },
-})
+});

@@ -40,20 +40,16 @@ This capability is being REPLACED by the new `syncspace-api` capability.
 
 **Reason:** Error handling pattern retained but now applies to all SyncSpace operations, not just storage.
 
-## Migration Notes
+## ADDED Requirements
 
-The `storage-api` capability is being **completely replaced** by the new `syncspace-api` capability. The new API:
+### Requirement: Deprecated in Favor of SyncSpace API
 
-- Uses opaque `bytes data` instead of JSON strings
-- Integrates with Any-Sync's ObjectTree instead of direct Any-Store
-- Adds space management operations
-- Adds sync control operations
-- Adds event streaming
-- Maintains collection-based organization
-- Maintains error context propagation patterns
+The storage API SHALL be considered deprecated in favor of the new SyncSpace API.
 
-Applications using the old storage API must:
-1. Migrate to the SyncSpace document API
-2. Handle their own data serialization (e.g., JSON.stringify/parse)
-3. Create domain service layers encapsulating their data models
-4. Update to use space management if needed
+#### Scenario: Applications must migrate to SyncSpace API
+
+- **GIVEN** an application using the old storage API
+- **WHEN** upgrading to the new plugin version
+- **THEN** the application must migrate to use the SyncSpace document operations
+- **AND** the new `syncspace-api` provides opaque bytes data and Any-Sync integration
+- **AND** the new API adds space management, sync control, and event streaming

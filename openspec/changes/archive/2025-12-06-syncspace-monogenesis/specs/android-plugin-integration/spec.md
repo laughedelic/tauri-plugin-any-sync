@@ -1,8 +1,39 @@
-# android-plugin-integration Specification
+# Android Plugin Integration Specification
 
-## Purpose
-Defines the Android Kotlin plugin layer that bridges Tauri to the gomobile-compiled Go backend. Provides minimal passthrough code that loads the native .aar library and forwards all plugin commands through the single-dispatch interface.
-## Requirements
+## REMOVED Requirements
+
+### Requirement: Storage Command Handlers
+
+~~The Android plugin SHALL implement Tauri command handlers for all storage operations.~~
+
+**Reason:** Replaced by single command method.
+
+### Requirement: Error Propagation
+
+~~The Android plugin SHALL catch and properly propagate errors from the Go backend.~~
+
+**Reason:** Error handling is now unified in the single command dispatcher.
+
+### Requirement: Database Path Management
+
+~~The Android plugin SHALL configure the database path to use Android-appropriate storage location.~~
+
+**Reason:** Database initialization is now handled by Go backend init, not Kotlin plugin.
+
+### Requirement: Rust Mobile Module Integration
+
+~~The Rust mobile module SHALL dispatch storage commands to the Android plugin.~~
+
+**Reason:** All operations now go through single command dispatcher.
+
+### Requirement: Command Registration
+
+~~The Android plugin SHALL register all storage commands with Tauri's command system.~~
+
+**Reason:** Only one command method is now registered with Tauri.
+
+## MODIFIED Requirements
+
 ### Requirement: gomobile Library Loading
 
 The Android plugin SHALL load the gomobile-generated native library at initialization.
@@ -19,6 +50,8 @@ The Android plugin SHALL load the gomobile-generated native library at initializ
 - **AND** loading happens in a static initializer block before any instance methods
 - **AND** loading failure throws UnsatisfiedLinkError with descriptive message
 - **AND** the error is logged to Android logcat for debugging
+
+## ADDED Requirements
 
 ### Requirement: Minimal Kotlin Implementation
 
@@ -53,4 +86,3 @@ The Kotlin plugin implementation SHALL be minimal passthrough code under 50 line
 - **GIVEN** the Kotlin plugin implementation
 - **WHEN** lines of code are counted (excluding comments and whitespace)
 - **THEN** the implementation is under 50 lines
-

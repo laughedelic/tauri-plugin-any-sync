@@ -1,76 +1,79 @@
 # mobile-backend-api Specification
 
 ## Purpose
-TBD - created by archiving change gomobile-android-build. Update Purpose after archive.
+Defines the gomobile-compatible mobile backend API exported by the Go backend for iOS and Android platforms. Provides exactly four functions (Init, Command, SetEventHandler, Shutdown) that bridge the native layer to the SyncSpace API through the single-dispatch pattern.
 ## Requirements
-### Requirement: gomobile-Compatible Storage API
-The Go backend SHALL provide a mobile-specific entrypoint with gomobile-compatible function signatures for all storage operations.
-
-#### Scenario: Initialize storage on mobile
-- **GIVEN** a mobile app using the plugin
-- **WHEN** the app initializes the Go backend with `InitStorage(dbPath string)`
-- **THEN** the backend opens an AnyStore database at the specified path
-- **AND** returns nil on success or an error on failure
-- **AND** the database connection is ready for storage operations
-
-#### Scenario: Store document via mobile API
-- **GIVEN** storage initialized successfully
-- **WHEN** calling `StoragePut(collection, id, documentJson string) error`
-- **THEN** the document is stored in the specified collection with the given ID
-- **AND** returns nil on success or descriptive error on failure
-- **AND** the operation is idempotent (subsequent calls update the document)
-
-#### Scenario: Retrieve document via mobile API
-- **GIVEN** a document exists in storage
-- **WHEN** calling `StorageGet(collection, id string) (string, error)`
-- **THEN** returns the document as JSON string and nil error
-- **AND** when document doesn't exist, returns empty string and nil error (not an error condition)
-- **AND** when collection doesn't exist, returns empty string and nil error
-
-#### Scenario: Delete document via mobile API
-- **GIVEN** a document exists in storage
-- **WHEN** calling `StorageDelete(collection, id string) (bool, error)`
-- **THEN** returns true and nil error when document existed and was deleted
-- **AND** returns false and nil error when document didn't exist (idempotent)
-- **AND** returns error only for actual storage failures
-
-#### Scenario: List documents via mobile API
-- **GIVEN** a collection with multiple documents
-- **WHEN** calling `StorageList(collection string) (string, error)`
-- **THEN** returns a JSON array string of document IDs: `["id1","id2","id3"]`
-- **AND** returns empty array `[]` when collection is empty or doesn't exist
-- **AND** returns error only for actual storage failures
-
 ### Requirement: Type Compatibility
+
 All exported mobile functions SHALL use only gomobile-compatible types.
 
-#### Scenario: Function signature validation
-- **GIVEN** the mobile package is defined
-- **WHEN** building with `gomobile bind -target=android`
-- **THEN** all exported functions compile without type errors
-- **AND** no complex types (maps, channels, interfaces, pointers) in signatures
-- **AND** only primitives (string, bool, int, float64) and []byte in signatures
-- **AND** standard Go error type used for error returns
+**Changes:**
+- Exports reduced to 4 functions total: Init, Command, SetEventHandler, Shutdown
+- All functions use gomobile-compatible types (string, []byte, error, func([]byte))
 
-### Requirement: Shared Backend Code
-The mobile entrypoint SHALL reuse >95% of the existing storage implementation.
+#### Scenario: All mobile functions use gomobile-compatible signatures
 
-#### Scenario: Code reuse validation
-- **GIVEN** the mobile and desktop implementations
-- **WHEN** analyzing the codebase
-- **THEN** both use `internal/storage/anystore.go` for core logic
-- **AND** both use the same AnyStore database engine
-- **AND** only API boundary differs (gRPC server vs direct function exports)
-- **AND** no duplicate storage logic exists
+- **GIVEN** the mobile package exported functions
+- **WHEN** gomobile compatibility is checked
+- **THEN** all 4 functions (Init, Command, SetEventHandler, Shutdown) use only compatible types
 
-### Requirement: State Management
-The mobile backend SHALL manage database connection lifecycle internally.
+### Requirement: Four-Function Mobile API
 
-#### Scenario: Database connection lifecycle
-- **GIVEN** mobile app starts and calls `InitStorage`
-- **WHEN** the Go backend initializes
-- **THEN** a single database connection is created and stored internally
-- **AND** subsequent storage operations reuse the same connection
-- **AND** connection remains open until process termination
-- **AND** no explicit close method required (handled by process cleanup)
+The mobile package SHALL export exactly four functions for the entire plugin API.
+
+#### Scenario: Init initializes plugin with data path
+
+- **GIVEN** the mobile platform needs to initialize the plugin
+- **WHEN** Init(dataPath string) is called
+- **THEN** the plugin initializes Any-Sync with the provided data path
+
+#### Scenario: Command dispatches operations
+
+- **GIVEN** the mobile platform needs to invoke any operation
+- **WHEN** Command(cmd string, data []byte) is called
+- **THEN** the command is dispatched to the appropriate handler and response bytes are returned
+
+#### Scenario: SetEventHandler registers callback
+
+- **GIVEN** the mobile platform needs to receive events
+- **WHEN** SetEventHandler(handler func([]byte)) is called
+- **THEN** the handler callback is registered for future event notifications
+
+#### Scenario: Shutdown cleans up resources
+
+- **GIVEN** the mobile platform is shutting down the plugin
+- **WHEN** Shutdown() is called
+- **THEN** all resources are cleaned up and Any-Sync is properly shut down
+
+### Requirement: Event Handler Callback
+
+The mobile package SHALL support asynchronous event callbacks via SetEventHandler.
+
+#### Scenario: Event handler is called for plugin events
+
+- **GIVEN** SetEventHandler has registered a callback
+- **WHEN** a plugin event occurs (document change, sync status)
+- **THEN** the callback is invoked with serialized event bytes
+
+#### Scenario: Event handler can be updated
+
+- **GIVEN** SetEventHandler has been called once
+- **WHEN** SetEventHandler is called again with a new handler
+- **THEN** the new handler replaces the previous one
+
+### Requirement: Thread-Safe Command Execution
+
+The mobile package SHALL ensure thread-safe execution of Command calls.
+
+#### Scenario: Concurrent Command calls are handled safely
+
+- **GIVEN** multiple threads on mobile platform
+- **WHEN** concurrent Command calls are made
+- **THEN** they are handled safely without data races
+
+#### Scenario: Dispatcher state is protected
+
+- **GIVEN** the dispatcher maintains internal state
+- **WHEN** concurrent operations access the state
+- **THEN** appropriate synchronization prevents corruption
 

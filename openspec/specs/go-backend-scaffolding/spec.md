@@ -4,11 +4,20 @@
 Provides a Go backend with gRPC services for health checks and plugin communication, including proper package structure, Protocol Buffer definitions, and cross-platform build support.
 ## Requirements
 ### Requirement: Basic Go Backend Structure
+
 The project SHALL provide a Go backend with proper package structure separating API and internal code.
-#### Scenario:
-Given the project needs a Go backend for AnySync integration
-When the developer sets up the project structure
-Then the Go backend should have a proper package structure with clear separation between API and internal code
+
+**Changes:**
+- Adds `shared/dispatcher/` for command routing
+- Adds `shared/handlers/` for operation handlers
+- Adds `shared/anysync/` for Any-Sync integration
+- Removes `internal/storage/` (replaced by Any-Sync integration)
+
+#### Scenario: Go backend package structure
+
+- **GIVEN** the Go backend project
+- **WHEN** the directory structure is reviewed
+- **THEN** it includes dispatcher, handlers, and anysync packages for unified API
 
 ### Requirement: gRPC Health Check Service
 The Go backend SHALL provide a gRPC health check service that responds to health status requests.
@@ -18,11 +27,18 @@ When the plugin calls the health check endpoint
 Then the Go backend should respond with a successful health status
 
 ### Requirement: gRPC Ping Service
+
 The Go backend SHALL provide a gRPC ping service for testing communication between frontend and backend.
-#### Scenario:
-Given the TypeScript frontend needs to test communication with the Go backend
-When the frontend invokes a ping command through the plugin
-Then the Go backend should receive the ping request and return a pong response
+
+**Changes:**
+- Ping remains as a single operation in the dispatcher pattern
+- No structural changes to ping implementation
+
+#### Scenario: Ping service via dispatcher
+
+- **GIVEN** a ping command via the SyncSpace API
+- **WHEN** the command is dispatched
+- **THEN** a pong response is returned
 
 ### Requirement: Protocol Buffer Definitions
 The project SHALL define Protocol Buffer service and message definitions for type-safe communication.
@@ -66,45 +82,57 @@ Given the existing Tauri plugin structure
 When adding the Go backend
 Then the `plugin-go-backend/` directory should integrate cleanly with the existing project layout
 
-### Requirement: AnyStore Integration
+### Requirement: Dispatcher Package
 
-The Go backend SHALL integrate AnyStore for document storage capabilities.
+The Go backend SHALL provide a dispatcher package for command routing.
 
-#### Scenario: AnyStore is integrated
+#### Scenario: Dispatcher routes commands to handlers
 
-- **GIVEN** the Go backend implementation
-- **WHEN** storage operations are performed
-- **THEN** AnyStore library is used for document persistence
+- **GIVEN** a command name and serialized request data
+- **WHEN** Dispatcher.Dispatch is called
+- **THEN** the appropriate handler function is invoked
 
-### Requirement: Storage Module Organization
+#### Scenario: Dispatcher registers handlers at initialization
 
-The Go backend SHALL organize storage code in `internal/storage/` to isolate AnyStore integration.
+- **GIVEN** the dispatcher is created
+- **WHEN** handlers are registered
+- **THEN** each command name maps to exactly one handler function
 
-#### Scenario: Storage wrapper is in internal/storage
+### Requirement: Handler Package
 
-- **GIVEN** the Go backend project structure
-- **WHEN** storage code is located
-- **THEN** the wrapper implementation is in `internal/storage/anystore.go`
+The Go backend SHALL organize operation handlers in a handlers package.
 
-#### Scenario: Storage types are internal
+#### Scenario: Handlers implement consistent signature
 
-- **GIVEN** the storage wrapper
-- **WHEN** exported types are examined
-- **THEN** AnyStore-specific types are not exposed outside internal/storage
+- **GIVEN** any operation handler
+- **WHEN** the handler signature is reviewed
+- **THEN** it accepts `[]byte` and returns `([]byte, error)`
 
-### Requirement: gRPC Server Registration
+#### Scenario: Handlers are registered with dispatcher
 
-The Go backend SHALL register the StorageService with the gRPC server during initialization.
+- **GIVEN** all operation handlers are implemented
+- **WHEN** the dispatcher is initialized
+- **THEN** all handlers are registered with their command names
 
-#### Scenario: Storage service is registered
+### Requirement: Any-Sync Integration Package
 
-- **GIVEN** the main gRPC server
-- **WHEN** services are registered
-- **THEN** StorageService is included alongside HealthService
+The Go backend SHALL provide an Any-Sync integration package wrapping SpaceService and ObjectTree.
 
-#### Scenario: Storage service uses shared database instance
+#### Scenario: Integration package exposes space operations
 
-- **GIVEN** the storage service initialization
-- **WHEN** the service is created
-- **THEN** it receives a reference to the shared AnyStore database instance
+- **GIVEN** the Any-Sync integration package
+- **WHEN** the package API is reviewed
+- **THEN** it provides functions for creating, joining, leaving, listing, and deleting spaces
+
+#### Scenario: Integration package exposes document operations
+
+- **GIVEN** the Any-Sync integration package
+- **WHEN** the package API is reviewed
+- **THEN** it provides functions for creating, reading, updating, deleting, listing, and querying documents
+
+#### Scenario: Integration package handles Any-Sync lifecycle
+
+- **GIVEN** the plugin initializes
+- **WHEN** the Any-Sync integration is initialized
+- **THEN** SpaceService and related components are properly initialized
 

@@ -4,11 +4,18 @@
 Manages the Go backend as a sidecar process on desktop platforms with health monitoring, gRPC communication, and graceful lifecycle management.
 ## Requirements
 ### Requirement: Sidecar Process Spawning
+
 The plugin SHALL spawn the Go backend as a separate process with proper lifecycle management.
-#### Scenario:
-Given the Tauri application starts on desktop
-When the plugin initializes
-Then it should spawn the Go backend as a separate process with proper lifecycle management
+
+**Changes:**
+- Sidecar now dispatches all operations through single Command interface
+- No changes to process management itself
+
+#### Scenario: Single command dispatcher at sidecar
+
+- **GIVEN** the Go sidecar is spawned
+- **WHEN** it initializes
+- **THEN** it implements a single Command(cmd string, data []byte) interface instead of per-operation functions
 
 ### Requirement: Process Health Monitoring
 The plugin SHALL perform periodic health checks on the Go backend process and detect failures.
@@ -18,11 +25,18 @@ When the plugin needs to verify the backend is responsive
 Then it should perform periodic health checks and detect process failures
 
 ### Requirement: gRPC Client Connection
+
 The plugin SHALL establish a gRPC client connection to communicate with the Go backend.
-#### Scenario:
-Given the Rust plugin needs to communicate with the Go backend
-When the plugin establishes communication
-Then it should create a gRPC client connection to the backend's localhost port
+
+**Changes:**
+- Connection is now used for single Command method instead of per-operation methods
+- All operations flow through Command(cmd, data) interface
+
+#### Scenario: Single command gRPC method
+
+- **GIVEN** the Rust plugin establishes gRPC connection
+- **WHEN** operations are invoked
+- **THEN** all commands use a single Command(cmd, data) gRPC method
 
 ### Requirement: Port Management
 The plugin SHALL allocate unique available ports to avoid conflicts between multiple application instances.
@@ -104,69 +118,47 @@ Given: Tauri expects binaries with target-triple suffixes
 When: the plugin searches for Go backend binary
 Then: it should find the correct platform-specific binary in the expected location
 
-### Requirement: Storage Command Handlers
+### Requirement: Backend Trait Simplification
 
-The Rust plugin SHALL provide Tauri commands for storage operations that communicate with the Go sidecar via gRPC.
+The Rust plugin SHALL define a simple backend trait with minimal methods.
 
-#### Scenario: Put command stores document
+#### Scenario: Backend trait has three methods
 
-- **GIVEN** a TypeScript call to storage.put(collection, id, json)
-- **WHEN** the Rust command handler is invoked
-- **THEN** a gRPC Put request is sent to the sidecar and the result is returned
+- **GIVEN** the AnySyncBackend trait definition
+- **WHEN** the trait is reviewed
+- **THEN** it defines exactly three methods: command, set_event_handler, and shutdown
 
-#### Scenario: Get command retrieves document
+#### Scenario: Command method signature
 
-- **GIVEN** a TypeScript call to storage.get(collection, id)
-- **WHEN** the Rust command handler is invoked
-- **THEN** a gRPC Get request is sent to the sidecar and the document JSON is returned
+- **GIVEN** the AnySyncBackend trait
+- **WHEN** the command method is reviewed
+- **THEN** it has signature `fn command(&self, cmd: &str, data: &[u8]) -> Result<Vec<u8>, Error>`
 
-#### Scenario: Delete command removes document
+#### Scenario: Desktop implementation of backend trait
 
-- **GIVEN** a TypeScript call to storage.delete(collection, id)
-- **WHEN** the Rust command handler is invoked
-- **THEN** a gRPC Delete request is sent to the sidecar and the result (existed boolean) is returned
+- **GIVEN** the desktop backend service
+- **WHEN** it implements AnySyncBackend
+- **THEN** the command method forwards to the sidecar
 
-#### Scenario: List command retrieves IDs
+### Requirement: Simplified Permission System
 
-- **GIVEN** a TypeScript call to storage.list(collection)
-- **WHEN** the Rust command handler is invoked
-- **THEN** a gRPC List request is sent to the sidecar and the ID list is returned
+The Rust plugin SHALL use a single permission for the command handler.
 
-### Requirement: Storage Error Handling
+#### Scenario: Single default permission exists
 
-The Rust plugin SHALL convert gRPC storage errors to Tauri-compatible error types with meaningful messages.
+- **GIVEN** the permissions directory
+- **WHEN** permission files are reviewed
+- **THEN** only one permission file exists: default.toml
 
-#### Scenario: NOT_FOUND error is converted
+#### Scenario: Default permission allows command
 
-- **GIVEN** a Get request for a non-existent document
-- **WHEN** the gRPC call returns NOT_FOUND
-- **THEN** the Rust error includes "Document not found" with collection and ID
+- **GIVEN** the default.toml permission file
+- **WHEN** the permission is reviewed
+- **THEN** it grants access to the "command" Tauri command
 
-#### Scenario: INVALID_ARGUMENT error is converted
+#### Scenario: No per-operation permissions
 
-- **GIVEN** a Put request with invalid JSON
-- **WHEN** the gRPC call returns INVALID_ARGUMENT
-- **THEN** the Rust error includes "Invalid JSON" with parsing details
-
-#### Scenario: Connection errors are handled
-
-- **GIVEN** the sidecar is not running
-- **WHEN** a storage command is invoked
-- **THEN** a connection error is returned with troubleshooting guidance
-
-### Requirement: gRPC Client Integration
-
-The desktop module SHALL create gRPC client connections to the storage service running in the sidecar.
-
-#### Scenario: Storage client is initialized
-
-- **GIVEN** the desktop module initialization
-- **WHEN** the sidecar is started
-- **THEN** a gRPC client is created for the StorageService
-
-#### Scenario: Storage client reuses connection
-
-- **GIVEN** multiple storage operations
-- **WHEN** commands are invoked
-- **THEN** the same gRPC connection is reused for all operations
+- **GIVEN** the permissions directory
+- **WHEN** permission files are reviewed
+- **THEN** there are no per-operation permission files (e.g., no storage_put.toml, storage_get.toml)
 

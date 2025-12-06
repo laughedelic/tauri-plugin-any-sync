@@ -8,90 +8,77 @@
  * via the `plugin:any-sync|command` invoke.
  */
 import {
-	createEcmaScriptPlugin,
-	type GeneratedFile,
-	runNodeJs,
-	type Schema,
+  createEcmaScriptPlugin,
+  type GeneratedFile,
+  runNodeJs,
+  type Schema,
 } from "@bufbuild/protoplugin";
 
 runNodeJs(
-	createEcmaScriptPlugin({
-		name: "gen-ts-tauri",
-		version: "v1",
-		generateTs,
-	}),
+  createEcmaScriptPlugin({
+    name: "gen-ts-tauri",
+    version: "v1",
+    generateTs,
+  }),
 );
 
 function generateTs(schema: Schema) {
-	for (const file of schema.files) {
-		const f = schema.generateFile(`${file.name}_api.ts`);
+  for (const file of schema.files) {
+    const f = schema.generateFile(`${file.name}_api.ts`);
 
-		const fileName = file.name.split("/").pop() || file.name;
+    const fileName = file.name.split("/").pop() || file.name;
 
-		f.print`import * as pb from "./${fileName}_pb";`;
-		const Message = f.import("Message", "@bufbuild/protobuf").toTypeOnly();
+    f.print`import * as pb from "./${fileName}_pb";`;
+    const Message = f.import("Message", "@bufbuild/protobuf").toTypeOnly();
 
-		// Utility type to expand mapped types for better readability
-		f.print`type Expand<T> = { [K in keyof T]: T[K]; } & {};`;
+    // Utility type to expand mapped types for better readability
+    f.print`type Expand<T> = { [K in keyof T]: T[K]; } & {};`;
 
-		// Export raw message types ommiting protobuf internals
-		for (const message of file.messages) {
-			f.print`export type ${message.name} = Expand<Omit<pb.${message.name}, keyof ${Message}<"${message.typeName}">>>;`;
-			f.print();
-		}
+    // Export raw message types ommiting protobuf internals
+    for (const message of file.messages) {
+      f.print`export type ${message.name} = Expand<Omit<pb.${message.name}, keyof ${Message}<"${message.typeName}">>>;`;
+      f.print();
+    }
 
-		// Generate Client
-		for (const service of file.services) {
-			const serviceName = service.name.replace(/Service$/, "");
-			const className = `${serviceName}Client`;
+    // Generate Client
+    for (const service of file.services) {
+      const serviceName = service.name.replace(/Service$/, "");
+      const className = `${serviceName}Client`;
 
-			f.print(f.jsDoc(service));
-			f.print`export class ${className} {`;
+      f.print(f.jsDoc(service));
+      f.print`export class ${className} {`;
 
-			generateDispatchMethod(f);
+      generateDispatchMethod(f);
 
-			for (const method of service.methods) {
-				// Don't add empty request params
-				const input = method.input.members.length
-					? `request: ${method.input.name}`
-					: "";
-				const request = input ? "request" : "{}";
+      for (const method of service.methods) {
+        // Don't add empty request params
+        const input = method.input.members.length ? `request: ${method.input.name}` : "";
+        const request = input ? "request" : "{}";
 
-				f.print(f.jsDoc(method, "  "));
-				f.print`public async ${method.localName}(${input}): Promise<${method.output.name}> {
+        f.print(f.jsDoc(method, "  "));
+        f.print`public async ${method.localName}(${input}): Promise<${method.output.name}> {
             return await this.dispatch("${method.name}", pb.${method.input.name}Schema, pb.${method.output.name}Schema, ${request});
           }`;
-				f.print();
-			}
-			f.print`}`;
-			f.print();
+        f.print();
+      }
+      f.print`}`;
+      f.print();
 
-			// Export singleton instance for convenience
-			f.print(
-				f.export("const", serviceName.toLowerCase()),
-				" = new ",
-				className,
-				"();",
-			);
-		}
-	}
+      // Export singleton instance for convenience
+      f.print(f.export("const", serviceName.toLowerCase()), " = new ", className, "();");
+    }
+  }
 }
 
 function generateDispatchMethod(f: GeneratedFile) {
-	const MessageShape = f
-		.import("MessageShape", "@bufbuild/protobuf")
-		.toTypeOnly();
-	const MessageInitShape = f
-		.import("MessageInitShape", "@bufbuild/protobuf")
-		.toTypeOnly();
-	const DescMessage = f
-		.import("DescMessage", "@bufbuild/protobuf")
-		.toTypeOnly();
-	const { create, fromBinary, toBinary } = f.runtime;
-	const invoke = f.import("invoke", "@tauri-apps/api/core");
+  const MessageShape = f.import("MessageShape", "@bufbuild/protobuf").toTypeOnly();
+  const MessageInitShape = f.import("MessageInitShape", "@bufbuild/protobuf").toTypeOnly();
+  const DescMessage = f.import("DescMessage", "@bufbuild/protobuf").toTypeOnly();
+  const { create, fromBinary, toBinary } = f.runtime;
+  const invoke = f.import("invoke", "@tauri-apps/api/core");
 
-	// Private generic call method
-	f.print`
+  // Private generic call method
+  f.print`
     private async dispatch<
       ReqSchema extends ${DescMessage}, 
       ReqShape extends ${MessageInitShape}<ReqSchema>, 

@@ -11,11 +11,15 @@ tasks:
     desc: Build CJS/ESM artifacts
     deps:
       - install
+      - :buf:generate-syncspace
     cmd: bun run build
     run: once
 
   typecheck:
     desc: Type check TypeScript code
+    deps:
+      - install
+      - :buf:generate-syncspace
     cmd: bun run tsc --noEmit --allowJs --checkJs --strict --target esnext --moduleResolution bundler ./src/*.ts
 
   check:

@@ -87,6 +87,43 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    // For iOS: symlink .xcframework to plugin's ios/Frameworks/ directory
+    // This allows the Package.swift to reference Frameworks/any-sync-ios.xcframework
+    let xcframework_dir = binaries_out_dir.join("any-sync-ios.xcframework");
+    if xcframework_dir.exists() {
+        let ios_frameworks = env::current_dir()?.join("ios").join("Frameworks");
+        println!(
+            "cargo:warning=Linking iOS xcframework to {}",
+            ios_frameworks.display()
+        );
+        fs::create_dir_all(&ios_frameworks)?;
+        let xcframework_dest = ios_frameworks.join("any-sync-ios.xcframework");
+
+        // Remove existing directory/symlink if present
+        if xcframework_dest.symlink_metadata().is_ok() {
+            if xcframework_dest.is_dir() && !xcframework_dest.is_symlink() {
+                fs::remove_dir_all(&xcframework_dest).ok();
+            } else {
+                fs::remove_file(&xcframework_dest).ok();
+            }
+        }
+
+        // Create symlink (Unix) or copy directory (Windows)
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(&xcframework_dir, &xcframework_dest)?;
+            println!(
+                "cargo:warning=Created symlink: {} -> {}",
+                xcframework_dest.display(),
+                xcframework_dir.display()
+            );
+        }
+        #[cfg(windows)]
+        {
+            copy_dir_recursive(&xcframework_dir, &xcframework_dest)?;
+        }
+    }
+
     // Emit metadata for consumer crates
     println!("cargo:binaries_dir={}", binaries_out_dir.display());
 
@@ -131,30 +168,34 @@ fn link_local_binaries(
     for entry in fs::read_dir(local_binaries)? {
         let entry = entry?;
         let path = entry.path();
+        let file_name = entry.file_name();
+        let dest_path = dest_dir.join(&file_name);
 
-        // Only link binary files (skip non-files like directories)
-        if path.is_file() {
-            let file_name = entry.file_name();
-            let dest_file = dest_dir.join(&file_name);
-
-            // Remove existing symlink/file if it exists
-            if dest_file.exists() || dest_file.symlink_metadata().is_ok() {
-                fs::remove_file(&dest_file).ok();
+        // Remove existing symlink/file/directory if it exists
+        if dest_path.symlink_metadata().is_ok() {
+            if dest_path.is_dir() && !dest_path.is_symlink() {
+                fs::remove_dir_all(&dest_path).ok();
+            } else {
+                fs::remove_file(&dest_path).ok();
             }
+        }
 
-            // Use absolute path for symlink target
-            let absolute_source = path.canonicalize()?;
+        // Use absolute path for symlink target
+        let absolute_source = path.canonicalize()?;
 
-            // Create symlink (Unix) or copy (Windows fallback)
-            #[cfg(unix)]
-            {
-                std::os::unix::fs::symlink(&absolute_source, &dest_file)?;
-            }
+        // Create symlink (Unix) or copy (Windows fallback)
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(&absolute_source, &dest_path)?;
+        }
 
-            #[cfg(windows)]
-            {
-                // Windows symlinks require admin privileges, so fall back to copying
-                fs::copy(&absolute_source, &dest_file)?;
+        #[cfg(windows)]
+        {
+            // Windows symlinks require admin privileges, so fall back to copying
+            if path.is_file() {
+                fs::copy(&absolute_source, &dest_path)?;
+            } else if path.is_dir() {
+                copy_dir_recursive(&absolute_source, &dest_path)?;
             }
         }
     }
@@ -221,16 +262,30 @@ fn download_binaries_from_github(
             .into());
         }
 
-        // Write binary to destination
-        let dest_path = dest_dir.join(&binary_name);
-        fs::write(&dest_path, &binary_content)?;
+        // Handle xcframework zip files specially - extract them
+        if binary_name.ends_with(".xcframework.zip") {
+            // Extract zip to dest_dir (zip contains xcframework folder at root)
+            let cursor = std::io::Cursor::new(&binary_content);
+            let mut archive = zip::ZipArchive::new(cursor)?;
+            archive.extract(dest_dir)?;
 
-        // Make binary executable on Unix-like systems
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            let permissions = fs::Permissions::from_mode(0o755);
-            fs::set_permissions(&dest_path, permissions)?;
+            println!(
+                "cargo:warning=Extracted {} to {}",
+                binary_name,
+                dest_dir.display()
+            );
+        } else {
+            // Write binary to destination
+            let dest_path = dest_dir.join(&binary_name);
+            fs::write(&dest_path, &binary_content)?;
+
+            // Make binary executable on Unix-like systems
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let permissions = fs::Permissions::from_mode(0o755);
+                fs::set_permissions(&dest_path, permissions)?;
+            }
         }
     }
 
@@ -259,6 +314,9 @@ fn determine_binaries_to_download() -> Result<Vec<String>, Box<dyn std::error::E
     }
     if cfg!(feature = "android") {
         binaries.push("any-sync-android.aar".to_string());
+    }
+    if cfg!(feature = "ios") {
+        binaries.push("any-sync-ios.xcframework.zip".to_string());
     }
 
     Ok(binaries)
@@ -319,6 +377,29 @@ fn compute_sha256(data: &[u8]) -> String {
     let result = hasher.finalize();
 
     format!("{:x}", result)
+}
+
+/// Copy directory recursively (for Windows fallback)
+#[cfg(windows)]
+fn copy_dir_recursive(
+    src: &std::path::Path,
+    dst: &std::path::Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use std::fs;
+
+    fs::create_dir_all(dst)?;
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let path = entry.path();
+        let dest_path = dst.join(entry.file_name());
+
+        if path.is_dir() {
+            copy_dir_recursive(&path, &dest_path)?;
+        } else {
+            fs::copy(&path, &dest_path)?;
+        }
+    }
+    Ok(())
 }
 
 fn generate_protobuf() -> Result<(), Box<dyn std::error::Error>> {

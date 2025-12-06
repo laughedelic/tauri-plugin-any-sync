@@ -20,7 +20,8 @@ x86_64-pc-windows-msvc = []
 windows = ["x86_64-pc-windows-msvc"]
 desktop = ["macos", "linux", "windows"]
 android = []
-mobile = ["android"]
+ios = []
+mobile = ["android", "ios"]
 all = ["desktop", "mobile"]
 
 [dependencies]
@@ -41,3 +42,4 @@ tauri-plugin = { version = "2.5.1", features = ["build"] }
 tonic-build = "0.12"
 reqwest = { version = "0.12", features = ["blocking"] }
 sha2 = "0.10"
+zip = "2.2"

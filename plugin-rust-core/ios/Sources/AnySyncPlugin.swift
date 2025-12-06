@@ -1,7 +1,6 @@
-// Note: Mobile framework (gomobile-generated) is provided at app build time
-// Standalone swift build will fail - this is expected and OK
-// The framework is located at: ../../binaries/any-sync-ios.xcframework
-import Mobile
+// Note: Go mobile framework (gomobile-generated) is provided at build time via Package.swift binaryTarget
+// The framework is symlinked to Frameworks/any-sync-ios.xcframework by build.rs
+import Any_Sync_Ios
 import SwiftRs
 import Tauri
 import UIKit

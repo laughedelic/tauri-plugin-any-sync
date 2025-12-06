@@ -11,7 +11,7 @@ fn test_command_request_serialization() {
     // The new architecture uses opaque bytes for command data
     // Verify that we can create the types the plugin expects
     let cmd = "syncspace.v1.SpaceCreate";
-    let data = vec![1, 2, 3, 4, 5];
+    let data = [1, 2, 3, 4, 5];
 
     // Simulate what would come from TypeScript
     assert_eq!(cmd, "syncspace.v1.SpaceCreate");
@@ -21,7 +21,7 @@ fn test_command_request_serialization() {
 #[test]
 fn test_command_response_serialization() {
     // The response is also opaque bytes
-    let response_data = vec![10, 20, 30, 40];
+    let response_data = [10, 20, 30, 40];
 
     assert_eq!(response_data.len(), 4);
 }
@@ -43,20 +43,20 @@ fn test_large_command_data() {
     let mut data = vec![0u8; 1_000_000]; // 1MB
 
     // Fill with some pattern
-    for i in 0..data.len() {
-        data[i] = (i % 256) as u8;
+    for (i, d) in data.iter_mut().enumerate() {
+        *d = (i % 256) as u8;
     }
 
     // Verify data integrity (no corruption)
-    for i in 0..data.len() {
-        assert_eq!(data[i], (i % 256) as u8);
+    for (i, d) in data.iter().enumerate() {
+        assert_eq!(*d, (i % 256) as u8);
     }
 }
 
 #[test]
 fn test_binary_data_preservation() {
     // Ensure binary data (not UTF-8) is preserved correctly
-    let mut data = vec![0xFFu8; 100];
+    let mut data = [0xFFu8; 100];
     data[0] = 0x00;
     data[50] = 0x7F;
     data[99] = 0x80;

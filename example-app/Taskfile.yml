@@ -33,6 +33,16 @@ tasks:
     cmd: "{{.TAURI_CMD}} android dev"
     interactive: true
 
+  dev:ios:
+    desc: "Run iOS app in development mode"
+    deps:
+      - init:ios
+      - frontend-install
+    env:
+      APPLE_DEVELOPMENT_TEAM: "1"
+    cmd: "{{.TAURI_CMD}} ios dev"
+    interactive: true
+
   init:android:
     desc: "Initialize Android environment"
     internal: true
@@ -40,3 +50,13 @@ tasks:
     status:
       - test -d ./src-tauri/gen/android
     cmd: "{{.TAURI_CMD}} android init"
+
+  init:ios:
+    desc: "Initialize iOS environment"
+    internal: true
+    run: once
+    status:
+      - test -d ./src-tauri/gen/ios
+    env:
+      APPLE_DEVELOPMENT_TEAM: "1"
+    cmd: "{{.TAURI_CMD}} ios init"

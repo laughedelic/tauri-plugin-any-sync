@@ -9,243 +9,285 @@
 
 import { syncspace } from "tauri-plugin-any-sync-api";
 
+// Simple logger with prefix
+const log = {
+  info: (msg: string, ...args: unknown[]) =>
+    console.log(`[NotesService] ${msg}`, ...args),
+  error: (msg: string, ...args: unknown[]) =>
+    console.error(`[NotesService] ${msg}`, ...args),
+};
+
 /**
  * Application-specific data model
  * The plugin doesn't know about this - it only stores bytes
  */
 export interface Note {
-	title: string;
-	content: string;
-	created: string;
-	updated?: string;
-	tags?: string[];
+  title: string;
+  content: string;
+  created: string;
+  updated?: string;
 }
 
 /**
  * NotesService wraps the SyncSpace API with domain-specific logic
  */
 export class NotesService {
-	private spaceId: string | null = null;
-	private encoder = new TextEncoder();
-	private decoder = new TextDecoder();
+  private spaceId: string | null = null;
+  private initialized = false;
+  private initializing: Promise<void> | null = null;
+  private encoder = new TextEncoder();
+  private decoder = new TextDecoder();
 
-	/**
-	 * Initialize the service - creates or gets the notes space
-	 */
-	async initialize(dataDir: string): Promise<void> {
-		console.log("[NotesService] Initializing with dataDir:", dataDir);
-		// Initialize the plugin backend
-		await syncspace.init({
-			dataDir,
-			networkId: "local",
-			deviceId: "example-app",
-			config: {},
-		});
-		console.log("[NotesService] Plugin initialized");
+  /**
+   * Check if service is ready
+   */
+  isReady(): boolean {
+    return this.initialized && this.spaceId !== null;
+  }
 
-		// Check if we already have a notes space
-		const { spaces } = await syncspace.listSpaces();
-		console.log(
-			`[NotesService] listing spaces (${spaces.length}): [${spaces.map((s) => s.name).join(", ")}]`,
-		);
+  /**
+   * Initialize the service - creates or gets the notes space
+   * Safe to call multiple times - will only initialize once
+   */
+  async initialize(dataDir: string): Promise<void> {
+    // Already initialized
+    if (this.initialized) {
+      return;
+    }
 
-		const notesSpace = spaces.find((s) => s.name === "notes");
-		if (notesSpace) {
-			console.log("[NotesService] Found notes space:", notesSpace);
-			this.spaceId = notesSpace.spaceId;
-			console.log("[NotesService] Using existing space:", this.spaceId);
-		} else {
-			// Create a new space for notes
-			console.log("[NotesService] Creating new notes space");
-			const response = await syncspace.createSpace({
-				spaceId: "", // Let backend generate ID
-				name: "notes",
-				metadata: {
-					description: "Personal notes storage",
-					created: new Date().toISOString(),
-				},
-			});
-			this.spaceId = response.spaceId;
-			console.log("[NotesService] Created new space:", this.spaceId);
-		}
-	}
+    // Initialization in progress - wait for it
+    if (this.initializing) {
+      return this.initializing;
+    }
 
-	/**
-	 * Create a new note
-	 */
-	async createNote(note: Note): Promise<string> {
-		if (!this.spaceId) {
-			throw new Error("NotesService not initialized");
-		}
+    // Start initialization
+    this.initializing = this.doInitialize(dataDir);
+    try {
+      await this.initializing;
+      this.initialized = true;
+    } finally {
+      this.initializing = null;
+    }
+  }
 
-		console.log("[NotesService] Creating note:", note);
-		// Serialize the note to bytes (application's responsibility)
-		const json = JSON.stringify(note);
-		const data = this.encoder.encode(json);
+  private async doInitialize(dataDir: string): Promise<void> {
+    log.info("init", { dataDir });
+    await syncspace.init({
+      dataDir,
+      networkId: "local",
+      deviceId: "example-app",
+      config: {},
+    });
 
-		// Store using plugin's generic document API
-		const response = await syncspace.createDocument({
-			spaceId: this.spaceId,
-			documentId: "", // Let backend generate ID
-			collection: "notes",
-			data,
-			metadata: {
-				title: note.title,
-				created: note.created,
-				tags: note.tags?.join(",") || "",
-			},
-		});
-		console.log("[NotesService] Created note with ID:", response.documentId);
+    log.info("listSpaces");
+    const { spaces } = await syncspace.listSpaces();
+    const notesSpace = spaces.find((s) => s.name === "notes");
 
-		return response.documentId;
-	}
+    if (notesSpace) {
+      this.spaceId = notesSpace.spaceId;
+      log.info("using existing space", { spaceId: this.spaceId });
+    } else {
+      log.info("createSpace", { name: "notes" });
+      const response = await syncspace.createSpace({
+        spaceId: "",
+        name: "notes",
+        metadata: {
+          description: "Personal notes storage",
+          created: new Date().toISOString(),
+        },
+      });
+      this.spaceId = response.spaceId;
+      log.info("created space", { spaceId: this.spaceId });
+    }
+  }
 
-	/**
-	 * Get a note by ID
-	 */
-	async getNote(documentId: string): Promise<Note | null> {
-		if (!this.spaceId) {
-			throw new Error("NotesService not initialized");
-		}
+  /**
+   * Create a new note
+   */
+  async createNote(note: Note): Promise<string> {
+    if (!this.spaceId) {
+      throw new Error("NotesService not initialized");
+    }
 
-		try {
-			const response = await syncspace.getDocument({
-				spaceId: this.spaceId,
-				documentId,
-			});
+    const json = JSON.stringify(note);
+    const data = this.encoder.encode(json);
 
-			if (!response.document) {
-				return null;
-			}
+    log.info("createDocument", { title: note.title || "(untitled)" });
+    const response = await syncspace.createDocument({
+      spaceId: this.spaceId,
+      documentId: "",
+      collection: "notes",
+      data,
+      metadata: {
+        title: note.title,
+        created: note.created,
+      },
+    });
+    log.info("created", { documentId: response.documentId });
 
-			// Deserialize from bytes (application's responsibility)
-			const json = this.decoder.decode(response.document.data);
-			return JSON.parse(json) as Note;
-		} catch (error) {
-			console.error("Failed to get note:", error);
-			return null;
-		}
-	}
+    return response.documentId;
+  }
 
-	/**
-	 * Update an existing note
-	 */
-	async updateNote(documentId: string, note: Note): Promise<void> {
-		if (!this.spaceId) {
-			throw new Error("NotesService not initialized");
-		}
+  /**
+   * Get a note by ID
+   */
+  async getNote(documentId: string): Promise<Note | null> {
+    if (!this.spaceId) {
+      throw new Error("NotesService not initialized");
+    }
 
-		// Add updated timestamp
-		const updatedNote = {
-			...note,
-			updated: new Date().toISOString(),
-		};
+    try {
+      log.info("getDocument", { documentId: documentId.slice(0, 8) });
+      const response = await syncspace.getDocument({
+        spaceId: this.spaceId,
+        documentId,
+      });
 
-		// Serialize to bytes
-		const json = JSON.stringify(updatedNote);
-		const data = this.encoder.encode(json);
+      if (!response.document) {
+        log.info("not found");
+        return null;
+      }
 
-		// Update using plugin API
-		// NOTE: Metadata is fully replaced (not merged), so send complete metadata
-		await syncspace.updateDocument({
-			spaceId: this.spaceId,
-			documentId,
-			data,
-			metadata: {
-				title: updatedNote.title,
-				created: updatedNote.created, // Must include to preserve
-				updated: updatedNote.updated,
-				tags: updatedNote.tags?.join(",") || "",
-			},
-			expectedVersion: 0n, // Skip version check
-		});
-	}
+      const json = this.decoder.decode(response.document.data);
+      return JSON.parse(json) as Note;
+    } catch (error) {
+      log.error("getDocument failed", error);
+      return null;
+    }
+  }
 
-	/**
-	 * Delete a note
-	 */
-	async deleteNote(documentId: string): Promise<boolean> {
-		if (!this.spaceId) {
-			throw new Error("NotesService not initialized");
-		}
+  /**
+   * Update an existing note
+   */
+  async updateNote(documentId: string, note: Note): Promise<void> {
+    if (!this.spaceId) {
+      throw new Error("NotesService not initialized");
+    }
 
-		try {
-			await syncspace.deleteDocument({
-				spaceId: this.spaceId,
-				documentId,
-			});
-			return true;
-		} catch (error) {
-			console.error("Failed to delete note:", error);
-			return false;
-		}
-	}
+    const updatedNote = {
+      ...note,
+      updated: new Date().toISOString(),
+    };
 
-	/**
-	 * List all notes
-	 */
-	async listNotes(): Promise<
-		Array<{ id: string; title: string; created: string }>
-	> {
-		if (!this.spaceId) {
-			throw new Error("NotesService not initialized");
-		}
+    const json = JSON.stringify(updatedNote);
+    const data = this.encoder.encode(json);
 
-		console.log("[NotesService] Listing notes for spaceId:", this.spaceId);
-		const response = await syncspace.listDocuments({
-			spaceId: this.spaceId,
-			collection: "notes",
-			limit: 0,
-			cursor: "",
-		});
-		console.log("[NotesService] listDocuments response:", response);
-		console.log("[NotesService] documents array:", response.documents);
-		console.log("[NotesService] documents length:", response.documents?.length);
+    log.info("updateDocument", {
+      documentId: documentId.slice(0, 8),
+      title: note.title || "(untitled)",
+    });
+    await syncspace.updateDocument({
+      spaceId: this.spaceId,
+      documentId,
+      data,
+      metadata: {
+        title: updatedNote.title,
+        created: updatedNote.created,
+        updated: updatedNote.updated,
+      },
+      expectedVersion: 0n,
+    });
+    log.info("updated");
+  }
 
-		const mapped = response.documents.map((doc) => ({
-			id: doc.documentId,
-			title: doc.metadata["title"] || "Untitled",
-			created: doc.metadata["created"] || "",
-		}));
-		console.log("[NotesService] mapped notes:", mapped);
-		return mapped;
-	}
+  /**
+   * Delete a note
+   */
+  async deleteNote(documentId: string): Promise<boolean> {
+    if (!this.spaceId) {
+      throw new Error("NotesService not initialized");
+    }
 
-	/**
-	 * Query notes by tags
-	 */
-	async findNotesByTag(
-		tag: string,
-	): Promise<Array<{ id: string; title: string }>> {
-		if (!this.spaceId) {
-			throw new Error("NotesService not initialized");
-		}
+    try {
+      log.info("deleteDocument", { documentId: documentId.slice(0, 8) });
+      await syncspace.deleteDocument({
+        spaceId: this.spaceId,
+        documentId,
+      });
+      log.info("deleted");
+      return true;
+    } catch (error) {
+      log.error("deleteDocument failed", error);
+      return false;
+    }
+  }
 
-		const response = await syncspace.queryDocuments({
-			spaceId: this.spaceId,
-			collection: "notes",
-			filters: [
-				{
-					field: "tags",
-					operator: "contains",
-					value: tag,
-				},
-			],
-			limit: 0,
-			cursor: "",
-		});
+  /**
+   * List all notes
+   */
+  async listNotes(): Promise<
+    Array<{ id: string; title: string; created: string }>
+  > {
+    if (!this.spaceId) {
+      throw new Error("NotesService not initialized");
+    }
 
-		return response.documents.map((doc) => ({
-			id: doc.documentId,
-			title: doc.metadata["title"] || "Untitled",
-		}));
-	}
+    log.info("listDocuments");
+    const response = await syncspace.listDocuments({
+      spaceId: this.spaceId,
+      collection: "notes",
+      limit: 0,
+      cursor: "",
+    });
+    log.info("listed", { count: response.documents.length });
 
-	/**
-	 * Shutdown the service
-	 */
-	async shutdown(): Promise<void> {
-		await syncspace.shutdown();
-		this.spaceId = null;
-	}
+    return response.documents.map((doc) => ({
+      id: doc.documentId,
+      title: doc.metadata["title"] || "Untitled",
+      created: doc.metadata["created"] || "",
+    }));
+  }
+
+  /**
+   * Shutdown the service
+   */
+  async shutdown(): Promise<void> {
+    log.info("shutdown");
+    await syncspace.shutdown();
+    this.spaceId = null;
+    this.initialized = false;
+  }
+
+  /**
+   * Create example notes for first-time users
+   */
+  async createExampleNotes(): Promise<void> {
+    log.info("creating example notes");
+    const exampleNotes: Note[] = [
+      {
+        title: "Welcome to AnySync Notes!",
+        content:
+          "This is your new notes app. It syncs automatically and works offline.\n\nFeel free to edit or delete these example notes.",
+        created: new Date().toISOString(),
+      },
+      {
+        title: "Grocery List",
+        content:
+          "- Mass-produced cheese\n- Artisanal water\n- Organic air\n- Free-range electrons\n- Gluten-free gluten",
+        created: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 min ago
+      },
+      {
+        title: "Meeting Notes",
+        content:
+          "Discussed synergy. Agreed to circle back. Will leverage our learnings going forward.\n\nAction item: Schedule meeting to discuss next meeting.",
+        created: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+      },
+      {
+        title: "Life Goals",
+        content:
+          "1. Learn to juggle\n2. Finally read that book\n3. Remember what the book was\n4. Find out where I put my keys\n5. World domination (optional)",
+        created: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // Yesterday
+      },
+      {
+        title: "Password Hints",
+        content:
+          "Email: The name of my first pet + birthday (but clever)\nBank: Something I'll definitely remember\nNetflix: Ask my sister",
+        created: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), // 3 days ago
+      },
+    ];
+
+    for (const note of exampleNotes) {
+      await this.createNote(note);
+    }
+  }
 }

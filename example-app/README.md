@@ -1,6 +1,13 @@
-# Example Tauri App
+# AnySync Notes
 
-Reference implementation showing tauri-plugin-any-sync usage.
+A minimalist notes app showcasing tauri-plugin-any-sync, inspired by Apple Notes.
+
+## Features
+
+- Clean, adaptive UI (desktop sidebar + mobile slide-out)
+- Auto-save with status indicator
+- Create, edit, and delete notes
+- Notes persist via any-sync storage backend
 
 ## Quick Start
 
@@ -10,43 +17,69 @@ task app:dev:android  # Run on Android emulator
 task app:build        # Build for production
 ```
 
-## Domain Service Pattern
+## Architecture
 
-The app demonstrates recommended architecture using a domain service layer (`src/services/notes.ts`) that wraps the SyncSpace client:
+### Tech Stack
+
+- **React 18** - UI framework
+- **Zustand** - State management
+- **Framer Motion** - Animations
+- **CSS Modules** - Scoped styling
+- **Vite** - Build tool
+
+### Structure
+
+```
+src/
+├── components/           # React components
+│   ├── Layout/          # Responsive layout container
+│   ├── Sidebar/         # Notes list sidebar
+│   ├── NoteList/        # Animated note list
+│   ├── Editor/          # Note editor with auto-save
+│   └── EmptyState/      # Placeholder states
+├── store/               # Zustand state management
+│   └── useNotesStore.ts
+├── services/            # Plugin integration
+│   └── notes.ts         # Domain service layer
+├── hooks/               # Custom React hooks
+└── lib/                 # Utilities
+```
+
+### Domain Service Pattern
+
+The app uses a domain service layer (`src/services/notes.ts`) to wrap the SyncSpace client:
 
 ```typescript
-// Domain service encapsulates SyncSpace operations
+// NotesService encapsulates SyncSpace operations
 class NotesService {
-  private client = new SyncSpaceClient()
-  private spaceId?: string
-
-  async createNote(title: string, content: string) {
-    const data = new TextEncoder().encode(JSON.stringify({ title, content }))
-    return await this.client.createDocument({
-      spaceId: this.spaceId!,
-      title,
-      data
-    })
+  async createNote(note: Note): Promise<string> {
+    const data = new TextEncoder().encode(JSON.stringify(note));
+    return await syncspace.createDocument({
+      spaceId: this.spaceId,
+      collection: "notes",
+      data,
+      metadata: { title: note.title }
+    });
   }
 }
 ```
 
-**Why domain services?**
-- Encapsulate data encoding/decoding (opaque bytes ↔ app-specific types)
-- Provide app-specific API (createNote vs createDocument)
-- Handle space/collection management
-- Centralize error handling
+**Benefits:**
+- Encapsulates data encoding/decoding (opaque bytes ↔ typed Note objects)
+- Provides app-specific API (createNote vs createDocument)
+- Handles space/collection management
+- Centralizes error handling
 
-See `src/services/notes.ts` and `src/App.svelte` for complete implementation.
+### State Management
 
-## Structure
+Zustand store (`src/store/useNotesStore.ts`) manages:
+- Notes list with optimistic updates
+- Selection state
+- Save status (idle/saving/saved/error)
+- Plugin initialization
 
-```
-example-app/
-├── src/
-│   ├── App.svelte           # UI
-│   └── services/notes.ts    # Domain service (recommended pattern)
-├── src-tauri/
-│   ├── src/lib.rs           # Plugin initialization
-│   └── capabilities/        # Permissions
-```
+### Auto-save
+
+The `useAutoSave` hook debounces changes (500ms delay) and automatically saves:
+- Updates saveStatus in store for UI feedback
+- Handles errors gracefully

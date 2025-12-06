@@ -68,37 +68,64 @@ Use `task --list` to see all available tasks and their descriptions.
 
 ### Adding New API Operations
 
-Follow these steps to add a new operation (e.g., `storageDelete`):
+The plugin uses a **single-dispatch pattern** with protobuf as source of truth. Adding operations requires only **2 files**:
 
-#### 1. Protocol Definition
-- **File**: `plugin-go-backend/desktop/proto/{service}.proto`
-- **Actions**: Add RPC method and messages
+#### 1. Define in Protobuf
+**File**: `buf/proto/syncspace-api/syncspace/v1/syncspace.proto`
 
-#### 2. Go Implementation
-- **Files**: `plugin-go-backend/desktop/api/server/{service}.go`
-- **Actions**: Implement gRPC handler and tests
+Add RPC method to `SyncSpace` service:
+```protobuf
+service SyncSpace {
+  rpc YourOperation(YourRequest) returns (YourResponse);
+}
 
-#### 3. Rust Plugin
-- **Files**: `plugin-rust-core/src/`, `plugin-rust-core/permissions/`
-- Follow detailed instructions in `plugin-rust-core/AGENTS.md`:
+message YourRequest {
+  string field = 1;
+}
 
-#### 5. TypeScript API
-- **File**: `plugin-js-api/src/index.ts`
-- **Actions**: Add typed function with JSDoc
-
-#### 6. Example App
-- **File**: `example-app/src/App.svelte`
-- **Actions**: Add UI and handler
-
-#### 7. Build
-```bash
-task build
+message YourResponse {
+  string result = 1;
+}
 ```
 
-#### Common Pitfalls
-- **Permission files**: All 3 must be updated and plugin rebuilt
-- **Sidecar binary**: Example app uses old binary until Go backend rebuilt
-- **Type alignment**: Ensure proto ↔ Rust ↔ TypeScript types match
+#### 2. Implement Go Handler
+**File**: `plugin-go-backend/shared/handlers/your_operation.go`
+
+```go
+func YourOperation(req []byte) ([]byte, error) {
+    var request pb.YourRequest
+    if err := proto.Unmarshal(req, &request); err != nil {
+        return nil, err
+    }
+
+    // Interact with Any-Sync (SpaceManager, ObjectTree, EventManager)
+    result := doSomething(request.Field)
+
+    response := &pb.YourResponse{Result: result}
+    return proto.Marshal(response)
+}
+```
+
+**Register in `plugin-go-backend/shared/handlers/registry.go`**:
+```go
+func init() {
+    dispatcher.Register("YourOperation", YourOperation)
+}
+```
+
+#### That's It!
+
+- TypeScript client auto-generated from protobuf
+- Rust uses single command dispatcher (no changes)
+- Mobile FFI unchanged (4-function API)
+- Permissions use single `allow-command`
+
+Build and test:
+```bash
+task build
+task go:test   # Run handler tests
+task app:dev   # Test in example app
+```
 
 ## Build System Integration
 

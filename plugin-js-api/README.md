@@ -1,41 +1,25 @@
 # TypeScript API
 
-Promise-based TypeScript API for tauri-plugin-any-sync, generated from protobuf definitions.
+Generated TypeScript client for tauri-plugin-any-sync from protobuf definitions.
 
 ## Usage
 
 ```typescript
-import { syncspace } from 'tauri-plugin-any-sync-api'
+import { SyncSpaceClient } from 'tauri-plugin-any-sync-api'
 
-// Initialize
-await syncspace.init({ dataDir: '/path/to/data', networkId: 'local' })
+const client = new SyncSpaceClient()
+await client.init({ dataDir: './data' })
 
-// Space operations
-const space = await syncspace.createSpace({ name: 'My Space' })
-const spaces = await syncspace.listSpaces({})
-
-// Document operations
-const doc = await syncspace.createDocument({
-  spaceId: space.spaceId,
+const { spaceId } = await client.createSpace({ name: 'Notes' })
+const { documentId } = await client.createDocument({
+  spaceId,
   title: 'Note',
   data: new TextEncoder().encode(JSON.stringify({ content: 'Hello' }))
 })
 ```
 
-## Implementation
+**Binary transport**: Protobuf bytes sent directly via Tauri IPC (no JSON).
 
-**Binary transport**: Protobuf messages serialized to `Uint8Array` and passed directly to Tauri via `ipc::Request` (no JSON conversion).
+**Code generation**: Client auto-generated from `buf/proto/syncspace-api/syncspace/v1/syncspace.proto` by a custom buf plugin script in `plugin-js-api/scripts/generate_api.ts` (runs via `task buf:generate-syncspace`).
 
-**Generated code**: Client methods auto-generated from `syncspace.proto` using `scripts/generate_api.ts`.
-
-## Structure
-
-```
-plugin-js-api/
-├── src/
-│   └── index.ts        # API functions
-├── dist/               # Build output (git-ignored)
-├── package.json
-```
-
-See [root README.md](../README.md) for API documentation.
+See [root README](../README.md) and [example-app](../example-app/) for complete usage.

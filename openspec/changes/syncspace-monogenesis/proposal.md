@@ -10,6 +10,16 @@ Additionally, the current architecture uses Any-Store directly, but research sho
 
 This change transforms the plugin to use the **SyncSpace API**: a generic, opaque-data document storage and synchronization system that lets host applications define their own data models while the plugin handles the complexity of local-first sync. The plugin retains the name `tauri-plugin-any-sync`, while the internal API is called `syncspace` to distinguish it from the raw Any-Sync protocol.
 
+## Implementation Status
+
+**Completed (Phases 1-5, 7)**: Local-first foundation with protobuf API, single-dispatch architecture, Any-Sync integration for local storage, generated TypeScript client, simplified mobile shims (~30-50 lines), example app with domain service pattern. 97 integration tests passing.
+
+**Deferred (Phase 6)**: Network synchronization layer including network coordinator, peer management, JoinSpace/LeaveSpace operations, sync control (StartSync/PauseSync/GetSyncStatus), and network events. The local-first foundation is complete and production-ready with full Any-Sync data structures.
+
+**Deferred (Phase 9)**: E2E testing suite for happy/error paths across platforms.
+
+The plugin fully supports local-first operations. All spaces and documents use proper cryptographic keys and Any-Sync structures, enabling future network sync without data migration or API changes.
+
 ## What Changes
 
 ### Core Architectural Changes

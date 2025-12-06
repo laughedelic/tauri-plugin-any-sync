@@ -40,7 +40,7 @@ tasks:
       - frontend-install
     env:
       APPLE_DEVELOPMENT_TEAM: "1"
-    cmd: "{{.TAURI_CMD}} ios dev"
+    cmd: "{{.TAURI_CMD}} ios dev {{.CLI_ARGS}}"
     interactive: true
 
   init:android:

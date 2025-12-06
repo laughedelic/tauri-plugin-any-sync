@@ -50,7 +50,7 @@ tasks:
     label: "{{.TASK}}"
     cmds:
       - mkdir -p '{{.BINARIES_DIR}}'
-      - gomobile bind -target=ios -o '{{.BINARY}}' .
+      - gomobile bind -target=ios -iosversion=13.0 -o '{{.BINARY}}' .
       - ls -la '{{.BINARIES_DIR}}'
     sources:
       - ./**/*

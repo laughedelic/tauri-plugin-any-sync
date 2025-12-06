@@ -87,13 +87,16 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // For iOS: symlink .xcframework to plugin's ios/Frameworks/ directory
+    // For iOS: COPY (not symlink) .xcframework to plugin's ios/Frameworks/ directory
     // This allows the Package.swift to reference Frameworks/any-sync-ios.xcframework
+    // NOTE: Swift Package Manager does NOT support symlinks for binaryTarget paths,
+    // so we must copy the entire xcframework directory.
+    // See: https://forums.swift.org/t/bug-with-binarytarget-in-swift-packages-with-xcode/45191
     let xcframework_dir = binaries_out_dir.join("any-sync-ios.xcframework");
     if xcframework_dir.exists() {
         let ios_frameworks = env::current_dir()?.join("ios").join("Frameworks");
         println!(
-            "cargo:warning=Linking iOS xcframework to {}",
+            "cargo:warning=Copying iOS xcframework to {}",
             ios_frameworks.display()
         );
         fs::create_dir_all(&ios_frameworks)?;
@@ -108,20 +111,19 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        // Create symlink (Unix) or copy directory (Windows)
-        #[cfg(unix)]
-        {
-            std::os::unix::fs::symlink(&xcframework_dir, &xcframework_dest)?;
-            println!(
-                "cargo:warning=Created symlink: {} -> {}",
-                xcframework_dest.display(),
-                xcframework_dir.display()
-            );
-        }
-        #[cfg(windows)]
-        {
-            copy_dir_recursive(&xcframework_dir, &xcframework_dest)?;
-        }
+        // Always copy the xcframework (SPM doesn't support symlinks for binaryTarget)
+        // The source might be a symlink itself (in dev mode), so resolve it first
+        let xcframework_source = if xcframework_dir.is_symlink() {
+            fs::read_link(&xcframework_dir)?
+        } else {
+            xcframework_dir.clone()
+        };
+        copy_dir_recursive(&xcframework_source, &xcframework_dest)?;
+        println!(
+            "cargo:warning=Copied xcframework: {} -> {}",
+            xcframework_source.display(),
+            xcframework_dest.display()
+        );
     }
 
     // Emit metadata for consumer crates
@@ -379,8 +381,7 @@ fn compute_sha256(data: &[u8]) -> String {
     format!("{:x}", result)
 }
 
-/// Copy directory recursively (for Windows fallback)
-#[cfg(windows)]
+/// Copy directory recursively (used for Windows and iOS xcframework)
 fn copy_dir_recursive(
     src: &std::path::Path,
     dst: &std::path::Path,

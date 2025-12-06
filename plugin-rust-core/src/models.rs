@@ -1,5 +1,5 @@
-/// Generic command request/response types for single-dispatch pattern.
-/// The actual command structure is handled by protobuf serialization.
+//! Generic command request/response types for single-dispatch pattern.
+//! The actual command structure is handled by protobuf serialization.
 
 /// Command operation - cmd name and opaque request bytes
 #[derive(Debug)]

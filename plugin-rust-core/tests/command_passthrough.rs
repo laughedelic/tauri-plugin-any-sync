@@ -3,7 +3,7 @@
 /// 1. Data types correctly serialize/deserialize
 /// 2. Command bytes pass through without corruption
 /// 3. Error handling works correctly
-/// 
+///
 /// Note: Full end-to-end testing requires running with the Go backend sidecar.
 
 #[test]
@@ -12,7 +12,7 @@ fn test_command_request_serialization() {
     // Verify that we can create the types the plugin expects
     let cmd = "syncspace.v1.SpaceCreate";
     let data = vec![1, 2, 3, 4, 5];
-    
+
     // Simulate what would come from TypeScript
     assert_eq!(cmd, "syncspace.v1.SpaceCreate");
     assert_eq!(data.len(), 5);
@@ -22,7 +22,7 @@ fn test_command_request_serialization() {
 fn test_command_response_serialization() {
     // The response is also opaque bytes
     let response_data = vec![10, 20, 30, 40];
-    
+
     assert_eq!(response_data.len(), 4);
 }
 
@@ -31,7 +31,7 @@ fn test_empty_command_data() {
     // Edge case: empty command data (some commands might not need input)
     let cmd = "syncspace.v1.Shutdown";
     let data: Vec<u8> = vec![];
-    
+
     assert_eq!(cmd.len(), 21);
     assert_eq!(data.len(), 0);
 }
@@ -41,12 +41,12 @@ fn test_large_command_data() {
     // Edge case: large command data (e.g., large document)
     let _cmd = "syncspace.v1.DocumentCreate";
     let mut data = vec![0u8; 1_000_000]; // 1MB
-    
+
     // Fill with some pattern
     for i in 0..data.len() {
         data[i] = (i % 256) as u8;
     }
-    
+
     // Verify data integrity (no corruption)
     for i in 0..data.len() {
         assert_eq!(data[i], (i % 256) as u8);
@@ -60,7 +60,7 @@ fn test_binary_data_preservation() {
     data[0] = 0x00;
     data[50] = 0x7F;
     data[99] = 0x80;
-    
+
     // Verify specific bytes are preserved
     assert_eq!(data[0], 0x00);
     assert_eq!(data[50], 0x7F);
@@ -82,7 +82,7 @@ fn test_command_naming_conventions() {
         "syncspace.v1.DocumentList",
         "syncspace.v1.DocumentQuery",
     ];
-    
+
     for cmd in commands {
         // All commands should follow pattern: package.version.Operation
         let parts: Vec<&str> = cmd.split('.').collect();

@@ -3,8 +3,7 @@
     "iOS": {
       "frameworks": [
         "binaries/AnySync.xcframework"
-      ],
-      "developmentTeam": "2KX46YX6LG"
+      ]
     }
   }
 }

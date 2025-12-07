@@ -28,12 +28,12 @@ pub(crate) async fn command(
     // Desktop: InvokeBody::Raw (Uint8Array sent as raw binary)
     // Mobile: InvokeBody::Json (Uint8Array serialized as JSON array)
     let request_bytes = match request.body() {
-        #[cfg(desktop)]
+        #[cfg(not(target_os = "android"))]
         ipc::InvokeBody::Raw(bytes) => bytes.to_vec(),
 
         // NOTE: this is an issue with Tauri IPC serialization on android and linux specifically (https://github.com/tauri-apps/tauri/issues/10573)
-        // TODO: test on ios and linux and adjust
-        #[cfg(mobile)]
+        // TODO: test on linux and adjust
+        #[cfg(target_os = "android")]
         ipc::InvokeBody::Json(value) => {
             // On mobile, Uint8Array is serialized as JSON array of numbers
             let array = value

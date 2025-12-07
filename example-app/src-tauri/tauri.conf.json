@@ -28,12 +28,6 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "iOS": {
-      "frameworks": [
-        "binaries/AnySync.xcframework"
-      ],
-      "developmentTeam": "2KX46YX6LG"
-    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

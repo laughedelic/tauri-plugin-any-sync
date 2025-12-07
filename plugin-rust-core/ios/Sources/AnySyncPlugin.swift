@@ -1,6 +1,6 @@
 // Note: Go mobile framework (gomobile-generated) is provided at build time via Package.swift binaryTarget
-// The framework is symlinked to Frameworks/any-sync-ios.xcframework by build.rs
-import Any_Sync_Ios
+// The framework is symlinked to Frameworks/AnySync.xcframework by build.rs
+import AnySync
 import SwiftRs
 import Tauri
 import UIKit
@@ -16,7 +16,10 @@ class AnySyncPlugin: Plugin {
 
   private func ensureInitialized() throws {
     if !initialized {
-      try MobileInit()
+      var error: NSError?
+      if !MobileInit(&error) {
+          throw error ?? NSError(domain: "AnySyncPlugin", code: -1, userInfo: [NSLocalizedDescriptionKey: "Unknown error during MobileInit"])
+      }
       initialized = true
     }
   }
@@ -29,7 +32,11 @@ class AnySyncPlugin: Plugin {
       let data = Data(args.data)
 
       // Call Go via gomobile FFI
-      let response = try MobileCommand(args.cmd, data)
+      var error: NSError?
+      let response = MobileCommand(args.cmd, data, &error)
+      if response == nil {
+          throw error ?? NSError(domain: "AnySyncPlugin", code: -1, userInfo: [NSLocalizedDescriptionKey: "Unknown error from MobileCommand"])
+      }
 
       // Convert response Data back to byte array for Rust
       let responseBytes = [UInt8](response ?? Data())

@@ -56,7 +56,7 @@ tasks:
     internal: true
     run: once
     status:
-      - test -d ./src-tauri/gen/ios
+      - test -d ./src-tauri/gen/apple
     env:
       APPLE_DEVELOPMENT_TEAM: "1"
     cmd: "{{.TAURI_CMD}} ios init"

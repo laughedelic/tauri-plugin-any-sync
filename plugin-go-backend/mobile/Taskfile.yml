@@ -45,12 +45,12 @@ tasks:
       - gomobile-setup
     vars:
       EXT: .xcframework
-      NAME: "{{.BINARY_PREFIX}}-ios{{.EXT}}"
+      NAME: "AnySync{{.EXT}}"
       BINARY: "{{joinPath .BINARIES_DIR .NAME}}"
     label: "{{.TASK}}"
     cmds:
       - mkdir -p '{{.BINARIES_DIR}}'
-      - gomobile bind -target=ios -iosversion=13.0 -o '{{.BINARY}}' .
+      - gomobile bind -target=ios,iossimulator,macos -o '{{.BINARY}}' .
       - ls -la '{{.BINARIES_DIR}}'
     sources:
       - ./**/*

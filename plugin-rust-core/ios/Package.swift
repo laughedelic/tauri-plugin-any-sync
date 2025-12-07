@@ -17,17 +17,22 @@ let package = Package(
     ],
     dependencies: [
         // Tauri dependency is resolved by the consuming app at build time
+        .package(name: "Tauri", path: "../.tauri/tauri-api")
     ],
     targets: [
-        // Go mobile framework (gomobile-generated, copied by build.rs)
-        .binaryTarget(
-            name: "Any-Sync-Ios",
-            path: "Frameworks/any-sync-ios.xcframework"
-        ),
         .target(
             name: "tauri-plugin-any-sync",
-            dependencies: ["Any-Sync-Ios"],
-            path: "Sources"),
+            dependencies: [
+                .byName(name: "Tauri"),
+                "AnySync"
+            ],
+            path: "Sources"
+        ),
+        // Go mobile framework (gomobile-generated, copied by build.rs)
+        .binaryTarget(
+            name: "AnySync",
+            path: "./Frameworks/AnySync.xcframework"
+        ),
         .testTarget(
             name: "tauri-plugin-any-sync-tests",
             dependencies: ["tauri-plugin-any-sync"],

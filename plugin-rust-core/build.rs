@@ -92,15 +92,19 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
     // NOTE: Swift Package Manager does NOT support symlinks for binaryTarget paths,
     // so we must copy the entire xcframework directory.
     // See: https://forums.swift.org/t/bug-with-binarytarget-in-swift-packages-with-xcode/45191
-    let xcframework_dir = binaries_out_dir.join("any-sync-ios.xcframework");
+    let framework_name = "AnySync";
+    let xcframework_ext = ".xcframework";
+    let xcframework_dir = binaries_out_dir.join(framework_name.to_string() + xcframework_ext);
     if xcframework_dir.exists() {
+        // Plugin's iOS frameworks directory
         let ios_frameworks = env::current_dir()?.join("ios").join("Frameworks");
         println!(
-            "cargo:warning=Copying iOS xcframework to {}",
+            "cargo:warning=Copying iOS xcframework from binaries/ to {}",
             ios_frameworks.display()
         );
         fs::create_dir_all(&ios_frameworks)?;
-        let xcframework_dest = ios_frameworks.join("any-sync-ios.xcframework");
+        let xcframework_dest = ios_frameworks.join(framework_name.to_string() + xcframework_ext);
+        // println!("cargo:rerun-if-changed={}", xcframework_dest.display());
 
         // Remove existing directory/symlink if present
         if xcframework_dest.symlink_metadata().is_ok() {
@@ -124,6 +128,28 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
             xcframework_source.display(),
             xcframework_dest.display()
         );
+
+        let target = std::env::var("TARGET").unwrap();
+
+        // xcframework bundles different architectures in subfolders
+        let framework_path = if target == "aarch64-apple-ios" {
+            xcframework_dest.join("ios-arm64")
+        } else {
+            xcframework_dest.join("ios-arm64_x86_64-simulator")
+        };
+
+        if !framework_path.exists() {
+            panic!("Could not find iOS framework at: {:?}", framework_path);
+        }
+
+        // -F flag (Search Path) -> points to the folder CONTAINING the .framework
+        println!(
+            "cargo:rustc-link-search=framework={}",
+            framework_path.display()
+        );
+
+        // -framework flag (The Lib) -> assumes "AnySync.framework" exists in the search path
+        println!("cargo:rustc-link-lib=framework={}", framework_name);
     }
 
     // Emit metadata for consumer crates

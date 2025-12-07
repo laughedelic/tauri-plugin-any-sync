@@ -1,5 +1,4 @@
 // Note: Go mobile framework (gomobile-generated) is provided at build time via Package.swift binaryTarget
-// The framework is symlinked to Frameworks/AnySync.xcframework by build.rs
 import AnySync
 import SwiftRs
 import Tauri

@@ -31,7 +31,7 @@ let package = Package(
         // Go mobile framework (gomobile-generated, copied by build.rs)
         .binaryTarget(
             name: "AnySync",
-            path: "./Frameworks/AnySync.xcframework"
+            path: "../../binaries/AnySync.xcframework"
         ),
         .testTarget(
             name: "tauri-plugin-any-sync-tests",

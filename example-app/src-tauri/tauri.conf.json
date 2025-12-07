@@ -30,7 +30,7 @@
     "targets": "all",
     "iOS": {
       "frameworks": [
-        "../../plugin-rust-core/ios/Frameworks/AnySync.xcframework"
+        "binaries/AnySync.xcframework"
       ],
       "developmentTeam": "2KX46YX6LG"
     },

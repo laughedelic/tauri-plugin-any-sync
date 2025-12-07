@@ -37,6 +37,7 @@ tasks:
     desc: "Run iOS app in development mode"
     deps:
       - init:ios
+      - :backend:mobile:build:ios
       - frontend-install
     env:
       APPLE_DEVELOPMENT_TEAM: "1"

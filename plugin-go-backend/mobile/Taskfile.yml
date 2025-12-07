@@ -44,19 +44,18 @@ tasks:
     deps:
       - gomobile-setup
     vars:
-      EXT: .xcframework
-      NAME: "AnySync{{.EXT}}"
-      BINARY: "{{joinPath .BINARIES_DIR .NAME}}"
+      NAME: "AnySync.xcframework"
+      BUNDLE: "{{joinPath .BINARIES_DIR .NAME}}"
     label: "{{.TASK}}"
     cmds:
       - mkdir -p '{{.BINARIES_DIR}}'
-      - gomobile bind -target=ios,iossimulator,macos -o '{{.BINARY}}' .
+      - gomobile bind -target=ios,iossimulator,macos -o '{{.BUNDLE}}' .
       - ls -la '{{.BINARIES_DIR}}'
     sources:
       - ./**/*
       - ../shared/**/*
     generates:
-      - "{{.BINARY}}"
+      - "{{.BUNDLE}}/**/*"
 
   build:
     desc: Build mobile binaries for current platform
@@ -78,7 +77,7 @@ tasks:
     desc: "Clean mobile build artifacts"
     cmds:
       - rm -rf '{{.BINARIES_DIR}}/any-sync-android*'
-      - rm -rf '{{.BINARIES_DIR}}/any-sync-ios*'
+      - rm -rf '{{.BINARIES_DIR}}/AnySync.xcframework'
 
   mod-tidy:
     desc: "Clean and verify Go modules"

@@ -35,6 +35,7 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
     use std::fs;
     use std::path::PathBuf;
 
+    let target = std::env::var("TARGET").unwrap();
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
     let binaries_out_dir = out_dir.join("binaries");
 
@@ -87,60 +88,17 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // For iOS: COPY (not symlink) .xcframework to plugin's ios/Frameworks/ directory
-    // This allows the Package.swift to reference Frameworks/any-sync-ios.xcframework
-    // NOTE: Swift Package Manager does NOT support symlinks for binaryTarget paths,
-    // so we must copy the entire xcframework directory.
-    // See: https://forums.swift.org/t/bug-with-binarytarget-in-swift-packages-with-xcode/45191
+    // For iOS: point swift-rs linker to the right framework inside the xcframework bundle
     let framework_name = "AnySync";
     let xcframework_ext = ".xcframework";
-    let xcframework_dir = binaries_out_dir.join(framework_name.to_string() + xcframework_ext);
-    if xcframework_dir.exists() {
-        // Plugin's iOS frameworks directory
-        let ios_frameworks = env::current_dir()?.join("ios").join("Frameworks");
-        println!(
-            "cargo:warning=Copying iOS xcframework from binaries/ to {}",
-            ios_frameworks.display()
-        );
-        fs::create_dir_all(&ios_frameworks)?;
-        let xcframework_dest = ios_frameworks.join(framework_name.to_string() + xcframework_ext);
-        // println!("cargo:rerun-if-changed={}", xcframework_dest.display());
-
-        // Remove existing directory/symlink if present
-        if xcframework_dest.symlink_metadata().is_ok() {
-            if xcframework_dest.is_dir() && !xcframework_dest.is_symlink() {
-                fs::remove_dir_all(&xcframework_dest).ok();
-            } else {
-                fs::remove_file(&xcframework_dest).ok();
-            }
-        }
-
-        // Always copy the xcframework (SPM doesn't support symlinks for binaryTarget)
-        // The source might be a symlink itself (in dev mode), so resolve it first
-        let xcframework_source = if xcframework_dir.is_symlink() {
-            fs::read_link(&xcframework_dir)?
-        } else {
-            xcframework_dir.clone()
-        };
-        copy_dir_recursive(&xcframework_source, &xcframework_dest)?;
-        println!(
-            "cargo:warning=Copied xcframework: {} -> {}",
-            xcframework_source.display(),
-            xcframework_dest.display()
-        );
-
-        let target = std::env::var("TARGET").unwrap();
-
+    let xcframework_path = binaries_out_dir.join(framework_name.to_string() + xcframework_ext);
+    if xcframework_path.exists() {
         // xcframework bundles different architectures in subfolders
         let framework_path = if target == "aarch64-apple-ios" {
-            xcframework_dest.join("ios-arm64")
+            xcframework_path.join("ios-arm64")
         } else {
-            xcframework_dest.join("ios-arm64_x86_64-simulator")
+            xcframework_path.join("ios-arm64_x86_64-simulator")
         };
-
-        if !framework_path.exists() {
-            panic!("Could not find iOS framework at: {:?}", framework_path);
-        }
 
         // -F flag (Search Path) -> points to the folder CONTAINING the .framework
         println!(

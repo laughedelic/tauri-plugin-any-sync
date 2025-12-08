@@ -5,8 +5,14 @@ authors.workspace = true
 description = ""
 edition.workspace = true
 rust-version.workspace = true
-exclude = ["/example-app", "/plugin-js-api/dist", "/plugin-js-api/node_modules", "/binaries"]
-include = ["src/**/*", "build.rs", "tests/**/*", "permissions/**/*", "android/**/*", "ios/**/*"]
+exclude = ["/example-app", "/binaries"]
+include = [
+  "src/**/*",
+  "build.rs",
+  "permissions/**/*",
+  "android/**/*",
+  "ios/**/*",
+]
 links = "tauri-plugin-any-sync"
 
 [features]
@@ -43,3 +49,7 @@ tonic-build = "0.12"
 reqwest = { version = "0.12", features = ["blocking"] }
 sha2 = "0.10"
 zip = "2.2"
+
+# Windows-specific dependency for creating symlinks (junctions)
+[target.'cfg(windows)'.build-dependencies]
+junction = "1.3"

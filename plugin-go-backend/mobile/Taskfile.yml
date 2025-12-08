@@ -5,9 +5,6 @@ vars:
   BINARY_PREFIX: any-sync
 
 tasks:
-  default:
-    deps: [build]
-
   gomobile-setup:
     desc: Install gomobile toolchain
     internal: true
@@ -18,12 +15,19 @@ tasks:
       - go install golang.org/x/mobile/cmd/gomobile@latest
       - gomobile init
 
+  binaries-init:
+    desc: Initialize binaries directory
+    internal: true
+    run: once
+    cmd: mkdir -p '{{.BINARIES_DIR}}'
+
   build:android:
     desc: Build the Android .aar file with gomobile
     preconditions:
       - 'test -n "$ANDROID_HOME"'
     deps:
       - gomobile-setup
+      - binaries-init
     vars:
       EXT: .aar
       NAME: "{{.BINARY_PREFIX}}-android{{.EXT}}"
@@ -43,6 +47,7 @@ tasks:
     desc: Build the iOS .xcframework file with gomobile
     deps:
       - gomobile-setup
+      - binaries-init
     vars:
       NAME: "AnySync.xcframework"
       BUNDLE: "{{joinPath .BINARIES_DIR .NAME}}"

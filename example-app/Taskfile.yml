@@ -22,6 +22,7 @@ tasks:
     desc: "Run Tauri app in development mode"
     deps:
       - frontend-install
+      - :backend:desktop:build
     cmd: "{{.TAURI_CMD}} dev"
     interactive: true
 
@@ -29,6 +30,7 @@ tasks:
     desc: "Run Android app in development mode"
     deps:
       - init:android
+      - :backend:mobile:build:android
       - frontend-install
     cmd: "{{.TAURI_CMD}} android dev"
     interactive: true
@@ -40,8 +42,10 @@ tasks:
       - :backend:mobile:build:ios
       - frontend-install
     env:
-      APPLE_DEVELOPMENT_TEAM: "1"
-    cmd: "{{.TAURI_CMD}} ios dev {{.CLI_ARGS}}"
+      APPLE_DEVELOPMENT_TEAM: "12345"
+    vars:
+      SIMULATOR: "iPad mini"
+    cmd: "{{.TAURI_CMD}} ios dev '{{.SIMULATOR}}' {{.CLI_ARGS}}"
     interactive: true
 
   init:android:
@@ -58,6 +62,4 @@ tasks:
     run: once
     status:
       - test -d ./src-tauri/gen/apple
-    env:
-      APPLE_DEVELOPMENT_TEAM: "1"
     cmd: "{{.TAURI_CMD}} ios init"

@@ -33,18 +33,6 @@ The plugin SHALL use Cargo's links mechanism to broadcast binary paths to consum
 - **THEN** it emits cargo:binaries_dir=<path> to standard output
 - **AND** Cargo propagates this as DEP_TAURI_PLUGIN_ANY_SYNC_BINARIES_DIR environment variable to consumer build scripts
 
-### Requirement: Platform-Selective Downloads via Features
-The plugin SHALL provide Cargo features for selective platform binary downloads.
-#### Scenario: Feature-based platform selection
-- **WHEN** a consumer specifies features in their Cargo.toml dependency declaration
-- **THEN** the plugin downloads only the binaries for enabled platforms
-- **AND** supports features: all, macos, linux, windows, and platform-specific targets
-
-#### Scenario: No default features
-- **WHEN** no features are explicitly specified by the consumer
-- **THEN** no platform binaries are downloaded (no default features)
-- **AND** users must explicitly select which platforms they need
-
 ### Requirement: Checksum Verification Security
 The plugin SHALL verify the integrity of downloaded binaries using SHA256 checksums.
 #### Scenario: Valid checksum verification

@@ -85,28 +85,7 @@ The plugin automatically downloads pre-compiled Go backend binaries from GitHub 
    tauri add tauri-plugin-any-sync
    ```
 
-2. **Select platform features** in your `src-tauri/Cargo.toml`:
-
-   ```toml
-   [dependencies]
-   tauri-plugin-any-sync = { version = "0.1", features = [...] }
-   ```
-   
-   **Available Features:**
-   - `all`
-     - `desktop`
-       - `macos`
-         - `x86_64-apple-darwin`
-         - `aarch64-apple-darwin`
-       - `linux`
-         - `x86_64-unknown-linux-gnu`
-         - `aarch64-unknown-linux-gnu`
-       - `windows`
-         - `x86_64-pc-windows-msvc`
-     - `mobile`
-       - `android`
-
-3. **Update `src-tauri/build.rs` script** to link binaries directory:
+2. **Update `src-tauri/build.rs` script** to link binaries directory:
 
    ```rust
    use std::{env, fs, path::Path};
@@ -140,13 +119,13 @@ The plugin automatically downloads pre-compiled Go backend binaries from GitHub 
   
    </details>
 
-4. **Create `.taurignore` file** in `src-tauri/` to prevent rebuild loops (also `.gitignore`):
+3. **Create `.taurignore` file** in `src-tauri/` to prevent rebuild loops (also `.gitignore`):
 
    ```
    binaries/
    ```
 
-5. **Add sidecar binary to Tauri config** in `src-tauri/tauri.conf.json`:
+4. **Add sidecar binary to Tauri config** in `src-tauri/tauri.conf.json`:
 
    ```json
    {
@@ -226,41 +205,30 @@ The plugin automatically downloads pre-compiled Go backend binaries from GitHub 
    cd src-tauri && cargo build
    ```
 
-### Android Setup
+### Mobile Setup (Android & iOS)
 
-The plugin includes Android support with no additional configuration required:
+The plugin supports both Android and iOS.
 
-1. **Add Android feature** in your `src-tauri/Cargo.toml`:
+**Android:**
+- The plugin automatically downloads and symlinks the Go backend `.aar` to `android/libs/`,
+- Gradle loads the native library; all ABIs are included.
 
-   ```toml
-   tauri-plugin-any-sync = { version = "0.1", features = ["android"] }
-   ```
+**iOS:**
+- The plugin automatically downloads and integrates the pre-built `.xcframework` for iOS.
 
-   Or if you're including all platforms:
-   
-   ```toml
-   tauri-plugin-any-sync = { version = "0.1", features = ["all"] }
-   ```
+**Usage:**
+1. **Initialize platform support:**
+  ```bash
+  npm run tauri [android|ios] init
+  ```
 
-2. **Initialize Android support:**
-   ```bash
-   npm run tauri android init
-   ```
+2. **Build and run:**
+  ```bash
+  npm run tauri [android|ios] dev    # Development
+  npm run tauri [android|ios] build  # Production
+  ```
 
-3. **Build and run:**
-   ```bash
-   # Development (emulator or device)
-   npm run tauri android dev
-   
-   # Production build
-   npm run tauri android build
-   ```
-
-**How it works:**
-- The plugin's `build.rs` automatically downloads `any-sync-android.aar` when the `android` feature is enabled (includes all ABIs)
-- The .aar is symlinked to the plugin's `android/libs/` directory
-- Gradle loads the Go mobile library as a native dependency
-- No additional setup needed in your app's build scripts
+No changes needed in your app’s build scripts—mobile native libraries are managed automatically.
 
 ## Development
 
@@ -588,10 +556,6 @@ ls -la ./binaries/
 task backend:build
 ```
 
-**Feature selection guidance**:
-- For single-platform development: Use specific target feature (e.g., `x86_64-apple-darwin`)
-- For desktop apps: Use `macos`, `linux`, `windows`
-- For distribution to multiple platforms: Use `all`
 - For offline builds: Use `ANY_SYNC_GO_BINARIES_DIR` environment variable
 
 ### Common Issues

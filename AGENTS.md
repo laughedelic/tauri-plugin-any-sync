@@ -134,10 +134,9 @@ task app:dev   # Test in example app
 The plugin uses an automated binary distribution system with two distinct modes:
 
 **Consumer/CI Mode (Production)**:
-- Plugin downloads pre-compiled Go binaries from GitHub Releases
+- Plugin downloads pre-compiled Go binaries from GitHub Releases based on the target platform
 - Binaries are verified using SHA256 checksums
 - Consumer's `build.rs` copies binaries to `src-tauri/binaries/`
-- Enabled via Cargo features (e.g., `features = ["all"]` or `["macos"]`)
 
 **Local Development Mode**:
 - Set `ANY_SYNC_GO_BINARIES_DIR` environment variable to local binaries path
@@ -153,8 +152,7 @@ The plugin uses an automated binary distribution system with two distinct modes:
    - Copy binaries from local path to `OUT_DIR/binaries/`
    - Emit warning message
 3. **If not set** (consumer/CI mode):
-   - Determine enabled features (e.g., `macos`, `windows`)
-   - Download binaries from GitHub Releases for plugin version
+   - Download binaries from GitHub Releases for plugin version based on the target platform
    - Download and parse `checksums.txt` from release assets
    - Verify SHA256 checksums for each binary (desktop + mobile)
    - Store verified binaries in `OUT_DIR/binaries/`
@@ -173,20 +171,6 @@ The plugin uses an automated binary distribution system with two distinct modes:
 4. Add `.taurignore` to prevent rebuild loops
 
 ### Cargo Configuration
-
-**Features** (select which platforms to download):
-- `all`
-  - `desktop`
-    - `macos`
-      - `x86_64-apple-darwin`
-      - `aarch64-apple-darwin`
-    - `linux`
-      - `x86_64-unknown-linux-gnu`
-      - `aarch64-unknown-linux-gnu`
-    - `windows`
-      - `x86_64-pc-windows-msvc`
-  - `mobile`
-    - `android`
 
 **Links** (`links = "tauri-plugin-any-sync"`):
 - Enables metadata propagation via environment variables

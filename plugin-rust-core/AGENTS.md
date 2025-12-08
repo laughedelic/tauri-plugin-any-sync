@@ -32,6 +32,4 @@ The `build.rs` script uses environment variables:
 - `ANY_SYNC_GO_BINARIES_DIR` - Local binaries directory (development)
 - `OUT_DIR` - Cargo build output directory
 
-Platform-specific features determine which binaries are linked or downloaded.
-
 See [root AGENTS.md](../AGENTS.md) for full development workflow.

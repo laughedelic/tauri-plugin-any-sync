@@ -9,7 +9,7 @@ fn main() {
 
     // Generate protobuf code for desktop targets only (mobile uses FFI, not gRPC)
     let target = env::var("TARGET").unwrap_or_default();
-    let is_mobile_target = target.contains("android") || target.contains("ios");
+    let is_mobile_target = target.contains("android") || target.contains("apple-ios");
     println!("cargo:warning=Building for target: {}", target);
 
     if !is_mobile_target {
@@ -81,7 +81,7 @@ fn manage_binaries() -> Result<(), Box<dyn Error>> {
     }
 
     // For iOS: point swift-rs linker to the right framework inside the xcframework bundle
-    if target.contains("-apple-ios") {
+    if target.contains("apple-ios") {
         let framework_name = "AnySync";
         let xcframework_ext = ".xcframework";
         let xcframework_path = binaries_out_dir.join(framework_name.to_string() + xcframework_ext);
@@ -116,14 +116,7 @@ fn download_binaries_from_github(dest_dir: &PathBuf) -> Result<(), Box<dyn Error
     let version = env::var("CARGO_PKG_VERSION")?;
 
     // Determine which binaries to download based on enabled features
-    let binaries_to_download = determine_binaries_to_download()?;
-
-    if binaries_to_download.is_empty() {
-        // No features enabled, skip download
-        println!("cargo:warning=No platform features enabled, skipping binary downloads");
-        fs::create_dir_all(dest_dir)?;
-        return Ok(());
-    }
+    let binary_name = target_binary_name();
 
     // Create destination directory
     fs::create_dir_all(dest_dir)?;
@@ -143,86 +136,77 @@ fn download_binaries_from_github(dest_dir: &PathBuf) -> Result<(), Box<dyn Error
     let checksums_str = String::from_utf8(checksums_content)?;
     let checksums = parse_checksums(&checksums_str)?;
 
-    // Download each binary
-    for binary_name in binaries_to_download {
-        let url = format!("{}{}", release_url, binary_name);
-        println!("Downloading: {}", url);
+    // Download the binary
+    let url = format!("{}{}", release_url, binary_name);
+    println!("Downloading: {}", url);
 
-        let binary_content = download_file(&url)?;
+    let binary_content = download_file(&url)?;
 
-        // Verify checksum
-        let expected_checksum = checksums
-            .get(&binary_name)
-            .ok_or_else(|| format!("Checksum not found for binary: {}", binary_name))?;
+    // Verify checksum
+    let expected_checksum = checksums
+        .get(&binary_name)
+        .ok_or_else(|| format!("Checksum not found for binary: {}", binary_name))?;
 
-        let actual_checksum = compute_sha256(&binary_content);
+    let actual_checksum = compute_sha256(&binary_content);
 
-        if actual_checksum != *expected_checksum {
-            return Err(format!(
-                "Checksum verification failed for {}: expected {}, got {}",
-                binary_name, expected_checksum, actual_checksum
-            )
-            .into());
-        }
+    if actual_checksum != *expected_checksum {
+        return Err(format!(
+            "Checksum verification failed for {}: expected {}, got {}",
+            binary_name, expected_checksum, actual_checksum
+        )
+        .into());
+    }
 
-        // Handle xcframework zip files specially - extract them
-        if binary_name.ends_with(".xcframework.zip") {
-            // Extract zip to dest_dir (zip contains xcframework folder at root)
-            let cursor = std::io::Cursor::new(&binary_content);
-            let mut archive = zip::ZipArchive::new(cursor)?;
-            archive.extract(dest_dir)?;
+    // Handle xcframework zip files specially - extract them
+    if binary_name.ends_with(".xcframework.zip") {
+        // Extract zip to dest_dir (zip contains xcframework folder at root)
+        let cursor = std::io::Cursor::new(&binary_content);
+        let mut archive = zip::ZipArchive::new(cursor)?;
+        archive.extract(dest_dir)?;
 
-            println!(
-                "cargo:warning=Extracted {} to {}",
-                binary_name,
-                dest_dir.display()
-            );
-        } else {
-            // Write binary to destination
-            let dest_path = dest_dir.join(&binary_name);
-            fs::write(&dest_path, &binary_content)?;
+        println!(
+            "cargo:warning=Extracted {} to {}",
+            binary_name,
+            dest_dir.display()
+        );
+    } else {
+        // Write binary to destination
+        let dest_path = dest_dir.join(&binary_name);
+        fs::write(&dest_path, &binary_content)?;
 
-            // Make binary executable on Unix-like systems
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::PermissionsExt;
-                let permissions = fs::Permissions::from_mode(0o755);
-                fs::set_permissions(&dest_path, permissions)?;
-            }
+        // Make binary executable on Unix-like systems
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let permissions = fs::Permissions::from_mode(0o755);
+            fs::set_permissions(&dest_path, permissions)?;
         }
     }
 
     Ok(())
 }
 
-/// Determine which binaries to download based on enabled features
-fn determine_binaries_to_download() -> Result<Vec<String>, Box<dyn Error>> {
-    let mut binaries = Vec::new();
+/// Determine which binary to download based on the TARGET triple
+fn target_binary_name() -> String {
+    let target = env::var("TARGET").unwrap();
 
-    // Check which platform features are enabled
-    if cfg!(feature = "x86_64-apple-darwin") {
-        binaries.push("any-sync-x86_64-apple-darwin".to_string());
-    }
-    if cfg!(feature = "aarch64-apple-darwin") {
-        binaries.push("any-sync-aarch64-apple-darwin".to_string());
-    }
-    if cfg!(feature = "x86_64-unknown-linux-gnu") {
-        binaries.push("any-sync-x86_64-unknown-linux-gnu".to_string());
-    }
-    if cfg!(feature = "aarch64-unknown-linux-gnu") {
-        binaries.push("any-sync-aarch64-unknown-linux-gnu".to_string());
-    }
-    if cfg!(feature = "x86_64-pc-windows-msvc") {
-        binaries.push("any-sync-x86_64-pc-windows-msvc.exe".to_string());
-    }
-    if cfg!(feature = "android") {
-        binaries.push("any-sync-android.aar".to_string());
-    }
-    if cfg!(feature = "ios") {
-        binaries.push("any-sync-ios.xcframework.zip".to_string());
+    // Android: .aar file
+    if target.contains("android") {
+        return "any-sync-android.aar".to_string();
     }
 
-    Ok(binaries)
+    // iOS: xcframework zip
+    if target.contains("apple-ios") {
+        return "AnySync.xcframework.zip".to_string();
+    }
+
+    // Desktop: binary name matches target triple (Windows needs .exe)
+    let ext = if target.contains("windows") {
+        ".exe"
+    } else {
+        ""
+    };
+    format!("any-sync-{}{}", target, ext)
 }
 
 /// Download file from URL

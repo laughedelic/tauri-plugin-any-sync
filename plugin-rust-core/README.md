@@ -41,12 +41,4 @@ task rust:fmt
 1. **Protobuf generation**: Compiles `.proto` files from `plugin-go-backend/desktop/proto/`
 2. **Binary management**: Links Go binaries from `binaries/` (local dev) or downloads them from GitHub (production)
 
-## Features
-
-Platform-specific features control which binaries are downloaded:
-- `all` - All platforms
-- `desktop` - Desktop platforms (macOS, Linux, Windows)
-- `mobile` - Mobile platforms (Android, iOS)
-- Specific platforms: `macos`, `linux`, `windows`, `android`
-
 See [root AGENTS.md](../AGENTS.md) for development workflow.

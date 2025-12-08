@@ -16,9 +16,22 @@ class AnySyncPlugin: Plugin {
   private func ensureInitialized() throws {
     if !initialized {
       var error: NSError?
-      if !MobileInit(&error) {
-          throw error ?? NSError(domain: "AnySyncPlugin", code: -1, userInfo: [NSLocalizedDescriptionKey: "Unknown error during MobileInit"])
+      let success = MobileInit(&error)
+
+      // Check if an error occurred
+      if let error = error {
+          NSLog("[AnySyncPlugin] MobileInit failed: \(error.localizedDescription)")
+          throw error
       }
+
+      // MobileInit returns BOOL indicating success/failure
+      if !success {
+          let errorMsg = "MobileInit returned false without error details"
+          NSLog("[AnySyncPlugin] \(errorMsg)")
+          throw NSError(domain: "AnySyncPlugin", code: -1, userInfo: [NSLocalizedDescriptionKey: errorMsg])
+      }
+
+      NSLog("[AnySyncPlugin] MobileInit succeeded")
       initialized = true
     }
   }

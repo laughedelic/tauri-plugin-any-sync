@@ -60,7 +60,7 @@ fn manage_binaries() -> Result<(), Box<dyn Error>> {
             "cargo:warning=Linking local binaries from: {}",
             local_binaries.canonicalize()?.display()
         );
-        create_link(&local_binaries, &binaries_out_dir)?;
+        create_link(local_binaries, &binaries_out_dir)?;
     } else if env::var_os("CI").is_none() {
         // Download from GitHub (non-CI)
         download_binaries_from_github(&binaries_out_dir)?;
@@ -70,12 +70,12 @@ fn manage_binaries() -> Result<(), Box<dyn Error>> {
     // This allows the plugin's gradle file to reference libs/any-sync-android.aar
     if target.contains("android") {
         let aar_file_name = "any-sync-android.aar";
-        let aar_file = binaries_out_dir.join(&aar_file_name);
+        let aar_file = binaries_out_dir.join(aar_file_name);
         if aar_file.exists() {
             let aar_dest = env::current_dir()?
                 .join("android")
                 .join("libs")
-                .join(&aar_file_name);
+                .join(aar_file_name);
             create_link(&aar_file, &aar_dest)?;
         }
     }

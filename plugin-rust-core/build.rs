@@ -1,14 +1,16 @@
-const COMMANDS: &[&str] = &["command"];
+use std::env;
+use std::error::Error;
+use std::fs;
+use std::path::Path;
+use std::path::PathBuf;
 
 fn main() {
-    println!(
-        "cargo:warning=ANY_SYNC_GO_BINARIES_DIR={}",
-        std::env::var("ANY_SYNC_GO_BINARIES_DIR").unwrap_or_default()
-    );
+    // println!("cargo:warning=ANY_SYNC_GO_BINARIES_DIR={}", env::var("ANY_SYNC_GO_BINARIES_DIR").unwrap_or_default());
 
     // Generate protobuf code for desktop targets only (mobile uses FFI, not gRPC)
-    let target = std::env::var("TARGET").unwrap_or_default();
-    let is_mobile_target = target.contains("android") || target.contains("ios");
+    let target = env::var("TARGET").unwrap_or_default();
+    let is_mobile_target = target.contains("android") || target.contains("apple-ios");
+    println!("cargo:warning=Building for target: {}", target);
 
     if !is_mobile_target {
         if let Err(e) = generate_protobuf() {
@@ -23,31 +25,27 @@ fn main() {
         std::process::exit(1);
     }
 
-    tauri_plugin::Builder::new(COMMANDS)
+    tauri_plugin::Builder::new(&["command"])
         .android_path("android")
         .ios_path("ios")
         .build();
 }
 
 /// Manages binaries: either downloads from GitHub or uses local directory
-fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
-    use std::env;
-    use std::fs;
-    use std::path::PathBuf;
-
+fn manage_binaries() -> Result<(), Box<dyn Error>> {
+    let target = env::var("TARGET").unwrap();
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
     let binaries_out_dir = out_dir.join("binaries");
 
     // Check if local development mode is enabled
     if let Ok(local_path) = env::var("ANY_SYNC_GO_BINARIES_DIR") {
-        // LOCAL DEVELOPMENT MODE
-        let local_binaries = std::path::Path::new(&local_path);
+        let local_binaries = Path::new(&local_path);
         println!("cargo:rerun-if-changed={}", local_binaries.display());
 
-        // Check if binaries directory exists and has any files
+        // Check if the provided directory exists and has any files
         let binaries_missing = !local_binaries.exists()
             || !local_binaries.is_dir()
-            || std::fs::read_dir(local_binaries)?.next().is_none();
+            || fs::read_dir(local_binaries)?.next().is_none();
 
         if binaries_missing {
             return Err(format!(
@@ -57,33 +55,52 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
             .into());
         }
 
-        link_local_binaries(&local_path, &binaries_out_dir)?;
+        // In development mode, link local binaries to out_dir
+        println!(
+            "cargo:warning=Linking local binaries from: {}",
+            local_binaries.canonicalize()?.display()
+        );
+        create_link(local_binaries, &binaries_out_dir)?;
     } else if env::var_os("CI").is_none() {
-        // CONSUMER: Download from GitHub (non-CI)
+        // Download from GitHub (non-CI)
         download_binaries_from_github(&binaries_out_dir)?;
     }
 
     // For Android: symlink .aar to plugin's android/libs/ directory
     // This allows the plugin's gradle file to reference libs/any-sync-android.aar
-    let aar_file = binaries_out_dir.join("any-sync-android.aar");
-    if aar_file.exists() {
-        let android_libs = env::current_dir()?.join("android").join("libs");
-        fs::create_dir_all(&android_libs)?;
-        let aar_dest = android_libs.join("any-sync-android.aar");
-
-        // Remove existing file/symlink if present
-        if aar_dest.exists() || aar_dest.symlink_metadata().is_ok() {
-            fs::remove_file(&aar_dest).ok();
+    if target.contains("android") {
+        let aar_file_name = "any-sync-android.aar";
+        let aar_file = binaries_out_dir.join(aar_file_name);
+        if aar_file.exists() {
+            let aar_dest = env::current_dir()?
+                .join("android")
+                .join("libs")
+                .join(aar_file_name);
+            create_link(&aar_file, &aar_dest)?;
         }
+    }
 
-        // Create symlink (Unix) or copy (Windows)
-        #[cfg(unix)]
-        {
-            std::os::unix::fs::symlink(&aar_file, &aar_dest)?;
-        }
-        #[cfg(windows)]
-        {
-            fs::copy(&aar_file, &aar_dest)?;
+    // For iOS: point swift-rs linker to the right framework inside the xcframework bundle
+    if target.contains("apple-ios") {
+        let framework_name = "AnySync";
+        let xcframework_ext = ".xcframework";
+        let xcframework_path = binaries_out_dir.join(framework_name.to_string() + xcframework_ext);
+        if xcframework_path.exists() {
+            // xcframework bundles different architectures in subfolders
+            let framework_path = if target == "aarch64-apple-ios" {
+                xcframework_path.join("ios-arm64")
+            } else {
+                xcframework_path.join("ios-arm64_x86_64-simulator")
+            };
+
+            // -F flag (Search Path) -> points to the folder CONTAINING the .framework
+            println!(
+                "cargo:rustc-link-search=framework={}",
+                framework_path.display()
+            );
+
+            // -framework flag (The Lib) -> assumes "AnySync.framework" exists in the search path
+            println!("cargo:rustc-link-lib=framework={}", framework_name);
         }
     }
 
@@ -93,93 +110,13 @@ fn manage_binaries() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Link binaries from local directory (development mode)
-fn link_local_binaries(
-    local_path: &str,
-    dest_dir: &std::path::PathBuf,
-) -> Result<(), Box<dyn std::error::Error>> {
-    use std::fs;
-
-    let local_binaries = std::path::Path::new(local_path);
-
-    // Validate the path exists
-    if !local_binaries.exists() {
-        return Err(format!(
-            "Local binaries directory not found at: {}",
-            local_binaries.display()
-        )
-        .into());
-    }
-
-    if !local_binaries.is_dir() {
-        return Err(format!(
-            "Expected a directory but found a file at: {}",
-            local_binaries.display()
-        )
-        .into());
-    }
-
-    println!(
-        "cargo:warning=Linking local binaries from: {}",
-        local_binaries.canonicalize()?.display()
-    );
-
-    // Create destination directory
-    fs::create_dir_all(dest_dir)?;
-
-    // Create symlinks to binaries from source to destination
-    for entry in fs::read_dir(local_binaries)? {
-        let entry = entry?;
-        let path = entry.path();
-
-        // Only link binary files (skip non-files like directories)
-        if path.is_file() {
-            let file_name = entry.file_name();
-            let dest_file = dest_dir.join(&file_name);
-
-            // Remove existing symlink/file if it exists
-            if dest_file.exists() || dest_file.symlink_metadata().is_ok() {
-                fs::remove_file(&dest_file).ok();
-            }
-
-            // Use absolute path for symlink target
-            let absolute_source = path.canonicalize()?;
-
-            // Create symlink (Unix) or copy (Windows fallback)
-            #[cfg(unix)]
-            {
-                std::os::unix::fs::symlink(&absolute_source, &dest_file)?;
-            }
-
-            #[cfg(windows)]
-            {
-                // Windows symlinks require admin privileges, so fall back to copying
-                fs::copy(&absolute_source, &dest_file)?;
-            }
-        }
-    }
-    Ok(())
-}
-
 /// Download binaries from GitHub releases (consumer/CI mode)
-fn download_binaries_from_github(
-    dest_dir: &std::path::PathBuf,
-) -> Result<(), Box<dyn std::error::Error>> {
-    use std::env;
-    use std::fs;
-
+fn download_binaries_from_github(dest_dir: &PathBuf) -> Result<(), Box<dyn Error>> {
     // Get plugin version from Cargo.toml
     let version = env::var("CARGO_PKG_VERSION")?;
 
     // Determine which binaries to download based on enabled features
-    let binaries_to_download = determine_binaries_to_download()?;
-
-    if binaries_to_download.is_empty() {
-        // No features enabled, skip download
-        println!("cargo:warning=No platform features enabled, skipping binary downloads");
-        fs::create_dir_all(dest_dir)?;
-        return Ok(());
-    }
+    let binary_name = target_binary_name();
 
     // Create destination directory
     fs::create_dir_all(dest_dir)?;
@@ -199,28 +136,40 @@ fn download_binaries_from_github(
     let checksums_str = String::from_utf8(checksums_content)?;
     let checksums = parse_checksums(&checksums_str)?;
 
-    // Download each binary
-    for binary_name in binaries_to_download {
-        let url = format!("{}{}", release_url, binary_name);
-        println!("Downloading: {}", url);
+    // Download the binary
+    let url = format!("{}{}", release_url, binary_name);
+    println!("Downloading: {}", url);
 
-        let binary_content = download_file(&url)?;
+    let binary_content = download_file(&url)?;
 
-        // Verify checksum
-        let expected_checksum = checksums
-            .get(&binary_name)
-            .ok_or_else(|| format!("Checksum not found for binary: {}", binary_name))?;
+    // Verify checksum
+    let expected_checksum = checksums
+        .get(&binary_name)
+        .ok_or_else(|| format!("Checksum not found for binary: {}", binary_name))?;
 
-        let actual_checksum = compute_sha256(&binary_content);
+    let actual_checksum = compute_sha256(&binary_content);
 
-        if actual_checksum != *expected_checksum {
-            return Err(format!(
-                "Checksum verification failed for {}: expected {}, got {}",
-                binary_name, expected_checksum, actual_checksum
-            )
-            .into());
-        }
+    if actual_checksum != *expected_checksum {
+        return Err(format!(
+            "Checksum verification failed for {}: expected {}, got {}",
+            binary_name, expected_checksum, actual_checksum
+        )
+        .into());
+    }
 
+    // Handle xcframework zip files specially - extract them
+    if binary_name.ends_with(".xcframework.zip") {
+        // Extract zip to dest_dir (zip contains xcframework folder at root)
+        let cursor = std::io::Cursor::new(&binary_content);
+        let mut archive = zip::ZipArchive::new(cursor)?;
+        archive.extract(dest_dir)?;
+
+        println!(
+            "cargo:warning=Extracted {} to {}",
+            binary_name,
+            dest_dir.display()
+        );
+    } else {
         // Write binary to destination
         let dest_path = dest_dir.join(&binary_name);
         fs::write(&dest_path, &binary_content)?;
@@ -237,35 +186,31 @@ fn download_binaries_from_github(
     Ok(())
 }
 
-/// Determine which binaries to download based on enabled features
-fn determine_binaries_to_download() -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let mut binaries = Vec::new();
+/// Determine which binary to download based on the TARGET triple
+fn target_binary_name() -> String {
+    let target = env::var("TARGET").unwrap();
 
-    // Check which platform features are enabled
-    if cfg!(feature = "x86_64-apple-darwin") {
-        binaries.push("any-sync-x86_64-apple-darwin".to_string());
-    }
-    if cfg!(feature = "aarch64-apple-darwin") {
-        binaries.push("any-sync-aarch64-apple-darwin".to_string());
-    }
-    if cfg!(feature = "x86_64-unknown-linux-gnu") {
-        binaries.push("any-sync-x86_64-unknown-linux-gnu".to_string());
-    }
-    if cfg!(feature = "aarch64-unknown-linux-gnu") {
-        binaries.push("any-sync-aarch64-unknown-linux-gnu".to_string());
-    }
-    if cfg!(feature = "x86_64-pc-windows-msvc") {
-        binaries.push("any-sync-x86_64-pc-windows-msvc.exe".to_string());
-    }
-    if cfg!(feature = "android") {
-        binaries.push("any-sync-android.aar".to_string());
+    // Android: .aar file
+    if target.contains("android") {
+        return "any-sync-android.aar".to_string();
     }
 
-    Ok(binaries)
+    // iOS: xcframework zip
+    if target.contains("apple-ios") {
+        return "AnySync.xcframework.zip".to_string();
+    }
+
+    // Desktop: binary name matches target triple (Windows needs .exe)
+    let ext = if target.contains("windows") {
+        ".exe"
+    } else {
+        ""
+    };
+    format!("any-sync-{}{}", target, ext)
 }
 
 /// Download file from URL
-fn download_file(url: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+fn download_file(url: &str) -> Result<Vec<u8>, Box<dyn Error>> {
     let client = reqwest::blocking::Client::new();
     let response = client.get(url).send()?;
 
@@ -284,7 +229,7 @@ fn download_file(url: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
 /// Parse checksums.txt format: "<hash>  <filename>"
 fn parse_checksums(
     content: &str,
-) -> Result<std::collections::HashMap<String, String>, Box<dyn std::error::Error>> {
+) -> Result<std::collections::HashMap<String, String>, Box<dyn Error>> {
     use std::collections::HashMap;
 
     let mut checksums = HashMap::new();
@@ -321,7 +266,7 @@ fn compute_sha256(data: &[u8]) -> String {
     format!("{:x}", result)
 }
 
-fn generate_protobuf() -> Result<(), Box<dyn std::error::Error>> {
+fn generate_protobuf() -> Result<(), Box<dyn Error>> {
     // Generate protobuf code from the new unified transport and syncspace APIs
     println!("cargo:rerun-if-changed=../buf/proto/dispatch-transport/transport/v1/transport.proto");
     println!("cargo:rerun-if-changed=../buf/proto/syncspace-api/syncspace/v1/syncspace.proto");
@@ -341,4 +286,50 @@ fn generate_protobuf() -> Result<(), Box<dyn std::error::Error>> {
         )?;
 
     Ok(())
+}
+
+/// Creates a filesystem link using the best unprivileged method for the platform.
+///
+/// - **Windows**: Uses `Junctions` for directories and `Hard Links` for files.
+/// - **Unix**: Uses `Symlinks` for both.
+pub fn create_link<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dst: Q) -> std::io::Result<()> {
+    let src = src.as_ref().canonicalize().unwrap_or_else(|err| {
+        panic!(
+            "Failed to canonicalize source path {:?}: {}",
+            src.as_ref(),
+            err
+        )
+    });
+    let dst = dst.as_ref();
+
+    // Clean Destination: Remove existing link or directory safely
+    if let Ok(meta) = fs::symlink_metadata(dst) {
+        if meta.is_dir() {
+            fs::remove_dir_all(dst)?;
+        } else {
+            fs::remove_file(dst)?;
+        }
+    }
+
+    // Create parent directories for destination if they don't exist
+    if let Some(parent) = dst.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    // Create Link: Platform-specific implementation
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink(src, dst)
+    }
+
+    #[cfg(windows)]
+    {
+        if src.is_dir() {
+            // Directory -> Create Junction (No Admin needed)
+            junction::create(src, dst)
+        } else {
+            // File -> Create Hard Link (No Admin needed, must be same drive)
+            fs::hard_link(src, dst)
+        }
+    }
 }

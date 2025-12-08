@@ -5,9 +5,6 @@ vars:
   BINARY_PREFIX: any-sync
 
 tasks:
-  default:
-    deps: [build]
-
   gomobile-setup:
     desc: Install gomobile toolchain
     internal: true
@@ -18,12 +15,19 @@ tasks:
       - go install golang.org/x/mobile/cmd/gomobile@latest
       - gomobile init
 
+  binaries-init:
+    desc: Initialize binaries directory
+    internal: true
+    run: once
+    cmd: mkdir -p '{{.BINARIES_DIR}}'
+
   build:android:
     desc: Build the Android .aar file with gomobile
     preconditions:
       - 'test -n "$ANDROID_HOME"'
     deps:
       - gomobile-setup
+      - binaries-init
     vars:
       EXT: .aar
       NAME: "{{.BINARY_PREFIX}}-android{{.EXT}}"
@@ -43,20 +47,20 @@ tasks:
     desc: Build the iOS .xcframework file with gomobile
     deps:
       - gomobile-setup
+      - binaries-init
     vars:
-      EXT: .xcframework
-      NAME: "{{.BINARY_PREFIX}}-ios{{.EXT}}"
-      BINARY: "{{joinPath .BINARIES_DIR .NAME}}"
+      NAME: "AnySync.xcframework"
+      BUNDLE: "{{joinPath .BINARIES_DIR .NAME}}"
     label: "{{.TASK}}"
     cmds:
       - mkdir -p '{{.BINARIES_DIR}}'
-      - gomobile bind -target=ios -o '{{.BINARY}}' .
+      - gomobile bind -target=ios,iossimulator,macos -o '{{.BUNDLE}}' .
       - ls -la '{{.BINARIES_DIR}}'
     sources:
       - ./**/*
       - ../shared/**/*
     generates:
-      - "{{.BINARY}}"
+      - "{{.BUNDLE}}/**/*"
 
   build:
     desc: Build mobile binaries for current platform
@@ -78,7 +82,7 @@ tasks:
     desc: "Clean mobile build artifacts"
     cmds:
       - rm -rf '{{.BINARIES_DIR}}/any-sync-android*'
-      - rm -rf '{{.BINARIES_DIR}}/any-sync-ios*'
+      - rm -rf '{{.BINARIES_DIR}}/AnySync.xcframework'
 
   mod-tidy:
     desc: "Clean and verify Go modules"

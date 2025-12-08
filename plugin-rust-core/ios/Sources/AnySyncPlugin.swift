@@ -1,7 +1,5 @@
-// Note: Mobile framework (gomobile-generated) is provided at app build time
-// Standalone swift build will fail - this is expected and OK
-// The framework is located at: ../../binaries/any-sync-ios.xcframework
-import Mobile
+// Note: Go mobile framework (gomobile-generated) is provided at build time via Package.swift binaryTarget
+import AnySync
 import SwiftRs
 import Tauri
 import UIKit
@@ -17,7 +15,23 @@ class AnySyncPlugin: Plugin {
 
   private func ensureInitialized() throws {
     if !initialized {
-      try MobileInit()
+      var error: NSError?
+      let success = MobileInit(&error)
+
+      // Check if an error occurred
+      if let error = error {
+          NSLog("[AnySyncPlugin] MobileInit failed: \(error.localizedDescription)")
+          throw error
+      }
+
+      // MobileInit returns BOOL indicating success/failure
+      if !success {
+          let errorMsg = "MobileInit returned false without error details"
+          NSLog("[AnySyncPlugin] \(errorMsg)")
+          throw NSError(domain: "AnySyncPlugin", code: -1, userInfo: [NSLocalizedDescriptionKey: errorMsg])
+      }
+
+      NSLog("[AnySyncPlugin] MobileInit succeeded")
       initialized = true
     }
   }
@@ -30,10 +44,20 @@ class AnySyncPlugin: Plugin {
       let data = Data(args.data)
 
       // Call Go via gomobile FFI
-      let response = try MobileCommand(args.cmd, data)
+      var error: NSError?
+      let response = MobileCommand(args.cmd, data, &error)
 
-      // Convert response Data back to byte array for Rust
-      let responseBytes = [UInt8](response ?? Data())
+      // Check if an error occurred
+      if let error = error {
+          NSLog("[AnySyncPlugin] MobileCommand failed for cmd=\(args.cmd): \(error.localizedDescription)")
+          throw error
+      }
+
+      // Handle nil response from gomobile
+      // Note: gomobile converts empty Go slices ([]byte{} with len==0) to nil in Swift/Objective-C
+      // This is documented behavior, not a bug. Treat nil as empty response.
+      let responseBytes = response != nil ? [UInt8](response!) : []
+      NSLog("[AnySyncPlugin] Command '\(args.cmd)' succeeded, response.len=\(responseBytes.count)")
       invoke.resolve(["data": responseBytes])
 
     } catch {

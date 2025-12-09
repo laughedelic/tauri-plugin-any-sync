@@ -14,11 +14,20 @@ on:
 permissions:
   contents: write
 
+env:
+  VERSION: ${{ inputs.version || github.ref_name }}
+
 jobs:
-  release:
-    runs-on: ubuntu-latest
-    env:
-      VERSION: ${{ inputs.version || github.ref_name }}
+  compile-binaries:
+    strategy:
+      matrix:
+        include:
+          - platform: macos-latest
+            type: apple
+          - platform: ubuntu-latest
+            type: non-apple
+    name: build ${{ matrix.type }}
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -32,12 +41,33 @@ jobs:
       - name: Install Task
         uses: go-task/setup-task@v1
 
-      - name: Cross-compile all Go binaries
-        run: task backend:build-all
+      - name: Cross-compile Go binaries
+        run: |
+          task backend:build-${{ matrix.type }}
+          ls -lh binaries/
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ matrix.type }}-binaries
+          path: binaries/
+
+  release:
+    runs-on: ubuntu-latest
+    needs: compile-binaries
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download all binaries
+        uses: actions/download-artifact@v6
+        with:
+          path: ./binaries
+          merge-multiple: true
 
       - name: Compress each binary
         working-directory: ./binaries
         run: |
+          ls -lh
           for i in *; do 
             [ -e "$i" ] && zip -r "${i}.zip" "$i" && rm -rf "$i";
           done
@@ -45,6 +75,7 @@ jobs:
       - name: Generate checksums
         working-directory: ./binaries
         run: |
+          ls -lh
           sha256sum *.zip > checksums.txt
           cat checksums.txt
 

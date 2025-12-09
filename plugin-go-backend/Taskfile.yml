@@ -24,6 +24,19 @@ tasks:
       - mobile:build-all
     cmd: ls -ogh {{.BINARIES_DIR}}
 
+  build-apple:
+    desc: Build Go backend binaries for Apple platforms
+    deps:
+      - desktop:build:macos
+      - mobile:build:ios
+
+  build-non-apple:
+    desc: Build Go backend binaries for non-Apple platforms
+    deps:
+      - desktop:build:linux
+      - desktop:build:windows
+      - mobile:build:android
+
   clean:
     desc: Clean all build artifacts
     deps:

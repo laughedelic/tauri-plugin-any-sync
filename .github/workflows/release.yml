@@ -29,26 +29,23 @@ jobs:
           go-version-file: "plugin-go-backend/go.work"
           cache-dependency-path: "plugin-go-backend/go.work.sum"
 
-      - name: Set up protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          version: "28.x"
-          repo-token: ${{ github.token }}
-
-      - name: Set up Android SDK/NDK
-        uses: android-actions/setup-android@v3
-
       - name: Install Task
         uses: go-task/setup-task@v1
 
       - name: Cross-compile all Go binaries
         run: task backend:build-all
 
+      - name: Compress each binary
+        working-directory: ./binaries
+        run: |
+          for i in *; do 
+            [ -e "$i" ] && zip -r "${i}.zip" "$i" && rm -rf "$i";
+          done
+
       - name: Generate checksums
         working-directory: ./binaries
         run: |
-          rm -f *-android-sources.jar
-          sha256sum * > checksums.txt
+          sha256sum *.zip > checksums.txt
           cat checksums.txt
 
       - name: Create or update release

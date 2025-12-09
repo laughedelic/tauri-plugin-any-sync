@@ -13,16 +13,16 @@ includes:
 
 tasks:
   build:
-    desc: Build Go backend binaries for current platform and mobile
+    desc: Build Go backend binaries for the current platform
     deps:
       - desktop:build
-      - mobile:build
 
   build-all:
     desc: Build Go backend binaries for all platforms
     deps:
       - desktop:build-all
       - mobile:build-all
+    cmd: ls -ogh {{.BINARIES_DIR}}
 
   clean:
     desc: Clean all build artifacts

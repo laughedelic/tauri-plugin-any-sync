@@ -34,9 +34,8 @@ tasks:
       BINARY: "{{joinPath .BINARIES_DIR .NAME}}"
     label: "{{.TASK}}"
     cmds:
-      - mkdir -p '{{.BINARIES_DIR}}'
       - gomobile bind -target=android -androidapi=21 -o '{{.BINARY}}' .
-      - ls -la '{{.BINARIES_DIR}}'
+      - rm -f '{{.BINARIES_DIR}}/{{.BINARY_PREFIX}}-android-sources.jar'
     sources:
       - ./**/*
       - ../shared/**/*
@@ -53,9 +52,7 @@ tasks:
       BUNDLE: "{{joinPath .BINARIES_DIR .NAME}}"
     label: "{{.TASK}}"
     cmds:
-      - mkdir -p '{{.BINARIES_DIR}}'
       - gomobile bind -target=ios,iossimulator,macos -o '{{.BUNDLE}}' .
-      - ls -la '{{.BINARIES_DIR}}'
     sources:
       - ./**/*
       - ../shared/**/*

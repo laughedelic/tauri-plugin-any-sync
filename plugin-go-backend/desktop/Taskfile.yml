@@ -36,17 +36,24 @@ tasks:
     generates:
       - "{{.BINARY}}"
 
+  build:*:
+    desc: Build desktop binary for specific platform
+    deps:
+      - for:
+          matrix:
+            ARCH: [amd64, arm64]
+        task: build
+        vars:
+          OS: "{{index .MATCH 0}}"
+          ARCH: "{{.ITEM.ARCH}}"
+
   build-all:
     desc: Build desktop binary for all platforms
     deps:
       - for:
           matrix:
             OS: [macos, linux, windows]
-            ARCH: [amd64, arm64]
-        task: build
-        vars:
-          OS: "{{.ITEM.OS}}"
-          ARCH: "{{.ITEM.ARCH}}"
+        task: build:{{.ITEM.OS}}
 
   test:
     desc: Run Go tests
